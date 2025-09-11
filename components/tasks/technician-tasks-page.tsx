@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { Button } from "@/components/ui/core/button"
 import { Input } from "@/components/ui/core/input"
@@ -31,101 +31,12 @@ import {
   HelpCircle,
   Users,
 } from "lucide-react"
-
-// Mock data for new tasks awaiting assignment or collaboration
-const newAssignments = [
-  {
-    id: "T-1028",
-    customerName: "Robert Johnson",
-    laptopModel: "MacBook Air 13",
-    issue: "Liquid damage - won't turn on",
-    priority: "High",
-    dateCreated: "2024-01-16",
-    estimatedCost: "$450.00",
-    urgency: "High",
-    phone: "(555) 789-0123",
-  },
-  {
-    id: "T-1029",
-    customerName: "Linda Martinez",
-    laptopModel: "Dell Inspiron 15",
-    issue: "Blue screen errors and random shutdowns",
-    priority: "Medium",
-    dateCreated: "2024-01-16",
-    estimatedCost: "$199.99",
-    urgency: "Medium",
-    phone: "(555) 456-7890",
-  },
-  {
-    id: "T-1030",
-    customerName: "Kevin Wong",
-    laptopModel: "HP Envy x360",
-    issue: "Need help with motherboard replacement",
-    priority: "Medium",
-    dateCreated: "2024-01-15",
-    estimatedCost: "$320.00",
-    urgency: "Low",
-    phone: "(555) 321-6543",
-    isCollaboration: true,
-    originalTechnician: "tech2",
-    collaborationReason:
-      "Need assistance with micro-soldering on the motherboard. Complex repair requiring two technicians.",
-  },
-]
-
-// Mock data for assigned tasks
-const assignedTasks = [
-  {
-    id: "T-1025",
-    customerName: "Sarah Connor",
-    laptopModel: "MacBook Pro 16",
-    issue: "Screen replacement needed",
-    status: "In Progress",
-    priority: "High",
-    dateAssigned: "2024-01-15",
-    estimatedCost: "$299.99",
-    phone: "(555) 123-4567",
-    urgency: "High",
-  },
-  {
-    id: "T-1026",
-    customerName: "Mike Davis",
-    laptopModel: "Lenovo ThinkPad X1",
-    issue: "Keyboard replacement and cleaning",
-    status: "Awaiting Parts",
-    priority: "Medium",
-    dateAssigned: "2024-01-14",
-    estimatedCost: "$149.50",
-    phone: "(555) 987-6543",
-    urgency: "Medium",
-  },
-  {
-    id: "T-1027",
-    customerName: "Emily Johnson",
-    laptopModel: "ASUS ROG Gaming",
-    issue: "Overheating issues - thermal paste replacement",
-    status: "In Progress",
-    priority: "Low",
-    dateAssigned: "2024-01-13",
-    estimatedCost: "$89.99",
-    phone: "(555) 555-0123",
-    urgency: "Low",
-  },
-  {
-    id: "T-1024",
-    customerName: "David Wilson",
-    laptopModel: "Surface Laptop 4",
-    issue: "Battery replacement completed",
-    status: "Completed",
-    priority: "Medium",
-    dateAssigned: "2024-01-12",
-    estimatedCost: "$179.99",
-    phone: "(555) 111-2222",
-    urgency: "Medium",
-  },
-]
+import { useAuth } from "@/lib/auth-context"
+import { getTasks, updateTask } from "@/lib/api-client"
 
 export function TechnicianTasksPage() {
+  const { user } = useAuth()
+  const [tasks, setTasks] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTask, setSelectedTask] = useState<any>(null)
   const [collaborationReason, setCollaborationReason] = useState("")
@@ -133,13 +44,28 @@ export function TechnicianTasksPage() {
   const [isAcceptingTask, setIsAcceptingTask] = useState(false)
   const [acceptingTaskId, setAcceptingTaskId] = useState<string | null>(null)
 
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await getTasks()
+        setTasks(response.data)
+      } catch (error) {
+        console.error("Error fetching tasks:", error)
+      }
+    }
+    fetchTasks()
+  }, [])
+
+  const newAssignments = tasks.filter((task) => task.status === "Assigned - Not Accepted")
+  const assignedTasks = tasks.filter((task) => task.assigned_to === user?.id && task.status !== "Assigned - Not Accepted")
+
   // Filter assigned tasks based on search query
   const filteredTasks = assignedTasks.filter(
     (task) =>
-      task.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.laptopModel.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.issue.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.id.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.laptop_model.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       task.status.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
@@ -147,12 +73,16 @@ export function TechnicianTasksPage() {
     setIsAcceptingTask(true)
     setAcceptingTaskId(taskId)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    alert(`Task ${taskId} has been accepted and added to your assigned tasks!`)
-    setIsAcceptingTask(false)
-    setAcceptingTaskId(null)
+    try {
+      await updateTask(taskId, { assigned_to: user?.id, status: "In Progress" })
+      const response = await getTasks()
+      setTasks(response.data)
+    } catch (error) {
+      console.error(`Error accepting task ${taskId}:`, error)
+    } finally {
+      setIsAcceptingTask(false)
+      setAcceptingTaskId(null)
+    }
   }
 
   const handleRequestCollaboration = async () => {
@@ -160,13 +90,19 @@ export function TechnicianTasksPage() {
 
     setIsSubmittingCollaboration(true)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    alert(`Collaboration request for task ${selectedTask.id} has been submitted successfully!`)
-    setIsSubmittingCollaboration(false)
-    setSelectedTask(null)
-    setCollaborationReason("")
+    try {
+      // This should be a call to a specific endpoint for collaboration requests
+      // For now, we'll just update the task status
+      await updateTask(selectedTask.id, { status: "Awaiting Collaboration", description: `${selectedTask.description}\n\nCollaboration request: ${collaborationReason}` })
+      const response = await getTasks()
+      setTasks(response.data)
+      setSelectedTask(null)
+      setCollaborationReason("")
+    } catch (error) {
+      console.error(`Error requesting collaboration for task ${selectedTask.id}:`, error)
+    } finally {
+      setIsSubmittingCollaboration(false)
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -246,7 +182,7 @@ export function TechnicianTasksPage() {
                     <div>
                       <div className="flex items-center gap-3 mb-1">
                         <span className="font-medium text-red-600">{task.id}</span>
-                        <span className="font-medium text-gray-900">{task.customerName}</span>
+                        <span className="font-medium text-gray-900">{task.customer_name}</span>
                         {getUrgencyBadge(task.urgency)}
                         {task.isCollaboration && (
                           <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">Collaboration</Badge>
@@ -255,27 +191,27 @@ export function TechnicianTasksPage() {
                       <div className="flex items-center gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
                           <Laptop className="h-3 w-3" />
-                          {task.laptopModel}
+                          {task.laptop_model}
                         </div>
                         <div className="flex items-center gap-1">
                           <Phone className="h-3 w-3" />
-                          {task.phone}
+                          {task.customer_phone}
                         </div>
                         <div className="flex items-center gap-1">
                           <DollarSign className="h-3 w-3" />
-                          {task.estimatedCost}
+                          {task.estimated_cost}
                         </div>
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-500">Created: {task.dateCreated}</p>
+                    <p className="text-sm text-gray-500">Created: {task.created_at}</p>
                   </div>
                 </div>
 
                 <div className="bg-gray-50 rounded-lg p-3">
                   <h4 className="font-medium text-gray-900 mb-2">Issue Description:</h4>
-                  <p className="text-sm text-gray-700">{task.issue}</p>
+                  <p className="text-sm text-gray-700">{task.description}</p>
 
                   {task.isCollaboration && task.collaborationReason && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
@@ -354,26 +290,26 @@ export function TechnicianTasksPage() {
                     <div>
                       <div className="flex items-center gap-3 mb-1">
                         <span className="font-medium text-blue-600">{task.id}</span>
-                        <span className="font-medium text-gray-900">{task.customerName}</span>
+                        <span className="font-medium text-gray-900">{task.customer_name}</span>
                         {getStatusBadge(task.status)}
                         {getUrgencyBadge(task.urgency)}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
                           <Laptop className="h-3 w-3" />
-                          {task.laptopModel}
+                          {task.laptop_model}
                         </div>
                         <div className="flex items-center gap-1">
                           <Phone className="h-3 w-3" />
-                          {task.phone}
+                          {task.customer_phone}
                         </div>
                         <div className="flex items-center gap-1">
                           <DollarSign className="h-3 w-3" />
-                          {task.estimatedCost}
+                          {task.estimated_cost}
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {task.dateAssigned}
+                          {task.created_at}
                         </div>
                       </div>
                     </div>
@@ -382,7 +318,7 @@ export function TechnicianTasksPage() {
 
                 <div className="bg-gray-50 rounded-lg p-3">
                   <h4 className="font-medium text-gray-900 mb-2">Issue Description:</h4>
-                  <p className="text-sm text-gray-700">{task.issue}</p>
+                  <p className="text-sm text-gray-700">{task.description}</p>
                 </div>
 
                 <div className="flex justify-end gap-2">
@@ -423,13 +359,13 @@ export function TechnicianTasksPage() {
                                   <strong>ID:</strong> {selectedTask.id}
                                 </p>
                                 <p>
-                                  <strong>Customer:</strong> {selectedTask.customerName}
+                                  <strong>Customer:</strong> {selectedTask.customer_name}
                                 </p>
                                 <p>
-                                  <strong>Device:</strong> {selectedTask.laptopModel}
+                                  <strong>Device:</strong> {selectedTask.laptop_model}
                                 </p>
                                 <p>
-                                  <strong>Issue:</strong> {selectedTask.issue}
+                                  <strong>Issue:</strong> {selectedTask.description}
                                 </p>
                               </div>
                             </div>

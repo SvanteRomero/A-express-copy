@@ -26,40 +26,14 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { apiClient } from "@/lib/api-client"
-
-interface TaskDetails {
-  id: string
-  customerId: string
-  customerName: string
-  customerPhone: string
-  customerEmail: string
-  laptopModel: string
-  serialNumber: string
-  dateIn: string
-  assignedTechnician: string
-  currentLocation: string
-  urgency: string
-  status: string
-  initialIssue: string
-  estimatedCompletion: string
-  notes: TaskNote[]
-}
-
-interface TaskNote {
-  id: string
-  timestamp: string
-  user: string
-  type: string
-  note: string
-}
+import { getTask, updateTask, addTaskActivity } from "@/lib/api-client"
 
 interface TechnicianTaskDetailsProps {
   taskId: string
 }
 
 export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
-  const [task, setTask] = useState<TaskDetails | null>(null)
+  const [task, setTask] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [newNote, setNewNote] = useState("")
@@ -77,10 +51,10 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   const loadTaskDetails = async () => {
     try {
       setLoading(true)
-      const response = await apiClient.getTaskDetails(taskId)
-      const taskData = response.data.task
+      const response = await getTask(taskId)
+      const taskData = response.data
       setTask(taskData)
-      setCurrentLocation(taskData.currentLocation)
+      setCurrentLocation(taskData.current_location)
       setUrgency(taskData.urgency)
       setStatus(taskData.status)
     } catch (error) {
@@ -93,7 +67,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   const handleStatusChange = async (newStatus: string) => {
     try {
       setUpdating(true)
-      await apiClient.updateTaskStatus(taskId, newStatus)
+      await updateTask(taskId, { status: newStatus })
       setStatus(newStatus)
       await loadTaskDetails() // Reload to get updated notes
     } catch (error) {
@@ -105,7 +79,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
 
   const handleLocationChange = async (newLocation: string) => {
     try {
-      await apiClient.updateTaskLocation(taskId, newLocation)
+      await updateTask(taskId, { current_location: newLocation })
       setCurrentLocation(newLocation)
     } catch (error) {
       console.error("Failed to update location:", error)
@@ -114,7 +88,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
 
   const handleUrgencyChange = async (newUrgency: string) => {
     try {
-      await apiClient.updateTaskUrgency(taskId, newUrgency)
+      await updateTask(taskId, { urgency: newUrgency })
       setUrgency(newUrgency)
     } catch (error) {
       console.error("Failed to update urgency:", error)
@@ -126,10 +100,9 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
 
     try {
       setUpdating(true)
-      await apiClient.addTaskNote(taskId, {
+      await addTaskActivity(taskId, {
         type: noteType,
-        note: newNote,
-        user: user?.first_name + " " + user?.last_name || "Current User",
+        message: newNote,
       })
       setNewNote("")
       await loadTaskDetails() // Reload to get updated notes
@@ -141,7 +114,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   }
 
   const handleMarkComplete = async () => {
-    await handleStatusChange("completed")
+    await handleStatusChange("Completed")
   }
 
   const handleRequestHelp = () => {
@@ -149,17 +122,15 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   }
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending_diagnosis: { label: "Pending Diagnosis", color: "bg-yellow-100 text-yellow-800" },
-      in_progress: { label: "In Progress", color: "bg-blue-100 text-blue-800" },
-      awaiting_parts: { label: "Awaiting Parts", color: "bg-orange-100 text-orange-800" },
-      repair_complete: { label: "Repair Complete", color: "bg-green-100 text-green-800" },
-      awaiting_collaboration: { label: "Awaiting Collaboration", color: "bg-red-100 text-red-800" },
-      quality_control: { label: "Quality Control", color: "bg-purple-100 text-purple-800" },
-      completed: { label: "Completed", color: "bg-green-100 text-green-800" },
+    const statusConfig: any = {
+      "To Do": { label: "To Do", color: "bg-gray-100 text-gray-800" },
+      "In Progress": { label: "In Progress", color: "bg-blue-100 text-blue-800" },
+      "Awaiting Parts": { label: "Awaiting Parts", color: "bg-orange-100 text-orange-800" },
+      "Done": { label: "Done", color: "bg-green-100 text-green-800" },
+      "Cancelled": { label: "Cancelled", color: "bg-red-100 text-red-800" },
     }
 
-    const config = statusConfig[status as keyof typeof statusConfig] || {
+    const config = statusConfig[status] || {
       label: status,
       color: "bg-gray-100 text-gray-800",
     }
@@ -167,13 +138,13 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   }
 
   const getUrgencyBadge = (urgency: string) => {
-    const urgencyConfig = {
-      high: { label: "High", color: "bg-red-100 text-red-800" },
-      medium: { label: "Medium", color: "bg-yellow-100 text-yellow-800" },
-      low: { label: "Low", color: "bg-green-100 text-green-800" },
+    const urgencyConfig: any = {
+      High: { label: "High", color: "bg-red-100 text-red-800" },
+      Medium: { label: "Medium", color: "bg-yellow-100 text-yellow-800" },
+      Low: { label: "Low", color: "bg-green-100 text-green-800" },
     }
 
-    const config = urgencyConfig[urgency as keyof typeof urgencyConfig] || {
+    const config = urgencyConfig[urgency] || {
       label: urgency,
       color: "bg-gray-100 text-gray-800",
     }
@@ -181,7 +152,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   }
 
   const getNoteIcon = (type: string) => {
-    const iconMap = {
+    const iconMap: any = {
       diagnosis: <Wrench className="h-4 w-4 text-blue-600" />,
       repair_step: <CheckCircle className="h-4 w-4 text-green-600" />,
       status_update: <Clock className="h-4 w-4 text-purple-600" />,
@@ -189,7 +160,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
       handoff_reason: <Users className="h-4 w-4 text-red-600" />,
       parts_request: <Package className="h-4 w-4 text-yellow-600" />,
     }
-    return iconMap[type as keyof typeof iconMap] || <FileText className="h-4 w-4 text-gray-600" />
+    return iconMap[type] || <FileText className="h-4 w-4 text-gray-600" />
   }
 
   if (loading) {
@@ -246,7 +217,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
               {/* Initial Issue */}
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <h4 className="font-medium text-blue-900 mb-2">Initial Issue Description</h4>
-                <p className="text-blue-800">{task.initialIssue}</p>
+                <p className="text-blue-800">{task.description}</p>
               </div>
 
               {/* Read-only fields */}
@@ -257,23 +228,23 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">Customer Name</label>
-                  <p className="text-lg font-semibold text-gray-900">{task.customerName}</p>
+                  <p className="text-lg font-semibold text-gray-900">{task.customer_name}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">Laptop Model</label>
-                  <p className="text-lg font-semibold text-gray-900">{task.laptopModel}</p>
+                  <p className="text-lg font-semibold text-gray-900">{task.laptop_model}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">Serial Number</label>
-                  <p className="text-lg font-semibold text-gray-900">{task.serialNumber}</p>
+                  <p className="text-lg font-semibold text-gray-900">{task.serial_number}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">Date In</label>
-                  <p className="text-lg font-semibold text-gray-900">{task.dateIn}</p>
+                  <p className="text-lg font-semibold text-gray-900">{task.date_in}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">Assigned Technician</label>
-                  <p className="text-lg font-semibold text-gray-900">{task.assignedTechnician}</p>
+                  <p className="text-lg font-semibold text-gray-900">{task.assigned_to_details?.full_name}</p>
                 </div>
               </div>
 
@@ -304,9 +275,9 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="Low">Low</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="High">High</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -329,12 +300,11 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending_diagnosis">Pending Diagnosis</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="awaiting_parts">Awaiting Parts</SelectItem>
-                      <SelectItem value="repair_complete">Repair Complete</SelectItem>
-                      <SelectItem value="awaiting_collaboration">Awaiting Collaboration</SelectItem>
-                      <SelectItem value="quality_control">Quality Control</SelectItem>
+                      <SelectItem value="To Do">To Do</SelectItem>
+                      <SelectItem value="In Progress">In Progress</SelectItem>
+                      <SelectItem value="Awaiting Parts">Awaiting Parts</SelectItem>
+                      <SelectItem value="Done">Done</SelectItem>
+                      <SelectItem value="Cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -342,7 +312,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
               </div>
 
               <div className="flex gap-3">
-                {status === "repair_complete" && (
+                {status === "Done" && (
                   <Button
                     className="bg-red-600 hover:bg-red-700 text-white"
                     onClick={handleMarkComplete}
@@ -374,19 +344,19 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
               {/* Activity Log */}
               <ScrollArea className="h-96 w-full border rounded-lg p-4">
                 <div className="space-y-4">
-                  {task.notes && task.notes.length > 0 ? (
-                    task.notes.map((note) => (
+                  {task.activities && task.activities.length > 0 ? (
+                    task.activities.map((note: any) => (
                       <div key={note.id} className="flex gap-3 p-3 bg-gray-50 rounded-lg">
                         <div className="p-2 bg-white rounded-full border">{getNoteIcon(note.type)}</div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-gray-900">{note.user}</span>
+                            <span className="font-medium text-gray-900">{note.user.full_name}</span>
                             <Badge variant="outline" className="text-xs">
                               {note.type.replace("_", " ").toUpperCase()}
                             </Badge>
-                            <span className="text-xs text-gray-500">{note.timestamp}</span>
+                            <span className="text-xs text-gray-500">{new Date(note.timestamp).toLocaleString()}</span>
                           </div>
-                          <p className="text-gray-700">{note.note}</p>
+                          <p className="text-gray-700">{note.message}</p>
                         </div>
                       </div>
                     ))
@@ -444,15 +414,15 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
             <CardContent className="space-y-3">
               <div>
                 <label className="text-sm font-medium text-gray-700">Name</label>
-                <p className="text-gray-900">{task.customerName}</p>
+                <p className="text-gray-900">{task.customer_name}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">Phone</label>
-                <p className="text-gray-900">{task.customerPhone}</p>
+                <p className="text-gray-900">{task.customer_phone}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">Email</label>
-                <p className="text-gray-900">{task.customerEmail}</p>
+                <p className="text-gray-900">{task.customer_email}</p>
               </div>
             </CardContent>
           </Card>
@@ -488,14 +458,14 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                 <Calendar className="h-4 w-4 text-gray-500" />
                 <div>
                   <p className="text-sm font-medium">Date In</p>
-                  <p className="text-sm text-gray-600">{task.dateIn}</p>
+                  <p className="text-sm text-gray-600">{task.date_in}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-gray-500" />
                 <div>
                   <p className="text-sm font-medium">Est. Completion</p>
-                  <p className="text-sm text-gray-600">{task.estimatedCompletion}</p>
+                  <p className="text-sm text-gray-600">{task.due_date}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">

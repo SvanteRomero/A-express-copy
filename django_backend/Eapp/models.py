@@ -119,4 +119,115 @@ class User(AbstractBaseUser, PermissionsMixin):
         """Check if user has permission to add other users"""
         return self.is_superuser or self.role == 'Manager'
     
+
+class Task(models.Model):
+    class Status(models.TextChoices):
+        TODO = 'To Do', _('To Do')
+        IN_PROGRESS = 'In Progress', _('In Progress')
+        DONE = 'Done', _('Done')
+        CANCELLED = 'Cancelled', _('Cancelled')
+
+    class Priority(models.TextChoices):
+        LOW = 'Low', _('Low')
+        MEDIUM = 'Medium', _('Medium')
+        HIGH = 'High', _('High')
+
+    class PaymentStatus(models.TextChoices):
+        UNPAID = 'Unpaid', _('Unpaid')
+        PARTIALLY_PAID = 'Partially Paid', _('Partially Paid')
+        PAID = 'Paid', _('Paid')
+        REFUNDED = 'Refunded', _('Refunded')
+
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.TODO
+    )
+    priority = models.CharField(
+        max_length=20,
+        choices=Priority.choices,
+        default=Priority.MEDIUM
+    )
+    assigned_to = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks'
+    )
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tasks')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    due_date = models.DateField(null=True, blank=True)
+
+    # New fields
+    customer_name = models.CharField(max_length=100)
+    customer_phone = models.CharField(max_length=20)
+    customer_email = models.EmailField(max_length=100, blank=True, null=True)
+    laptop_make = models.CharField(max_length=50)
+    laptop_model = models.CharField(max_length=100)
+    serial_number = models.CharField(max_length=100)
+    estimated_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    total_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.UNPAID
+    )
+    current_location = models.CharField(max_length=100)
+    urgency = models.CharField(max_length=20, choices=Priority.choices, default=Priority.MEDIUM)
+    date_in = models.DateField(default=timezone.now)
+    approved_date = models.DateField(null=True, blank=True)
+    paid_date = models.DateField(null=True, blank=True)
+    date_out = models.DateField(null=True, blank=True)
+    negotiated_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='negotiated_tasks'
+    )
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class TaskActivity(models.Model):
+    class ActivityType(models.TextChoices):
+        STATUS_UPDATE = 'status_update', _('Status Update')
+        NOTE = 'note', _('Note')
+        DIAGNOSIS = 'diagnosis', _('Diagnosis')
+        CUSTOMER_CONTACT = 'customer_contact', _('Customer Contact')
+        INTAKE = 'intake', _('Intake')
+
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='activities')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    type = models.CharField(max_length=20, choices=ActivityType.choices)
+    message = models.TextField()
+
+    def __str__(self):
+        return f'{self.get_type_display()} for {self.task.title} at {self.timestamp}'
+
+    class Meta:
+        ordering = ['-timestamp']
+
+
+class Payment(models.Model):
+    class PaymentMethod(models.TextChoices):
+        CASH = 'Cash', _('Cash')
+        CREDIT_CARD = 'Credit Card', _('Credit Card')
+        DEBIT_CARD = 'Debit Card', _('Debit Card')
+        CHECK = 'Check', _('Check')
+        DIGITAL_PAYMENT = 'Digital Payment', _('Digital Payment')
+
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='payments')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    date = models.DateField(default=timezone.now)
+    method = models.CharField(max_length=20, choices=PaymentMethod.choices)
+    reference = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return f'Payment of {self.amount} for {self.task.title} on {self.date}'
+
+    class Meta:
+        ordering = ['-date']
+    
     

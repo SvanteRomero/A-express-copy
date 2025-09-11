@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { Button } from "@/components/ui/core/button"
 import { Input } from "@/components/ui/core/input"
@@ -21,146 +21,14 @@ import {
   Laptop,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
+import { getTasks } from "@/lib/api-client"
 
-// Mock data for all tasks
-const allTasks = [
-  {
-    id: "T-1001",
-    customerName: "John Smith",
-    laptopModel: 'MacBook Pro 13"',
-    initialIssue: "Screen replacement needed",
-    dateIn: "2024-01-10",
-    assignedTechnician: "Sarah Johnson",
-    currentStatus: "Ready for Pickup",
-    urgency: "Medium",
-    currentLocation: "Front Desk",
-    customerPhone: "(555) 123-4567",
-    estimatedCompletion: "2024-01-15",
-  },
-  {
-    id: "T-1002",
-    customerName: "Emily Davis",
-    laptopModel: "Dell XPS 15",
-    initialIssue: "Won't turn on",
-    dateIn: "2024-01-12",
-    assignedTechnician: "John Smith",
-    currentStatus: "In Progress",
-    urgency: "High",
-    currentLocation: "Repair Bay 1",
-    customerPhone: "(555) 987-6543",
-    estimatedCompletion: "2024-01-16",
-  },
-  {
-    id: "T-1003",
-    customerName: "Michael Brown",
-    laptopModel: "HP Pavilion",
-    initialIssue: "Keyboard not working",
-    dateIn: "2024-01-08",
-    assignedTechnician: "Mike Chen",
-    currentStatus: "Awaiting Parts",
-    urgency: "Low",
-    currentLocation: "Parts Storage",
-    customerPhone: "(555) 456-7890",
-    estimatedCompletion: "2024-01-18",
-  },
-  {
-    id: "T-1004",
-    customerName: "Sarah Wilson",
-    laptopModel: "Lenovo ThinkPad",
-    initialIssue: "Slow performance",
-    dateIn: "2024-01-14",
-    assignedTechnician: "Lisa Brown",
-    currentStatus: "Diagnostic",
-    urgency: "Medium",
-    currentLocation: "Diagnostic Station",
-    customerPhone: "(555) 321-0987",
-    estimatedCompletion: "2024-01-17",
-  },
-  {
-    id: "T-1005",
-    customerName: "David Wilson",
-    laptopModel: "MacBook Air M2",
-    initialIssue: "Battery replacement",
-    dateIn: "2024-01-11",
-    assignedTechnician: "David Wilson",
-    currentStatus: "Completed",
-    urgency: "Low",
-    currentLocation: "Quality Control",
-    customerPhone: "(555) 654-3210",
-    estimatedCompletion: "2024-01-15",
-  },
-  {
-    id: "T-1006",
-    customerName: "Lisa Garcia",
-    laptopModel: "ASUS ROG",
-    initialIssue: "Overheating issues",
-    dateIn: "2024-01-13",
-    assignedTechnician: "Sarah Johnson",
-    currentStatus: "In Progress",
-    urgency: "High",
-    currentLocation: "Repair Bay 2",
-    customerPhone: "(555) 789-0123",
-    estimatedCompletion: "2024-01-16",
-  },
-  {
-    id: "T-1007",
-    customerName: "Robert Chen",
-    laptopModel: "Surface Laptop",
-    initialIssue: "Hard drive failure",
-    dateIn: "2024-01-09",
-    assignedTechnician: "John Smith",
-    currentStatus: "Awaiting Parts",
-    urgency: "High",
-    currentLocation: "Parts Storage",
-    customerPhone: "(555) 234-5678",
-    estimatedCompletion: "2024-01-19",
-  },
-  {
-    id: "T-1008",
-    customerName: "Amanda Rodriguez",
-    laptopModel: "Dell Inspiron",
-    initialIssue: "Virus removal",
-    dateIn: "2024-01-15",
-    assignedTechnician: "Mike Chen",
-    currentStatus: "Assigned - Not Accepted",
-    urgency: "Medium",
-    currentLocation: "Intake",
-    customerPhone: "(555) 345-6789",
-    estimatedCompletion: "2024-01-18",
-  },
-  {
-    id: "T-1009",
-    customerName: "Tom Anderson",
-    laptopModel: 'MacBook Pro 16"',
-    initialIssue: "Water damage",
-    dateIn: "2024-01-07",
-    assignedTechnician: "Lisa Brown",
-    currentStatus: "Ready for Pickup",
-    urgency: "High",
-    currentLocation: "Front Desk",
-    customerPhone: "(555) 456-7891",
-    estimatedCompletion: "2024-01-14",
-  },
-  {
-    id: "T-1010",
-    customerName: "Jennifer Lee",
-    laptopModel: "HP Spectre",
-    initialIssue: "Screen flickering",
-    dateIn: "2024-01-16",
-    assignedTechnician: "David Wilson",
-    currentStatus: "Diagnostic",
-    urgency: "Medium",
-    currentLocation: "Diagnostic Station",
-    customerPhone: "(555) 567-8901",
-    estimatedCompletion: "2024-01-19",
-  },
-]
-
-type SortField = keyof (typeof allTasks)[0]
+type SortField = any
 type SortDirection = "asc" | "desc" | null
 
 export function AllTasksList() {
   const { user } = useAuth()
+  const [tasks, setTasks] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [technicianFilter, setTechnicianFilter] = useState<string>("all")
@@ -169,29 +37,41 @@ export function AllTasksList() {
   const [sortField, setSortField] = useState<SortField | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
 
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await getTasks()
+        setTasks(response.data)
+      } catch (error) {
+        console.error("Error fetching tasks:", error)
+      }
+    }
+    fetchTasks()
+  }, [])
+
   // Check if user can create new tasks (Admin, Manager, or Front Desk roles)
   const canCreateTasks = user?.role === "Administrator" || user?.role === "Manager" || user?.role === "Front Desk"
 
   // Get unique values for filter dropdowns
-  const uniqueStatuses = [...new Set(allTasks.map((task) => task.currentStatus))]
-  const uniqueTechnicians = [...new Set(allTasks.map((task) => task.assignedTechnician))]
-  const uniqueUrgencies = [...new Set(allTasks.map((task) => task.urgency))]
-  const uniqueLocations = [...new Set(allTasks.map((task) => task.currentLocation))]
+  const uniqueStatuses = [...new Set(tasks.map((task) => task.status))]
+  const uniqueTechnicians = [...new Set(tasks.map((task) => task.assigned_to_details?.full_name).filter(Boolean))]
+  const uniqueUrgencies = [...new Set(tasks.map((task) => task.urgency))]
+  const uniqueLocations = [...new Set(tasks.map((task) => task.current_location))]
 
   // Filter and sort tasks
   const filteredAndSortedTasks = useMemo(() => {
-    const filtered = allTasks.filter((task) => {
+    const filtered = tasks.filter((task) => {
       const matchesSearch =
         searchQuery === "" ||
-        task.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.laptopModel.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.initialIssue.toLowerCase().includes(searchQuery.toLowerCase())
+        task.id.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.laptop_model.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.description.toLowerCase().includes(searchQuery.toLowerCase())
 
-      const matchesStatus = statusFilter === "all" || task.currentStatus === statusFilter
-      const matchesTechnician = technicianFilter === "all" || task.assignedTechnician === technicianFilter
+      const matchesStatus = statusFilter === "all" || task.status === statusFilter
+      const matchesTechnician = technicianFilter === "all" || task.assigned_to_details?.full_name === technicianFilter
       const matchesUrgency = urgencyFilter === "all" || task.urgency === urgencyFilter
-      const matchesLocation = locationFilter === "all" || task.currentLocation === locationFilter
+      const matchesLocation = locationFilter === "all" || task.current_location === locationFilter
 
       return matchesSearch && matchesStatus && matchesTechnician && matchesUrgency && matchesLocation
     })
@@ -209,7 +89,7 @@ export function AllTasksList() {
     }
 
     return filtered
-  }, [searchQuery, statusFilter, technicianFilter, urgencyFilter, locationFilter, sortField, sortDirection])
+  }, [searchQuery, statusFilter, technicianFilter, urgencyFilter, locationFilter, sortField, sortDirection, tasks])
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -388,7 +268,7 @@ export function AllTasksList() {
           {/* Results Summary */}
           <div className="flex items-center justify-between text-sm text-gray-600">
             <span>
-              Showing {filteredAndSortedTasks.length} of {allTasks.length} tasks
+              Showing {filteredAndSortedTasks.length} of {tasks.length} tasks
             </span>
             {(searchQuery ||
               statusFilter !== "all" ||
@@ -418,38 +298,38 @@ export function AllTasksList() {
                   <TableHead className="font-semibold text-gray-900">
                     <Button
                       variant="ghost"
-                      onClick={() => handleSort("customerName")}
+                      onClick={() => handleSort("customer_name")}
                       className="h-auto p-0 font-semibold text-gray-900 hover:text-red-600"
                     >
-                      Customer Name {getSortIcon("customerName")}
+                      Customer Name {getSortIcon("customer_name")}
                     </Button>
                   </TableHead>
                   <TableHead className="font-semibold text-gray-900">
                     <Button
                       variant="ghost"
-                      onClick={() => handleSort("laptopModel")}
+                      onClick={() => handleSort("laptop_model")}
                       className="h-auto p-0 font-semibold text-gray-900 hover:text-red-600"
                     >
-                      Laptop Model {getSortIcon("laptopModel")}
+                      Laptop Model {getSortIcon("laptop_model")}
                     </Button>
                   </TableHead>
                   <TableHead className="font-semibold text-gray-900">Initial Issue</TableHead>
                   <TableHead className="font-semibold text-gray-900">
                     <Button
                       variant="ghost"
-                      onClick={() => handleSort("dateIn")}
+                      onClick={() => handleSort("date_in")}
                       className="h-auto p-0 font-semibold text-gray-900 hover:text-red-600"
                     >
-                      Date In {getSortIcon("dateIn")}
+                      Date In {getSortIcon("date_in")}
                     </Button>
                   </TableHead>
                   <TableHead className="font-semibold text-gray-900">
                     <Button
                       variant="ghost"
-                      onClick={() => handleSort("assignedTechnician")}
+                      onClick={() => handleSort("assigned_to_details.full_name")}
                       className="h-auto p-0 font-semibold text-gray-900 hover:text-red-600"
                     >
-                      Assigned Technician {getSortIcon("assignedTechnician")}
+                      Assigned Technician {getSortIcon("assigned_to_details.full_name")}
                     </Button>
                   </TableHead>
                   <TableHead className="font-semibold text-gray-900">Current Status</TableHead>
@@ -467,35 +347,35 @@ export function AllTasksList() {
                     <TableCell className="font-medium text-red-600">{task.id}</TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium text-gray-900">{task.customerName}</p>
-                        <p className="text-sm text-gray-500">{task.customerPhone}</p>
+                        <p className="font-medium text-gray-900">{task.customer_name}</p>
+                        <p className="text-sm text-gray-500">{task.customer_phone}</p>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Laptop className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-900">{task.laptopModel}</span>
+                        <span className="text-gray-900">{task.laptop_model}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-gray-600 max-w-xs truncate">{task.initialIssue}</TableCell>
+                    <TableCell className="text-gray-600 max-w-xs truncate">{task.description}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-600">{task.dateIn}</span>
+                        <span className="text-gray-600">{task.date_in}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-900">{task.assignedTechnician}</span>
+                        <span className="text-gray-900">{task.assigned_to_details?.full_name}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{getStatusBadge(task.currentStatus)}</TableCell>
+                    <TableCell>{getStatusBadge(task.status)}</TableCell>
                     <TableCell>{getUrgencyBadge(task.urgency)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-600">{task.currentLocation}</span>
+                        <span className="text-gray-600">{task.current_location}</span>
                       </div>
                     </TableCell>
                   </TableRow>

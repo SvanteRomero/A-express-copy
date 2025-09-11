@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { Button } from "@/components/ui/core/button"
 import { Input } from "@/components/ui/core/input"
@@ -28,81 +28,28 @@ import {
   Edit,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
+import { getTasks, createTask, updateTask } from "@/lib/api-client"
 
-// Mock data for all tasks
-const allTasks = [
-  {
-    id: "T-1001",
-    customerName: "John Smith",
-    customerPhone: "(555) 123-4567",
-    customerEmail: "john.smith@email.com",
-    laptopModel: 'MacBook Pro 13"',
-    initialIssue: "Screen replacement needed",
-    dateIn: "2024-01-10",
-    assignedTechnician: "Sarah Johnson",
-    currentStatus: "Ready for Pickup",
-    urgency: "Medium",
-    currentLocation: "Front Desk",
-    estimatedCompletion: "2024-01-15",
-    totalCost: 299.99,
-    paymentStatus: "Paid",
-    serialNumber: "C02XK1XMJGH5",
-  },
-  {
-    id: "T-1002",
-    customerName: "Emily Davis",
-    customerPhone: "(555) 987-6543",
-    customerEmail: "emily.davis@email.com",
-    laptopModel: "Dell XPS 15",
-    initialIssue: "Won't turn on",
-    dateIn: "2024-01-12",
-    assignedTechnician: "John Smith",
-    currentStatus: "In Progress",
-    urgency: "High",
-    currentLocation: "Repair Bay 1",
-    estimatedCompletion: "2024-01-16",
-    totalCost: 189.99,
-    paymentStatus: "Partially Paid",
-    serialNumber: "DXP2024001",
-  },
-  {
-    id: "T-1003",
-    customerName: "Michael Brown",
-    customerPhone: "(555) 456-7890",
-    customerEmail: "michael.brown@email.com",
-    laptopModel: "HP Pavilion",
-    initialIssue: "Keyboard not working",
-    dateIn: "2024-01-08",
-    assignedTechnician: "Mike Chen",
-    currentStatus: "Awaiting Parts",
-    urgency: "Low",
-    currentLocation: "Parts Storage",
-    estimatedCompletion: "2024-01-18",
-    totalCost: 149.99,
-    paymentStatus: "Unpaid",
-    serialNumber: "HPP2024001",
-  },
-]
-
-type SortField = keyof (typeof allTasks)[0]
+type SortField = any
 type SortDirection = "asc" | "desc" | null
 
 interface NewTaskForm {
-  customerName: string
-  customerPhone: string
-  customerEmail: string
-  laptopMake: string
-  laptopModel: string
-  serialNumber: string
-  initialIssue: string
+  customer_name: string
+  customer_phone: string
+  customer_email: string
+  laptop_make: string
+  laptop_model: string
+  serial_number: string
+  description: string
   urgency: string
-  assignedTechnician: string
-  estimatedCost: string
+  assigned_to: string
+  estimated_cost: string
 }
 
 export function ManagerTasksPage() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState("list")
+  const [tasks, setTasks] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [technicianFilter, setTechnicianFilter] = useState<string>("all")
@@ -112,42 +59,53 @@ export function ManagerTasksPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
   const [selectedTask, setSelectedTask] = useState<any>(null)
   const [isEditingCustomer, setIsEditingCustomer] = useState(false)
-  const [tasks, setTasks] = useState(allTasks)
 
   // New task form state
   const [newTaskForm, setNewTaskForm] = useState<NewTaskForm>({
-    customerName: "",
-    customerPhone: "",
-    customerEmail: "",
-    laptopMake: "",
-    laptopModel: "",
-    serialNumber: "",
-    initialIssue: "",
+    customer_name: "",
+    customer_phone: "",
+    customer_email: "",
+    laptop_make: "",
+    laptop_model: "",
+    serial_number: "",
+    description: "",
     urgency: "Medium",
-    assignedTechnician: "",
-    estimatedCost: "",
+    assigned_to: "",
+    estimated_cost: "",
   })
 
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await getTasks()
+        setTasks(response.data)
+      } catch (error) {
+        console.error("Error fetching tasks:", error)
+      }
+    }
+    fetchTasks()
+  }, [])
+
   // Get unique values for filter dropdowns
-  const uniqueStatuses = [...new Set(tasks.map((task) => task.currentStatus))]
-  const uniqueTechnicians = [...new Set(tasks.map((task) => task.assignedTechnician))]
+  const uniqueStatuses = [...new Set(tasks.map((task) => task.status))]
+  const uniqueTechnicians = [...new Set(tasks.map((task) => task.assigned_to_details?.full_name).filter(Boolean))]
   const uniqueUrgencies = [...new Set(tasks.map((task) => task.urgency))]
-  const uniqueLocations = [...new Set(tasks.map((task) => task.currentLocation))]
+  const uniqueLocations = [...new Set(tasks.map((task) => task.current_location))]
 
   // Filter and sort tasks
   const filteredAndSortedTasks = useMemo(() => {
     const filtered = tasks.filter((task) => {
       const matchesSearch =
         searchQuery === "" ||
-        task.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.laptopModel.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.initialIssue.toLowerCase().includes(searchQuery.toLowerCase())
+        task.id.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.laptop_model.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.description.toLowerCase().includes(searchQuery.toLowerCase())
 
-      const matchesStatus = statusFilter === "all" || task.currentStatus === statusFilter
-      const matchesTechnician = technicianFilter === "all" || task.assignedTechnician === technicianFilter
+      const matchesStatus = statusFilter === "all" || task.status === statusFilter
+      const matchesTechnician = technicianFilter === "all" || task.assigned_to_details?.full_name === technicianFilter
       const matchesUrgency = urgencyFilter === "all" || task.urgency === urgencyFilter
-      const matchesLocation = locationFilter === "all" || task.currentLocation === locationFilter
+      const matchesLocation = locationFilter === "all" || task.current_location === locationFilter
 
       return matchesSearch && matchesStatus && matchesTechnician && matchesUrgency && matchesLocation
     })
@@ -242,68 +200,44 @@ export function ManagerTasksPage() {
 
   const handleCreateTask = async () => {
     try {
-      const newTask = {
-        id: `T-${Date.now()}`,
-        ...newTaskForm,
-        laptopModel: `${newTaskForm.laptopMake} ${newTaskForm.laptopModel}`,
-        dateIn: new Date().toISOString().split("T")[0],
-        currentStatus: "Assigned - Not Accepted",
-        currentLocation: "Front Desk Intake",
-        paymentStatus: "Unpaid",
-        totalCost: Number.parseFloat(newTaskForm.estimatedCost) || 0,
-        estimatedCompletion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      }
-
-      setTasks((prev) => [newTask, ...prev])
-
-      // Reset form
+      const response = await createTask(newTaskForm)
+      setTasks((prev) => [response.data, ...prev])
       setNewTaskForm({
-        customerName: "",
-        customerPhone: "",
-        customerEmail: "",
-        laptopMake: "",
-        laptopModel: "",
-        serialNumber: "",
-        initialIssue: "",
+        customer_name: "",
+        customer_phone: "",
+        customer_email: "",
+        laptop_make: "",
+        laptop_model: "",
+        serial_number: "",
+        description: "",
         urgency: "Medium",
-        assignedTechnician: "",
-        estimatedCost: "",
+        assigned_to: "",
+        estimated_cost: "",
       })
-
-      console.log(`Manager ${user?.first_name} created new task: ${newTask.id}`)
       setActiveTab("list")
     } catch (error) {
       console.error("Error creating task:", error)
     }
   }
 
-  const handleUpdateTask = (field: string, value: any) => {
+  const handleUpdateTask = async (field: string, value: any) => {
     if (!selectedTask) return
 
     const updatedTask = { ...selectedTask, [field]: value }
     setSelectedTask(updatedTask)
 
-    // Update in tasks list
-    setTasks((prev) => prev.map((task) => (task.id === selectedTask.id ? updatedTask : task)))
-
-    console.log(`Manager ${user?.first_name} updated task ${selectedTask.id}: ${field} = ${value}`)
+    try {
+      await updateTask(selectedTask.id, { [field]: value })
+      setTasks((prev) => prev.map((task) => (task.id === selectedTask.id ? updatedTask : task)))
+    } catch (error) {
+      console.error(`Error updating task ${selectedTask.id}:`, error)
+    }
   }
 
   const handleProcessPickup = (taskId: string) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              currentStatus: "Completed",
-              currentLocation: "Completed",
-              paymentStatus: "Paid",
-            }
-          : task,
-      ),
-    )
-
-    console.log(`Manager ${user?.first_name} processed pickup for task: ${taskId}`)
+    handleUpdateTask("status", "Completed")
+    handleUpdateTask("current_location", "Completed")
+    handleUpdateTask("payment_status", "Paid")
     alert("Pickup processed successfully!")
   }
 
@@ -462,10 +396,10 @@ export function ManagerTasksPage() {
                       <TableHead className="font-semibold text-gray-900">
                         <Button
                           variant="ghost"
-                          onClick={() => handleSort("customerName")}
+                          onClick={() => handleSort("customer_name")}
                           className="h-auto p-0 font-semibold text-gray-900 hover:text-red-600"
                         >
-                          Customer {getSortIcon("customerName")}
+                          Customer {getSortIcon("customer_name")}
                         </Button>
                       </TableHead>
                       <TableHead className="font-semibold text-gray-900">Device</TableHead>
@@ -486,28 +420,28 @@ export function ManagerTasksPage() {
                         <TableCell className="font-medium text-red-600">{task.id}</TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium text-gray-900">{task.customerName}</p>
-                            <p className="text-sm text-gray-500">{task.customerPhone}</p>
+                            <p className="font-medium text-gray-900">{task.customer_name}</p>
+                            <p className="text-sm text-gray-500">{task.customer_phone}</p>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Laptop className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-900">{task.laptopModel}</span>
+                            <span className="text-gray-900">{task.laptop_model}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-gray-600 max-w-xs truncate">{task.initialIssue}</TableCell>
-                        <TableCell>{getStatusBadge(task.currentStatus)}</TableCell>
+                        <TableCell className="text-gray-600 max-w-xs truncate">{task.description}</TableCell>
+                        <TableCell>{getStatusBadge(task.status)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-900">{task.assignedTechnician}</span>
+                            <span className="text-gray-900">{task.assigned_to_details?.full_name}</span>
                           </div>
                         </TableCell>
-                        <TableCell>{getPaymentStatusBadge(task.paymentStatus)}</TableCell>
+                        <TableCell>{getPaymentStatusBadge(task.payment_status)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            {task.currentStatus === "Ready for Pickup" && (
+                            {task.status === "Ready for Pickup" && (
                               <Button
                                 size="sm"
                                 className="bg-green-600 hover:bg-green-700 text-white"
@@ -571,32 +505,32 @@ export function ManagerTasksPage() {
                   </h3>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="customerName">Customer Name *</Label>
+                      <Label htmlFor="customer_name">Customer Name *</Label>
                       <Input
-                        id="customerName"
-                        value={newTaskForm.customerName}
-                        onChange={(e) => setNewTaskForm({ ...newTaskForm, customerName: e.target.value })}
+                        id="customer_name"
+                        value={newTaskForm.customer_name}
+                        onChange={(e) => setNewTaskForm({ ...newTaskForm, customer_name: e.target.value })}
                         placeholder="Enter customer full name"
                         className="border-gray-300 focus:border-red-500 focus:ring-red-500"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="customerPhone">Phone Number *</Label>
+                      <Label htmlFor="customer_phone">Phone Number *</Label>
                       <Input
-                        id="customerPhone"
-                        value={newTaskForm.customerPhone}
-                        onChange={(e) => setNewTaskForm({ ...newTaskForm, customerPhone: e.target.value })}
+                        id="customer_phone"
+                        value={newTaskForm.customer_phone}
+                        onChange={(e) => setNewTaskForm({ ...newTaskForm, customer_phone: e.target.value })}
                         placeholder="(555) 123-4567"
                         className="border-gray-300 focus:border-red-500 focus:ring-red-500"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="customerEmail">Email Address</Label>
+                      <Label htmlFor="customer_email">Email Address</Label>
                       <Input
-                        id="customerEmail"
+                        id="customer_email"
                         type="email"
-                        value={newTaskForm.customerEmail}
-                        onChange={(e) => setNewTaskForm({ ...newTaskForm, customerEmail: e.target.value })}
+                        value={newTaskForm.customer_email}
+                        onChange={(e) => setNewTaskForm({ ...newTaskForm, customer_email: e.target.value })}
                         placeholder="customer@email.com"
                         className="border-gray-300 focus:border-red-500 focus:ring-red-500"
                       />
@@ -613,50 +547,51 @@ export function ManagerTasksPage() {
                   <div className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="laptopMake">Make *</Label>
+                        <Label htmlFor="laptop_make">Make *</Label>
                         <Input
-                          id="laptopMake"
-                          value={newTaskForm.laptopMake}
-                          onChange={(e) => setNewTaskForm({ ...newTaskForm, laptopMake: e.target.value })}
+                          id="laptop_make"
+                          value={newTaskForm.laptop_make}
+                          onChange={(e) => setNewTaskForm({ ...newTaskForm, laptop_make: e.target.value })}
                           placeholder="e.g., Apple, Dell, HP"
                           className="border-gray-300 focus:border-red-500 focus:ring-red-500"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="laptopModel">Model *</Label>
+                        <Label htmlFor="laptop_model">Model *</Label>
                         <Input
-                          id="laptopModel"
-                          value={newTaskForm.laptopModel}
-                          onChange={(e) => setNewTaskForm({ ...newTaskForm, laptopModel: e.target.value })}
+                          id="laptop_model"
+                          value={newTaskForm.laptop_model}
+                          onChange={(e) => setNewTaskForm({ ...newTaskForm, laptop_model: e.target.value })}
                           placeholder='e.g., MacBook Pro 13"'
                           className="border-gray-300 focus:border-red-500 focus:ring-red-500"
                         />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="serialNumber">Serial Number *</Label>
+                      <Label htmlFor="serial_number">Serial Number *</Label>
                       <Input
-                        id="serialNumber"
-                        value={newTaskForm.serialNumber}
-                        onChange={(e) => setNewTaskForm({ ...newTaskForm, serialNumber: e.target.value })}
+                        id="serial_number"
+                        value={newTaskForm.serial_number}
+                        onChange={(e) => setNewTaskForm({ ...newTaskForm, serial_number: e.target.value })}
                         placeholder="Enter device serial number"
                         className="border-gray-300 focus:border-red-500 focus:ring-red-500"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="assignedTechnician">Assigned Technician</Label>
+                      <Label htmlFor="assigned_to">Assigned Technician</Label>
                       <Select
-                        value={newTaskForm.assignedTechnician}
-                        onValueChange={(value) => setNewTaskForm({ ...newTaskForm, assignedTechnician: value })}
+                        value={newTaskForm.assigned_to}
+                        onValueChange={(value) => setNewTaskForm({ ...newTaskForm, assigned_to: value })}
                       >
                         <SelectTrigger className="border-gray-300 focus:border-red-500 focus:ring-red-500">
                           <SelectValue placeholder="Select technician" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Sarah Johnson">Sarah Johnson</SelectItem>
-                          <SelectItem value="John Smith">John Smith</SelectItem>
-                          <SelectItem value="Mike Chen">Mike Chen</SelectItem>
-                          <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
+                          {uniqueTechnicians.map((technician) => (
+                            <SelectItem key={technician} value={technician}>
+                              {technician}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -685,24 +620,24 @@ export function ManagerTasksPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="estimatedCost">Estimated Cost</Label>
+                    <Label htmlFor="estimated_cost">Estimated Cost</Label>
                     <Input
-                      id="estimatedCost"
+                      id="estimated_cost"
                       type="number"
                       step="0.01"
-                      value={newTaskForm.estimatedCost}
-                      onChange={(e) => setNewTaskForm({ ...newTaskForm, estimatedCost: e.target.value })}
+                      value={newTaskForm.estimated_cost}
+                      onChange={(e) => setNewTaskForm({ ...newTaskForm, estimated_cost: e.target.value })}
                       placeholder="0.00"
                       className="border-gray-300 focus:border-red-500 focus:ring-red-500"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="initialIssue">Issue Description *</Label>
+                  <Label htmlFor="description">Issue Description *</Label>
                   <Textarea
-                    id="initialIssue"
-                    value={newTaskForm.initialIssue}
-                    onChange={(e) => setNewTaskForm({ ...newTaskForm, initialIssue: e.target.value })}
+                    id="description"
+                    value={newTaskForm.description}
+                    onChange={(e) => setNewTaskForm({ ...newTaskForm, description: e.target.value })}
                     placeholder="Describe the problem in detail..."
                     rows={4}
                     className="border-gray-300 focus:border-red-500 focus:ring-red-500"
@@ -722,12 +657,12 @@ export function ManagerTasksPage() {
                 <Button
                   onClick={handleCreateTask}
                   disabled={
-                    !newTaskForm.customerName ||
-                    !newTaskForm.customerPhone ||
-                    !newTaskForm.laptopMake ||
-                    !newTaskForm.laptopModel ||
-                    !newTaskForm.serialNumber ||
-                    !newTaskForm.initialIssue
+                    !newTaskForm.customer_name ||
+                    !newTaskForm.customer_phone ||
+                    !newTaskForm.laptop_make ||
+                    !newTaskForm.laptop_model ||
+                    !newTaskForm.serial_number ||
+                    !newTaskForm.description
                   }
                   className="bg-red-600 hover:bg-red-700 text-white"
                 >
@@ -754,9 +689,9 @@ export function ManagerTasksPage() {
                       <CardDescription>Complete task information and management</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                      {getStatusBadge(selectedTask.currentStatus)}
+                      {getStatusBadge(selectedTask.status)}
                       {getUrgencyBadge(selectedTask.urgency)}
-                      {getPaymentStatusBadge(selectedTask.paymentStatus)}
+                      {getPaymentStatusBadge(selectedTask.payment_status)}
                     </div>
                   </div>
                 </CardHeader>
@@ -788,12 +723,12 @@ export function ManagerTasksPage() {
                         <Label className="text-sm font-medium text-gray-600">Customer Name</Label>
                         {isEditingCustomer ? (
                           <Input
-                            value={selectedTask.customerName}
-                            onChange={(e) => handleUpdateTask("customerName", e.target.value)}
+                            value={selectedTask.customer_name}
+                            onChange={(e) => handleUpdateTask("customer_name", e.target.value)}
                             className="mt-1"
                           />
                         ) : (
-                          <p className="text-gray-900 font-medium mt-1">{selectedTask.customerName}</p>
+                          <p className="text-gray-900 font-medium mt-1">{selectedTask.customer_name}</p>
                         )}
                       </div>
                       <div>
@@ -802,11 +737,11 @@ export function ManagerTasksPage() {
                           <Phone className="h-4 w-4 text-gray-400" />
                           {isEditingCustomer ? (
                             <Input
-                              value={selectedTask.customerPhone}
-                              onChange={(e) => handleUpdateTask("customerPhone", e.target.value)}
+                              value={selectedTask.customer_phone}
+                              onChange={(e) => handleUpdateTask("customer_phone", e.target.value)}
                             />
                           ) : (
-                            <span className="text-gray-900">{selectedTask.customerPhone}</span>
+                            <span className="text-gray-900">{selectedTask.customer_phone}</span>
                           )}
                         </div>
                       </div>
@@ -816,11 +751,11 @@ export function ManagerTasksPage() {
                           <Mail className="h-4 w-4 text-gray-400" />
                           {isEditingCustomer ? (
                             <Input
-                              value={selectedTask.customerEmail}
-                              onChange={(e) => handleUpdateTask("customerEmail", e.target.value)}
+                              value={selectedTask.customer_email}
+                              onChange={(e) => handleUpdateTask("customer_email", e.target.value)}
                             />
                           ) : (
-                            <span className="text-gray-900">{selectedTask.customerEmail}</span>
+                            <span className="text-gray-900">{selectedTask.customer_email}</span>
                           )}
                         </div>
                       </div>
@@ -840,12 +775,12 @@ export function ManagerTasksPage() {
                     <div className="space-y-3">
                       <div>
                         <Label className="text-sm font-medium text-gray-600">Device</Label>
-                        <p className="text-gray-900 font-medium mt-1">{selectedTask.laptopModel}</p>
+                        <p className="text-gray-900 font-medium mt-1">{selectedTask.laptop_model}</p>
                       </div>
                       <div>
                         <Label className="text-sm font-medium text-gray-600">Serial Number</Label>
                         <p className="text-gray-900 font-mono text-sm bg-gray-50 p-2 rounded border mt-1">
-                          {selectedTask.serialNumber}
+                          {selectedTask.serial_number}
                         </p>
                       </div>
                       <div>
@@ -855,8 +790,8 @@ export function ManagerTasksPage() {
                           <Input
                             type="number"
                             step="0.01"
-                            value={selectedTask.totalCost}
-                            onChange={(e) => handleUpdateTask("totalCost", Number.parseFloat(e.target.value))}
+                            value={selectedTask.total_cost}
+                            onChange={(e) => handleUpdateTask("total_cost", Number.parseFloat(e.target.value))}
                             className="w-32"
                           />
                         </div>
@@ -864,8 +799,8 @@ export function ManagerTasksPage() {
                       <div>
                         <Label className="text-sm font-medium text-gray-600">Payment Status</Label>
                         <Select
-                          value={selectedTask.paymentStatus}
-                          onValueChange={(value) => handleUpdateTask("paymentStatus", value)}
+                          value={selectedTask.payment_status}
+                          onValueChange={(value) => handleUpdateTask("payment_status", value)}
                         >
                           <SelectTrigger className="mt-1">
                             <SelectValue />
@@ -892,8 +827,8 @@ export function ManagerTasksPage() {
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-600">Current Status</Label>
                       <Select
-                        value={selectedTask.currentStatus}
-                        onValueChange={(value) => handleUpdateTask("currentStatus", value)}
+                        value={selectedTask.status}
+                        onValueChange={(value) => handleUpdateTask("status", value)}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -911,25 +846,26 @@ export function ManagerTasksPage() {
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-600">Assigned Technician</Label>
                       <Select
-                        value={selectedTask.assignedTechnician}
-                        onValueChange={(value) => handleUpdateTask("assignedTechnician", value)}
+                        value={selectedTask.assigned_to}
+                        onValueChange={(value) => handleUpdateTask("assigned_to", value)}
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Sarah Johnson">Sarah Johnson</SelectItem>
-                          <SelectItem value="John Smith">John Smith</SelectItem>
-                          <SelectItem value="Mike Chen">Mike Chen</SelectItem>
-                          <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
+                          {uniqueTechnicians.map((technician) => (
+                            <SelectItem key={technician} value={technician}>
+                              {technician}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-600">Current Location</Label>
                       <Select
-                        value={selectedTask.currentLocation}
-                        onValueChange={(value) => handleUpdateTask("currentLocation", value)}
+                        value={selectedTask.current_location}
+                        onValueChange={(value) => handleUpdateTask("current_location", value)}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -956,7 +892,7 @@ export function ManagerTasksPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="bg-gray-50 p-4 rounded-lg border">
-                    <p className="text-gray-900 leading-relaxed">{selectedTask.initialIssue}</p>
+                    <p className="text-gray-900 leading-relaxed">{selectedTask.description}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -971,7 +907,7 @@ export function ManagerTasksPage() {
                         <Mail className="h-4 w-4 mr-2" />
                         Send Customer Update
                       </Button>
-                      {selectedTask.currentStatus === "Ready for Pickup" && (
+                      {selectedTask.status === "Ready for Pickup" && (
                         <Button
                           className="bg-green-600 hover:bg-green-700 text-white"
                           onClick={() => handleProcessPickup(selectedTask.id)}
@@ -982,7 +918,7 @@ export function ManagerTasksPage() {
                       )}
                       <Button
                         className="bg-blue-600 hover:bg-blue-700 text-white"
-                        onClick={() => handleUpdateTask("currentStatus", "Completed")}
+                        onClick={() => handleUpdateTask("status", "Completed")}
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
                         Mark Complete

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User
+from .models import User, Task, TaskActivity, Payment
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -83,4 +83,46 @@ class LoginSerializer(serializers.Serializer):
                 return data
             raise serializers.ValidationError('Unable to log in with provided credentials.')
         raise serializers.ValidationError('Must include "username" and "password".')
+
+
+class TaskActivitySerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = TaskActivity
+        fields = ('id', 'user', 'timestamp', 'type', 'message')
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ('id', 'amount', 'date', 'method', 'reference')
+
+
+class TaskSerializer(serializers.ModelSerializer):
+    assigned_to_details = UserSerializer(source='assigned_to', read_only=True)
+    created_by_details = UserSerializer(source='created_by', read_only=True)
+    negotiated_by_details = UserSerializer(source='negotiated_by', read_only=True)
+    activities = TaskActivitySerializer(many=True, read_only=True)
+    payments = PaymentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Task
+        fields = (
+            'id', 'title', 'description', 'status', 'priority', 
+            'assigned_to', 'assigned_to_details', 'created_by', 'created_by_details',
+            'created_at', 'updated_at', 'due_date',
+            'customer_name', 'customer_phone', 'customer_email',
+            'laptop_make', 'laptop_model', 'serial_number',
+            'estimated_cost', 'total_cost', 'payment_status',
+            'current_location', 'urgency', 'date_in', 'approved_date',
+            'paid_date', 'date_out', 'negotiated_by', 'negotiated_by_details',
+            'activities', 'payments'
+        )
+        read_only_fields = ('created_by', 'created_at', 'updated_at', 'assigned_to_details', 'created_by_details', 'negotiated_by_details', 'activities', 'payments')
+
+    def create(self, validated_data):
+        # Automatically set created_by to the current user
+        validated_data['created_by'] = self.context['request'].user
+        return super().create(validated_data)
     

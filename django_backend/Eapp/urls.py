@@ -3,7 +3,7 @@ from . import views
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
-       path('register/', views.register_user, name='register'),
+    path('register/', views.register_user, name='register'),
     path('login/', views.login_user, name='login'),
     path('logout/', views.logout, name='logout'),
     path('profile/', views.get_user_profile, name='profile'),
@@ -18,4 +18,11 @@ urlpatterns = [
     path('users/role/<str:role>/', views.list_users_by_role, name='users-by-role'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('change-password/', views.change_password, name='change-password'),
+    # Task URLs
+    path('tasks/', views.task_list_create, name='task-list-create'),
+    path('tasks/<int:task_id>/', views.task_detail, name='task-detail'),
+    path('tasks/<int:task_id>/activities/', views.task_activities, name='task-activities'),
+    path('tasks/<int:task_id>/activities/add/', views.add_task_activity, name='add-task-activity'),
+    path('tasks/<int:task_id>/payments/', views.task_payments, name='task-payments'),
+    path('tasks/<int:task_id>/payments/add/', views.add_task_payment, name='add-task-payment'),
  ]

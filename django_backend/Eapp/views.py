@@ -2,9 +2,13 @@ from rest_framework import status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.utils import timezone  # FIXED: Import from django.utils, not from time
-from .models import User
-from .serializers import ChangePasswordSerializer, UserProfileUpdateSerializer, UserSerializer, UserRegistrationSerializer, LoginSerializer
+from django.utils import timezone
+from .models import User, Task, TaskActivity, Payment
+from .serializers import (
+    ChangePasswordSerializer, UserProfileUpdateSerializer, UserSerializer, 
+    UserRegistrationSerializer, LoginSerializer, TaskSerializer,
+    TaskActivitySerializer, PaymentSerializer
+)
 from django.shortcuts import get_object_or_404
 
 
@@ -13,18 +17,13 @@ class IsAdminOrManager(permissions.BasePermission):
     Custom permission to only allow admins or managers to add users.
     """
     def has_permission(self, request, view):
-        # Check if user is authenticated first
         if not request.user or not request.user.is_authenticated:
             return False
-        
-        # Now check if user is superuser or manager
         return request.user.is_superuser or request.user.role == 'Manager'
-    
 
 @api_view(['POST'])
 @permission_classes([IsAdminOrManager])
 def register_user(request):
-    # Add the request to the serializer context
     serializer = UserRegistrationSerializer(data=request.data, context={'request': request})
     if serializer.is_valid():
         user = serializer.save()
@@ -42,7 +41,7 @@ def login_user(request):
     serializer = LoginSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.validated_data['user']
-        user.last_login = timezone.now()  # This will now work correctly
+        user.last_login = timezone.now()
         user.save(update_fields=['last_login'])
         
         refresh = RefreshToken.for_user(user)
@@ -54,6 +53,7 @@ def login_user(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
 def get_user_profile(request):
     serializer = UserSerializer(request.user)
     return Response(serializer.data)
@@ -82,16 +82,10 @@ def logout(request):
 @api_view(['PUT', 'PATCH'])
 @permission_classes([permissions.IsAuthenticated])
 def update_profile(request):
-    print("Update profile called with data:", request.data)
     user = request.user
     serializer = UserSerializer(user, data=request.data, partial=True)
-    
-  
-    
     if serializer.is_valid():
-        
         serializer.save()
-        print("Serializer is valid. Data:", serializer.data)
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -102,12 +96,10 @@ def upload_profile_picture(request):
     if 'profile_picture' not in request.FILES:
         return Response({"error": "No profile picture provided"}, status=status.HTTP_400_BAD_REQUEST)
     
-    # Use UserProfileUpdateSerializer for better handling
     serializer = UserProfileUpdateSerializer(user, data={'profile_picture': request.FILES['profile_picture']}, partial=True)
     
     if serializer.is_valid():
         serializer.save()
-        # Return full user data with UserSerializer
         user_serializer = UserSerializer(user, context={'request': request})
         return Response(user_serializer.data)
     
@@ -116,9 +108,6 @@ def upload_profile_picture(request):
 @api_view(['GET'])
 @permission_classes([IsAdminOrManager])
 def get_user_detail(request, user_id):
-    """
-    Get details of a specific user
-    """
     user = get_object_or_404(User, id=user_id)
     serializer = UserSerializer(user)
     return Response(serializer.data)
@@ -127,12 +116,8 @@ def get_user_detail(request, user_id):
 @api_view(['PUT', 'PATCH'])
 @permission_classes([IsAdminOrManager])
 def update_user(request, user_id):
-    """
-    Update a user's information (Manager/Admin only)
-    """
     user = get_object_or_404(User, id=user_id)
     
-    # Check if trying to update superuser (only other superusers can update superusers)
     if user.is_superuser and not request.user.is_superuser:
         return Response(
             {"error": "Only superusers can update other superusers."},
@@ -151,19 +136,14 @@ def update_user(request, user_id):
 @api_view(['DELETE'])
 @permission_classes([IsAdminOrManager])
 def delete_user(request, user_id):
-    """
-    Delete a user (Manager/Admin only)
-    """
     user = get_object_or_404(User, id=user_id)
     
-    # Prevent self-deletion
     if user.id == request.user.id:
         return Response(
             {"error": "You cannot delete your own account."},
             status=status.HTTP_403_FORBIDDEN
         )
     
-    # Check if trying to delete superuser (only other superusers can delete superusers)
     if user.is_superuser and not request.user.is_superuser:
         return Response(
             {"error": "Only superusers can delete other superusers."},
@@ -180,12 +160,8 @@ def delete_user(request, user_id):
 @api_view(['POST'])
 @permission_classes([IsAdminOrManager])
 def deactivate_user(request, user_id):
-    """
-    Deactivate a user account (Manager/Admin only)
-    """
     user = get_object_or_404(User, id=user_id)
     
-    # Prevent self-deactivation
     if user.id == request.user.id:
         return Response(
             {"error": "You cannot deactivate your own account."},
@@ -204,9 +180,6 @@ def deactivate_user(request, user_id):
 @api_view(['POST'])
 @permission_classes([IsAdminOrManager])
 def activate_user(request, user_id):
-    """
-    Activate a user account (Manager/Admin only)
-    """
     user = get_object_or_404(User, id=user_id)
     user.is_active = True
     user.save()
@@ -220,10 +193,6 @@ def activate_user(request, user_id):
 @api_view(['GET'])
 @permission_classes([IsAdminOrManager])
 def list_users_by_role(request, role):
-    """
-    List users filtered by role
-    """
-    # Validate role
     valid_roles = [choice[0] for choice in User.Role.choices]
     if role not in valid_roles:
         return Response(
@@ -238,21 +207,16 @@ def list_users_by_role(request, role):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def change_password(request):
-    """
-    Change user password
-    """
     user = request.user
     serializer = ChangePasswordSerializer(data=request.data)
     
     if serializer.is_valid():
-        # Check old password
         if not user.check_password(serializer.validated_data['current_password']):
             return Response(
                 {"error": "Current password is incorrect."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Set new password
         user.set_password(serializer.validated_data['new_password'])
         user.save()
         
@@ -261,4 +225,108 @@ def change_password(request):
             status=status.HTTP_200_OK
         )
     
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([permissions.IsAuthenticated])
+def task_list_create(request):
+    if request.method == 'GET':
+        if request.user.role == 'Manager' or request.user.is_superuser:
+            tasks = Task.objects.all()
+        else:
+            tasks = Task.objects.filter(assigned_to=request.user)
+        
+        serializer = TaskSerializer(tasks, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        if not (request.user.role == 'Manager' or request.user.is_superuser):
+            return Response(
+                {"error": "You do not have permission to create tasks."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = TaskSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save(created_by=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def task_detail(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+
+    if request.method == 'GET':
+        serializer = TaskSerializer(task, context={'request': request})
+        return Response(serializer.data)
+
+    elif request.method in ['PUT', 'PATCH']:
+        is_manager_or_admin = request.user.role == 'Manager' or request.user.is_superuser
+        is_assigned_user = task.assigned_to == request.user
+
+        if not (is_manager_or_admin or is_assigned_user):
+            return Response(
+                {"error": "You do not have permission to update this task."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if is_assigned_user and not is_manager_or_admin:
+            if any(field not in ['status'] for field in request.data.keys()):
+                 return Response(
+                    {"error": "You are only allowed to update the task status."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        serializer = TaskSerializer(task, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        if not (request.user.role == 'Manager' or request.user.is_superuser):
+            return Response(
+                {"error": "You do not have permission to delete tasks."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        task.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def task_activities(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+    activities = task.activities.all()
+    serializer = TaskActivitySerializer(activities, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def add_task_activity(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+    serializer = TaskActivitySerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(task=task, user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def task_payments(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+    payments = task.payments.all()
+    serializer = PaymentSerializer(payments, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def add_task_payment(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+    serializer = PaymentSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(task=task)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
