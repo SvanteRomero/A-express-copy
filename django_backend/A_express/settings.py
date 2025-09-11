@@ -90,11 +90,11 @@ WSGI_APPLICATION = 'A_express.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': '',
-        'USER': 'postgres',
-        'PASSWORD': 'ivan123',
+        'NAME': 'my_django_api',
+        'USER': 'root',
+        'PASSWORD': '',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '3306',
     }
 }
 

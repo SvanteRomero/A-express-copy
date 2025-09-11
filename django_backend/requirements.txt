@@ -7,6 +7,9 @@ djangorestframework
 # MySQL/MariaDB Database Connector (for XAMPP)
 mysqlclient
 
+# Pillow for image processing
+Pillow
+
 # JSON Web Token Authentication for DRF
 djangorestframework-simplejwt==5.3.1
 

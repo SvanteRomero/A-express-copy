@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useState, useEffect, SetStateAction } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card"
+import { Button } from "@/components/ui/core/button"
+import { Input } from "@/components/ui/core/input"
+import { Label } from "@/components/ui/core/label"
+import { Badge } from "@/components/ui/core/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table"
 import {
   Dialog,
   DialogContent,
@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/feedback/alert-dialog"
 import { Users, UserPlus, Search, Edit, Trash2, Shield, Activity, Clock, Loader2 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { useUserManagement } from "@/lib/use-user-management"
@@ -208,7 +208,7 @@ export function ManagerUserManagement() {
                       <Input
                         id="username"
                         value={newUser.username}
-                        onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+                        onChange={(e: { target: { value: any } }) => setNewUser({ ...newUser, username: e.target.value })}
                         placeholder="Enter username"
                       />
                     </div>
@@ -218,7 +218,7 @@ export function ManagerUserManagement() {
                         id="email"
                         type="email"
                         value={newUser.email}
-                        onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                        onChange={(e: { target: { value: any } }) => setNewUser({ ...newUser, email: e.target.value })}
                         placeholder="Enter email address"
                       />
                     </div>
@@ -230,7 +230,7 @@ export function ManagerUserManagement() {
                       <Input
                         id="first_name"
                         value={newUser.first_name}
-                        onChange={(e) => setNewUser({ ...newUser, first_name: e.target.value })}
+                        onChange={(e: { target: { value: any } }) => setNewUser({ ...newUser, first_name: e.target.value })}
                         placeholder="Enter first name"
                       />
                     </div>
@@ -239,7 +239,7 @@ export function ManagerUserManagement() {
                       <Input
                         id="last_name"
                         value={newUser.last_name}
-                        onChange={(e) => setNewUser({ ...newUser, last_name: e.target.value })}
+                        onChange={(e: { target: { value: any } }) => setNewUser({ ...newUser, last_name: e.target.value })}
                         placeholder="Enter last name"
                       />
                     </div>
@@ -251,7 +251,7 @@ export function ManagerUserManagement() {
                       <Input
                         id="phone"
                         value={newUser.phone}
-                        onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                        onChange={(e: { target: { value: any } }) => setNewUser({ ...newUser, phone: e.target.value })}
                         placeholder="Enter phone number"
                       />
                     </div>
@@ -279,7 +279,7 @@ export function ManagerUserManagement() {
                       id="password"
                       type="password"
                       value={newUser.password}
-                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                      onChange={(e: { target: { value: any } }) => setNewUser({ ...newUser, password: e.target.value })}
                       placeholder="Enter password"
                     />
                   </div>
@@ -302,7 +302,7 @@ export function ManagerUserManagement() {
                 placeholder="Search team members..."
                 className="pl-8"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e: { target: { value: SetStateAction<string> } }) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
@@ -373,7 +373,7 @@ export function ManagerUserManagement() {
                                   <Input
                                     id="edit-first_name"
                                     value={editingUser.first_name}
-                                    onChange={(e) => setEditingUser({ ...editingUser, first_name: e.target.value })}
+                                    onChange={(e: { target: { value: any } }) => setEditingUser({ ...editingUser, first_name: e.target.value })}
                                   />
                                 </div>
                                 <div className="grid gap-2">
@@ -381,7 +381,7 @@ export function ManagerUserManagement() {
                                   <Input
                                     id="edit-last_name"
                                     value={editingUser.last_name}
-                                    onChange={(e) => setEditingUser({ ...editingUser, last_name: e.target.value })}
+                                    onChange={(e: { target: { value: any } }) => setEditingUser({ ...editingUser, last_name: e.target.value })}
                                   />
                                 </div>
                               </div>
@@ -392,7 +392,7 @@ export function ManagerUserManagement() {
                                   <Input
                                     id="edit-email"
                                     value={editingUser.email}
-                                    onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                                    onChange={(e: { target: { value: any } }) => setEditingUser({ ...editingUser, email: e.target.value })}
                                   />
                                 </div>
                                 <div className="grid gap-2">
@@ -400,7 +400,7 @@ export function ManagerUserManagement() {
                                   <Input
                                     id="edit-phone"
                                     value={editingUser.phone || ""}
-                                    onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
+                                    onChange={(e: { target: { value: any } }) => setEditingUser({ ...editingUser, phone: e.target.value })}
                                   />
                                 </div>
                               </div>
