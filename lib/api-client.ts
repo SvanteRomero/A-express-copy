@@ -8,14 +8,18 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const authTokens = localStorage.getItem('auth_tokens');
+  if (authTokens) {
+    const parsedTokens = JSON.parse(authTokens);
+    const token = parsedTokens.access;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 });
 
-export const getTasks = () => apiClient.get('/tasks/');
+export const getTasks = () => apiClient.get('/auth/tasks/');
 export const getTask = (id: string) => apiClient.get(`/tasks/${id}/`);
 export const createTask = (data: any) => apiClient.post('/tasks/', data);
 export const updateTask = (id: string, data: any) => apiClient.patch(`/tasks/${id}/`, data);
