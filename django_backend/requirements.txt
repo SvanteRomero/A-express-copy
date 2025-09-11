@@ -2,10 +2,10 @@
 django==5.0.7
 
 # Django REST Framework for building APIs
-djangorestframework==3.15.2
+djangorestframework
 
 # MySQL/MariaDB Database Connector (for XAMPP)
-mysql-connector-python==8.4.0
+mysqlclient
 
 # JSON Web Token Authentication for DRF
 djangorestframework-simplejwt==5.3.1

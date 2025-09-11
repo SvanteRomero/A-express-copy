@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'corsheaders',  
+     'corsheaders',  
     'rest_framework',  
     'Eapp',
     
@@ -90,13 +90,14 @@ WSGI_APPLICATION = 'A_express.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'my_django_api',
-        'USER': 'root',
-        'PASSWORD': '',
+        'NAME': '',
+        'USER': 'postgres',
+        'PASSWORD': 'ivan123',
         'HOST': 'localhost',
-        'PORT': '3306',
+        'PORT': '5432',
     }
 }
+
 
 AUTH_USER_MODEL = 'Eapp.User'
 
