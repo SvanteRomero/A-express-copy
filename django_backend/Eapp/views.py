@@ -21,6 +21,18 @@ class IsAdminOrManager(permissions.BasePermission):
             return False
         return request.user.is_superuser or request.user.role == 'Manager'
 
+class IsManager(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and (request.user.role == 'Manager' or request.user.is_superuser)
+
+class IsFrontDesk(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and request.user.role == 'Front Desk'
+
+class IsTechnician(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and request.user.role == 'Technician'
+
 @api_view(['POST'])
 @permission_classes([IsAdminOrManager])
 def register_user(request):
@@ -232,7 +244,7 @@ def change_password(request):
 @permission_classes([permissions.IsAuthenticated])
 def task_list_create(request):
     if request.method == 'GET':
-        if request.user.role == 'Manager' or request.user.is_superuser:
+        if request.user.role in ['Manager', 'Front Desk'] or request.user.is_superuser:
             tasks = Task.objects.all()
         else:
             tasks = Task.objects.filter(assigned_to=request.user)
@@ -241,7 +253,7 @@ def task_list_create(request):
         return Response(serializer.data)
 
     elif request.method == 'POST':
-        if not (request.user.role == 'Manager' or request.user.is_superuser):
+        if not (request.user.role in ['Manager', 'Front Desk'] or request.user.is_superuser):
             return Response(
                 {"error": "You do not have permission to create tasks."},
                 status=status.HTTP_403_FORBIDDEN
@@ -264,19 +276,37 @@ def task_detail(request, task_id):
         return Response(serializer.data)
 
     elif request.method in ['PUT', 'PATCH']:
-        is_manager_or_admin = request.user.role == 'Manager' or request.user.is_superuser
-        is_assigned_user = task.assigned_to == request.user
+        user = request.user
+        role = user.role
+        is_manager = role == 'Manager' or user.is_superuser
+        is_front_desk = role == 'Front Desk'
+        is_technician = role == 'Technician' and task.assigned_to == user
 
-        if not (is_manager_or_admin or is_assigned_user):
+        if not (is_manager or is_front_desk or is_technician):
             return Response(
                 {"error": "You do not have permission to update this task."},
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        if is_assigned_user and not is_manager_or_admin:
-            if any(field not in ['status'] for field in request.data.keys()):
-                 return Response(
-                    {"error": "You are only allowed to update the task status."},
+        if is_technician:
+            allowed_fields = {'status', 'description', 'assigned_to', 'current_location'}
+            if any(field not in allowed_fields for field in request.data.keys()):
+                return Response(
+                    {"error": "Technicians can only update status, description, assigned_to, and current_location."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        elif is_front_desk:
+            allowed_fields = {
+                'title', 'description', 'priority', 'assigned_to', 'due_date',
+                'customer_name', 'customer_phone', 'customer_email',
+                'laptop_make', 'laptop_model', 'serial_number',
+                'estimated_cost', 'total_cost',
+                'current_location', 'urgency', 'date_in', 'approved_date',
+                'date_out', 'negotiated_by', 'status'  # Allow status for pickup, etc.
+            }
+            if any(field not in allowed_fields for field in request.data.keys()):
+                return Response(
+                    {"error": "Front Desk can only update customer and administrative details."},
                     status=status.HTTP_403_FORBIDDEN
                 )
 
@@ -324,6 +354,11 @@ def task_payments(request, task_id):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def add_task_payment(request, task_id):
+    if not (request.user.role in ['Manager', 'Front Desk'] or request.user.is_superuser):
+        return Response(
+            {"error": "You do not have permission to add payments."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     task = get_object_or_404(Task, id=task_id)
     serializer = PaymentSerializer(data=request.data)
     if serializer.is_valid():

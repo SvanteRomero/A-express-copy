@@ -5,6 +5,7 @@ from django.core.exceptions import PermissionDenied
 from django.utils.translation import gettext_lazy as _
 import os
 from uuid import uuid4
+from decimal import Decimal
 
 
 class CustomUserManager(BaseUserManager):
@@ -122,9 +123,11 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Task(models.Model):
     class Status(models.TextChoices):
-        TODO = 'To Do', _('To Do')
+        PENDING = 'Pending', _('Pending')
         IN_PROGRESS = 'In Progress', _('In Progress')
-        DONE = 'Done', _('Done')
+        AWAITING_PARTS = 'Awaiting Parts', _('Awaiting Parts')
+        COMPLETED = 'Completed', _('Completed')
+        PICKED_UP = 'Picked Up', _('Picked Up')
         CANCELLED = 'Cancelled', _('Cancelled')
 
     class Priority(models.TextChoices):
@@ -135,7 +138,7 @@ class Task(models.Model):
     class PaymentStatus(models.TextChoices):
         UNPAID = 'Unpaid', _('Unpaid')
         PARTIALLY_PAID = 'Partially Paid', _('Partially Paid')
-        PAID = 'Paid', _('Paid')
+        FULLY_PAID = 'Fully Paid', _('Fully Paid')
         REFUNDED = 'Refunded', _('Refunded')
 
     title = models.CharField(max_length=200)
@@ -143,7 +146,7 @@ class Task(models.Model):
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
-        default=Status.TODO
+        default=Status.PENDING
     )
     priority = models.CharField(
         max_length=20,
@@ -188,6 +191,28 @@ class Task(models.Model):
     class Meta:
         ordering = ['-created_at']
 
+    @property
+    def outstanding_balance(self):
+        if not self.total_cost:
+            return Decimal('0.00')
+        paid = sum(p.amount for p in self.payments.all()) or Decimal('0.00')
+        return self.total_cost - paid
+
+    def update_payment_status(self):
+        paid = sum(p.amount for p in self.payments.all()) or Decimal('0.00')
+        total = self.total_cost or Decimal('0.00')
+        if paid == 0:
+            self.payment_status = self.PaymentStatus.UNPAID
+        elif paid < total:
+            self.payment_status = self.PaymentStatus.PARTIALLY_PAID
+        elif paid == total:
+            self.payment_status = self.PaymentStatus.FULLY_PAID
+            if not self.paid_date:
+                self.paid_date = timezone.now().date()
+        else:
+            self.payment_status = self.PaymentStatus.REFUNDED
+        self.save(update_fields=['payment_status', 'paid_date'])
+
 
 class TaskActivity(models.Model):
     class ActivityType(models.TextChoices):
@@ -229,5 +254,7 @@ class Payment(models.Model):
 
     class Meta:
         ordering = ['-date']
-    
-    
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.task.update_payment_status()

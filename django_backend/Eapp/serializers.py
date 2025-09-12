@@ -6,8 +6,8 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'first_name', 'last_name', 
-                 'phone', 'role','profile_picture', 'is_active', 'created_at', 'last_login')  
-        read_only_fields = ('id', 'created_at', 'last_login')  
+                    'phone', 'role','profile_picture', 'is_active', 'created_at', 'last_login') 
+        read_only_fields = ('id', 'created_at', 'last_login') 
         
     def get_profile_picture_url(self, obj):
         request = self.context.get('request')
@@ -44,7 +44,7 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError("New passwords don't match.")
         return data
 
-     
+    
         
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
@@ -52,7 +52,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'email', 'password', 'first_name', 
-                 'last_name', 'phone', 'role')
+                    'last_name', 'phone', 'role')
     
     def create(self, validated_data):
         # Check if the requesting user has permission to create users
@@ -105,6 +105,7 @@ class TaskSerializer(serializers.ModelSerializer):
     negotiated_by_details = UserSerializer(source='negotiated_by', read_only=True)
     activities = TaskActivitySerializer(many=True, read_only=True)
     payments = PaymentSerializer(many=True, read_only=True)
+    outstanding_balance = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -117,12 +118,14 @@ class TaskSerializer(serializers.ModelSerializer):
             'estimated_cost', 'total_cost', 'payment_status',
             'current_location', 'urgency', 'date_in', 'approved_date',
             'paid_date', 'date_out', 'negotiated_by', 'negotiated_by_details',
-            'activities', 'payments'
+            'activities', 'payments', 'outstanding_balance'
         )
-        read_only_fields = ('created_by', 'created_at', 'updated_at', 'assigned_to_details', 'created_by_details', 'negotiated_by_details', 'activities', 'payments')
+        read_only_fields = ('created_by', 'created_at', 'updated_at', 'assigned_to_details', 'created_by_details', 'negotiated_by_details', 'activities', 'payments', 'payment_status')
+
+    def get_outstanding_balance(self, obj):
+        return obj.outstanding_balance
 
     def create(self, validated_data):
         # Automatically set created_by to the current user
         validated_data['created_by'] = self.context['request'].user
         return super().create(validated_data)
-    
