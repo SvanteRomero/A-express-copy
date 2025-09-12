@@ -32,7 +32,7 @@ class UserAdmin(BaseUserAdmin):
         (None, {
             'classes': ('wide',),
             'fields': ('username', 'email', 'first_name', 'last_name', 'phone', 
-                        'role', 'password', 'is_active', 'is_staff', 'profile_picture'),  # Added profile_picture
+                        'role', 'password1', 'password2', 'is_active', 'is_staff', 'profile_picture'),  # Added profile_picture
         }),
     )
     
