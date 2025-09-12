@@ -11,12 +11,14 @@ import {
   Search,
   Plus,
   Filter,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   Calendar,
   User,
   MapPin,
   AlertTriangle,
   Laptop,
-  Trash2,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { getTasks } from "@/lib/api-client"
@@ -103,6 +105,13 @@ export function AllTasksList() {
       setSortField(field)
       setSortDirection("asc")
     }
+  }
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />
+    if (sortDirection === "asc") return <ArrowUp className="h-4 w-4" />
+    if (sortDirection === "desc") return <ArrowDown className="h-4 w-4" />
+    return <ArrowUpDown className="h-4 w-4" />
   }
 
   const getStatusBadge = (status: string) => {
@@ -277,15 +286,55 @@ export function AllTasksList() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold text-gray-900">Task ID</TableHead>
-                  <TableHead className="font-semibold text-gray-900">Customer Name</TableHead>
-                  <TableHead className="font-semibold text-gray-900">Laptop Model</TableHead>
-                  <TableHead className="font-semibold text-gray-900">Date In</TableHead>
-                  <TableHead className="font-semibold text-gray-900">Assigned Technician</TableHead>
+                  <TableHead className="font-semibold text-gray-900">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort("id")}
+                      className="h-auto p-0 font-semibold text-gray-900 hover:text-red-600"
+                    >
+                      Task ID {getSortIcon("id")}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-900">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort("customer_name")}
+                      className="h-auto p-0 font-semibold text-gray-900 hover:text-red-600"
+                    >
+                      Customer Name {getSortIcon("customer_name")}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-900">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort("laptop_model")}
+                      className="h-auto p-0 font-semibold text-gray-900 hover:text-red-600"
+                    >
+                      Laptop Model {getSortIcon("laptop_model")}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-900">Initial Issue</TableHead>
+                  <TableHead className="font-semibold text-gray-900">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort("date_in")}
+                      className="h-auto p-0 font-semibold text-gray-900 hover:text-red-600"
+                    >
+                      Date In {getSortIcon("date_in")}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-900">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort("assigned_to_details.full_name")}
+                      className="h-auto p-0 font-semibold text-gray-900 hover:text-red-600"
+                    >
+                      Assigned Technician {getSortIcon("assigned_to_details.full_name")}
+                    </Button>
+                  </TableHead>
                   <TableHead className="font-semibold text-gray-900">Current Status</TableHead>
                   <TableHead className="font-semibold text-gray-900">Urgency</TableHead>
                   <TableHead className="font-semibold text-gray-900">Current Location</TableHead>
-                  <TableHead className="font-semibold text-gray-900">Delete</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -308,6 +357,7 @@ export function AllTasksList() {
                         <span className="text-gray-900">{task.laptop_model}</span>
                       </div>
                     </TableCell>
+                    <TableCell className="text-gray-600 max-w-xs truncate">{task.description}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-gray-400" />
@@ -317,9 +367,7 @@ export function AllTasksList() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-900 max-w-[150px] truncate" title={task.assigned_to_details?.full_name}>
-                          {task.assigned_to_details?.full_name || 'Unassigned'}
-                        </span>
+                        <span className="text-gray-900">{task.assigned_to_details?.full_name}</span>
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(task.status)}</TableCell>
@@ -329,22 +377,6 @@ export function AllTasksList() {
                         <MapPin className="h-4 w-4 text-gray-400" />
                         <span className="text-gray-600">{task.current_location}</span>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(`Are you sure you want to delete task ${task.id}?`)) {
-                            // Add delete logic here
-                            console.log(`Deleting task ${task.id}`);
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
