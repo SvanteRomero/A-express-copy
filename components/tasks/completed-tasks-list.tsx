@@ -62,7 +62,7 @@ const getWorkshopStatusBadge = (workshopStatus: string) => {
 
 export function CompletedTasksList() {
   const { user } = useAuth()
-  const { data: tasks, isLoading, isError, error } = useCompletedTasks(user?.id);
+  const { data: tasks, isLoading, isError, error } = useCompletedTasks(user?.id ? user.id.toString() : undefined);
 
   if (isLoading) {
     return (

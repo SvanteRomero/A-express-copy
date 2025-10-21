@@ -40,7 +40,7 @@ export default function AccountantHistoryPage() {
           <p className="text-gray-600 mt-2">A list of all fully paid tasks.</p>
         </div>
       </div>
-      <TasksDisplay tasks={fullyPaidTasks} technicians={[]} onRowClick={handleRowClick} />
+      <TasksDisplay tasks={fullyPaidTasks} technicians={[]} onRowClick={handleRowClick} showActions={false} />
     </div>
   );
 }

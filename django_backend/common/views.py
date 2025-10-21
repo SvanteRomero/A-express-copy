@@ -16,7 +16,7 @@ class LocationViewSet(viewsets.ModelViewSet):
     serializer_class = LocationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='workshop-locations')
     def workshops(self, request):
         locations = self.get_queryset().filter(is_workshop=True)
         serializer = self.get_serializer(locations, many=True)

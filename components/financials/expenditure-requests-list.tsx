@@ -20,9 +20,12 @@ export function ExpenditureRequestsList() {
 
   const approveMutation = useMutation({
     mutationFn: approveExpenditureRequest,
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['expenditureRequests'] });
       queryClient.invalidateQueries({ queryKey: ['payments'] });
+      if (data.task_title) {
+        queryClient.invalidateQueries({ queryKey: ['task', data.task_title] });
+      }
       toast({ title: "Success", description: "Expenditure request approved." });
     },
     onError: (error: any) => {

@@ -47,13 +47,13 @@ export const addTaskActivity = (taskId: string, data: any) => apiClient.post(`/t
 export const getTaskPayments = (taskId: string) => apiClient.get(`/tasks/${taskId}/payments/`);
 export const addTaskPayment = (taskId: string, data: any) => apiClient.post(`/tasks/${taskId}/add-payment/`, data);
 
-export const listTechnicians = () => apiClient.get('/technicians/');
+export const listTechnicians = () => apiClient.get('list/technicians/');
 export const getLocations = () => apiClient.get('/locations/');
 export const addLocation = (locationData: { name: string; }) => apiClient.post('/locations/', locationData);
 export const updateLocation = (locationId: number, locationData: { name: string; }) => apiClient.patch(`/locations/${locationId}/`, locationData);
 export const deleteLocation = (locationId: number) => apiClient.delete(`/locations/${locationId}/`);
-export const listWorkshopLocations = () => apiClient.get('/workshop-locations/');
-export const listWorkshopTechnicians = () => apiClient.get('/workshop-technicians/');
+export const listWorkshopLocations = () => apiClient.get('locations/workshop-locations/');
+export const listWorkshopTechnicians = () => apiClient.get('list/workshop-technicians/');
 
 // Functions from ApiClient class
 export const login = (username: any, password: any) => apiClient.post('/login/', { username, password });

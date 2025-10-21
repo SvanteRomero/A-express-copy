@@ -6,9 +6,7 @@ class Customer(models.Model):
         NORMAL = 'Normal', _('Normal')
         REPAIRMAN = 'Repairman', _('Repairman')
 
-    name = models.CharField(max_length=100)
-    email = models.EmailField(max_length=100, unique=True, blank=True, null=True)
-    phone = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    name = models.CharField(max_length=100, db_index=True)
     address = models.TextField(blank=True, null=True)
     customer_type = models.CharField(
         max_length=20,
@@ -23,6 +21,12 @@ class Customer(models.Model):
     class Meta:
         ordering = ['name']
 
+class PhoneNumber(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='phone_numbers')
+    phone_number = models.CharField(max_length=20, unique=True)
+
+    def __str__(self):
+        return self.phone_number
 
 class Referrer(models.Model):
     name = models.CharField(max_length=100, unique=True)

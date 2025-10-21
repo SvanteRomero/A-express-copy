@@ -1,34 +1,26 @@
 from common.models import Location
 from customers.serializers import CustomerSerializer
 from rest_framework import status, permissions, viewsets
-from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
-from django.db.models import Sum, F, DecimalField, Q
-from django.core.mail import send_mail
-from django.conf import settings
-from financials.serializers import PaymentSerializer
+
+from users.models import User
+from financials.serializers import PaymentSerializer, CostBreakdownSerializer
 from .models import Task, TaskActivity
 from .serializers import (
     TaskListSerializer, TaskDetailSerializer, TaskActivitySerializer
 )
-from financials.models import Payment, PaymentCategory
-from django.db.models import Q
+from financials.models import PaymentCategory
 from django.shortcuts import get_object_or_404
 from users.permissions import IsAdminOrManagerOrAccountant
 from .status_transitions import can_transition
-from users.models import User
+from django_filters.rest_framework import DjangoFilterBackend
+from .filters import TaskFilter
+from .pagination import StandardResultsSetPagination
+from customers.models import Customer
 
 
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def get_task_status_options(request):
-    return Response(Task.Status.choices)
-
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def get_task_urgency_options(request):
-    return Response(Task.Urgency.choices)
 
 
 def generate_task_id():
@@ -58,23 +50,42 @@ def generate_task_id():
 
     return f"{month_prefix}-{new_seq:03d}"
 
-from django_filters.rest_framework import DjangoFilterBackend
-from .filters import TaskFilter, PaymentFilter
-from .pagination import StandardResultsSetPagination
-
-
-from customers.models import Customer
-
 class TaskViewSet(viewsets.ModelViewSet):
-    queryset = Task.objects.select_related(
-        'assigned_to', 'created_by', 'negotiated_by', 'brand', 'workshop_location', 'workshop_technician', 'original_technician', 'customer'
-    ).prefetch_related('activities', 'payments', 'cost_breakdowns')
+    def get_queryset(self):
+        queryset = Task.objects.all()
+        
+        # Prefetch related objects to avoid N+1 queries
+        if self.action == 'list':
+            return queryset.select_related(
+                'customer', 'assigned_to'
+            ).prefetch_related(
+                'payments', 'cost_breakdowns'
+            )
+            
+        # For detail view, prefetch all related data
+        return queryset.select_related(
+            'assigned_to', 'created_by', 'negotiated_by', 'approved_by', 
+            'sent_out_by', 'brand', 'referred_by', 'customer', 
+            'workshop_location', 'workshop_technician', 'original_technician', 'qc_rejected_by'
+        ).prefetch_related(
+            'activities', 'payments', 'cost_breakdowns'
+        )
+
+
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_class = TaskFilter
     pagination_class = StandardResultsSetPagination
     lookup_field = 'title'
     lookup_url_kwarg = 'task_id'
+
+    @action(detail=False, methods=['get'], url_path='status-options')
+    def status_options(self, request):
+        return Response(Task.Status.choices)
+
+    @action(detail=False, methods=['get'], url_path='urgency-options')
+    def urgency_options(self, request):
+        return Response(Task.Urgency.choices)
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -98,24 +109,30 @@ class TaskViewSet(viewsets.ModelViewSet):
         data = request.data.copy()
         data['title'] = generate_task_id()
 
-        # Customer creation logic
-        customer_name = data.pop('customer_name', None)
-        customer_phone = data.pop('customer_phone', None)
-        customer_email = data.pop('customer_email', None)
-        customer_type = data.pop('customer_type', 'Normal')
-        
+        # Customer creation/retrieval logic
+        customer_data = data.pop('customer', None)
         customer_created = False
-        if customer_phone:
-            customer, created = Customer.objects.get_or_create(
-                phone=customer_phone,
-                defaults={
-                    'name': customer_name,
-                    'email': customer_email,
-                    'customer_type': customer_type,
-                }
-            )
-            data['customer'] = customer.id
-            customer_created = created
+        if customer_data:
+            phone_numbers = customer_data.get('phone_numbers', [])
+            customer = None
+            if phone_numbers:
+                first_phone_number = phone_numbers[0].get('phone_number')
+                if first_phone_number:
+                    try:
+                        customer = Customer.objects.get(phone_numbers__phone_number=first_phone_number)
+                    except Customer.DoesNotExist:
+                        pass  # Customer not found, will be created
+
+            if customer:
+                # An existing customer was found, use it
+                data['customer'] = customer.id
+            else:
+                # No existing customer found, create a new one
+                customer_serializer = CustomerSerializer(data=customer_data)
+                customer_serializer.is_valid(raise_exception=True)
+                customer = customer_serializer.save()
+                data['customer'] = customer.id
+                customer_created = True
 
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
@@ -249,133 +266,54 @@ class TaskViewSet(viewsets.ModelViewSet):
 
 
 
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def task_activities(request, task_id):
-    task = get_object_or_404(Task, title=task_id)
-    activities = task.activities.all()
-    serializer = TaskActivitySerializer(activities, many=True)
-    return Response(serializer.data)
+    @action(detail=True, methods=['get'])
+    def activities(self, request, task_id=None):
+        task = self.get_object()
+        activities = task.activities.all()
+        serializer = TaskActivitySerializer(activities, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='add-activity')
+    def add_activity(self, request, task_id=None):
+        task = self.get_object()
+        serializer = TaskActivitySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(task=task, user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'])
+    def payments(self, request, task_id=None):
+        task = self.get_object()
+        payments = task.payments.all()
+        serializer = PaymentSerializer(payments, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='add-payment')
+    def add_payment(self, request, task_id=None):
+        if not (request.user.role in ['Manager', 'Front Desk', 'Accountant'] or request.user.is_superuser):
+            return Response(
+                {"error": "You do not have permission to add payments."},
+                status=status.HTTP_4_FORBIDDEN
+            )
+        task = self.get_object()
+        serializer = PaymentSerializer(data=request.data)
+        if serializer.is_valid():
+            tech_support_category, _ = PaymentCategory.objects.get_or_create(name='Tech Support')
+            serializer.save(task=task, description=f"{task.customer.name} - {task.title}", category=tech_support_category)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated])
-def add_task_activity(request, task_id):
-    task = get_object_or_404(Task, title=task_id)
-    serializer = TaskActivitySerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save(task=task, user=request.user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], url_path='cost-breakdowns')
+    def cost_breakdowns(self, request, task_id=None):
+        task = self.get_object()
+        serializer = CostBreakdownSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(task=task)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def task_payments(request, task_id):
-    task = get_object_or_404(Task, title=task_id)
-    payments = task.payments.all()
-    serializer = PaymentSerializer(payments, many=True)
-    return Response(serializer.data)
 
-
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated])
-def add_task_payment(request, task_id):
-    if not (request.user.role in ['Manager', 'Front Desk', 'Accountant'] or request.user.is_superuser):
-        return Response(
-            {"error": "You do not have permission to add payments."},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    task = get_object_or_404(Task, title=task_id)
-    serializer = PaymentSerializer(data=request.data)
-    if serializer.is_valid():
-        tech_support_category, _ = PaymentCategory.objects.get_or_create(name='Tech Support')
-        payment = serializer.save(task=task, description=f"{task.customer.name} - {task.title}", category=tech_support_category)
-        payment.task.update_payment_status()  # Trigger update
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated])
-def send_customer_update(request, task_id):
-    if not (request.user.role in ['Manager', 'Front Desk'] or request.user.is_superuser):
-        return Response({'error': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
-
-    try:
-        task = get_object_or_404(Task, title=task_id)
-        if not task.customer.email:
-            return Response({'error': 'No customer email available for this task.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        subject = request.data.get('subject')
-        message = request.data.get('message')
-        if not subject or not message:
-            return Response({'error': 'Subject and message are required.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [task.customer.email],
-            fail_silently=False,
-        )
-        TaskActivity.objects.create(
-            task=task, 
-            user=request.user, 
-            type='customer_contact', 
-            message=f'Sent customer update: "{subject}"'
-        )
-        return Response({'message': 'Customer update sent successfully.'}, status=status.HTTP_200_OK)
-    except Task.DoesNotExist:
-        return Response({'error': 'Task not found.'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': f'Failed to send email: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-from django.utils import timezone
-from datetime import timedelta
-
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def revenue_overview(request):
-    """
-    Calculate revenue for this month and today, with comparisons to the previous period.
-    """
-    now = timezone.now()
-    today = now.date()
-
-    # This month's revenue
-    this_month_start = today.replace(day=1)
-    this_month_revenue = Payment.objects.filter(
-        date__gte=this_month_start
-    ).aggregate(total=Sum('amount'))['total'] or 0
-
-    # Last month's revenue
-    last_month_end = this_month_start - timedelta(days=1)
-    last_month_start = last_month_end.replace(day=1)
-    last_month_revenue = Payment.objects.filter(
-        date__gte=last_month_start,
-        date__lt=this_month_start
-    ).aggregate(total=Sum('amount'))['total'] or 0
-
-    # Today's revenue
-    today_revenue = Payment.objects.filter(
-        date=today
-    ).aggregate(total=Sum('amount'))['total'] or 0
-
-    # Yesterday's revenue
-    yesterday = today - timedelta(days=1)
-    yesterday_revenue = Payment.objects.filter(
-        date=yesterday
-    ).aggregate(total=Sum('amount'))['total'] or 0
-
-    # Percentage changes
-    month_over_month_change = ((this_month_revenue - last_month_revenue) / last_month_revenue * 100) if last_month_revenue else 100
-    day_over_day_change = ((today_revenue - yesterday_revenue) / yesterday_revenue * 100) if yesterday_revenue else 100
-
-    return Response({
-        'this_month_revenue': this_month_revenue,
-        'month_over_month_change': month_over_month_change,
-        'today_revenue': today_revenue,
-        'day_over_day_change': day_over_day_change,
-    })

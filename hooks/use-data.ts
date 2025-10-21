@@ -7,6 +7,7 @@ import { Brand, Task } from '@/lib/api'
 interface Location {
     id: number;
     name: string;
+    is_workshop: boolean;
   }
 
 export function useTechnicians() {

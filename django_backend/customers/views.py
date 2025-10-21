@@ -16,8 +16,8 @@ class CustomerViewSet(viewsets.ModelViewSet):
         if query:
             customers = self.get_queryset().filter(
                 Q(name__icontains=query) |
-                Q(phone__icontains=query)
-            ).order_by('name')
+                Q(phone_numbers__phone_number__icontains=query)
+            ).distinct().order_by('name')
         else:
             customers = self.get_queryset().none()
         serializer = self.get_serializer(customers, many=True)

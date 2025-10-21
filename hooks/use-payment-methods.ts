@@ -16,6 +16,6 @@ const fetcher = async (url: string) => {
 };
 
 export function usePaymentMethods() {
-  const { data, error, isLoading } = useSWR<PaymentMethod[]>('/payment-methods/', fetcher);
-  return { data, error, isLoading };
+  const { data, error, isLoading, mutate } = useSWR<PaymentMethod[]>('/payment-methods/', fetcher);
+  return { data, error, isLoading, mutate };
 }

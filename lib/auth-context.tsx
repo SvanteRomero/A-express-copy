@@ -9,7 +9,7 @@ interface User {
   id: number
   username: string
   email: string
-  role: "Administrator" | "Manager" | "Technician" | "Front Desk"
+  role: "Administrator" | "Manager" | "Technician" | "Front Desk" | "Accountant"
   first_name: string
   last_name: string
   phone: string

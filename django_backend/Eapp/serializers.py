@@ -40,9 +40,7 @@ class TaskListSerializer(serializers.ModelSerializer):
         )
 
     def get_outstanding_balance(self, obj):
-        total_cost = obj.calculate_total_cost()
-        paid_sum = sum(p.amount for p in obj.payments.all()) or Decimal('0.00')
-        return total_cost - paid_sum
+        return obj.total_cost - obj.paid_amount
 
 class TaskDetailSerializer(serializers.ModelSerializer):
     negotiated_by = serializers.PrimaryKeyRelatedField(
@@ -67,18 +65,17 @@ class TaskDetailSerializer(serializers.ModelSerializer):
     workshop_technician_details = UserSerializer(source='workshop_technician', read_only=True)
     original_technician_details = UserSerializer(source='original_technician', read_only=True)
     cost_breakdowns = CostBreakdownSerializer(many=True, read_only=True)
-    total_cost = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
         fields = (
-            'id', 'title', 'description', 'status', 'urgency', 
+            'id', 'title', 'description', 'status', 'urgency',
             'assigned_to', 'assigned_to_details', 'created_by_details',
             'created_at', 'updated_at', 'due_date',
             'customer', 'customer_details',
-            'brand', 'brand_details', 'laptop_model', 'serial_number',
+            'brand', 'brand_details', 'laptop_model',
             'device_type', 'device_notes',
-            'estimated_cost', 'total_cost', 'payment_status',
+            'estimated_cost', 'total_cost', 'paid_amount', 'payment_status',
             'current_location', 'date_in', 'approved_at', 'approved_by',
             'paid_date', 'next_payment_date', 'date_out', 'negotiated_by', 'negotiated_by_details',
             'activities', 'payments', 'outstanding_balance', 'is_referred', 'is_debt', 'referred_by', 'referred_by_details',
@@ -90,21 +87,14 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             'cost_breakdowns'
         )
         read_only_fields = ('created_at', 'updated_at', 'assigned_to_details', 'created_by_details', 'activities', 'payments',
-                            'workshop_location_details', 'workshop_technician_details', 'original_technician_details', 'approved_by_details', 'sent_out_by_details')
+                            'workshop_location_details', 'workshop_technician_details', 'original_technician_details', 'approved_by_details', 'sent_out_by_details',
+                            'total_cost', 'paid_amount')
         extra_kwargs = {
             'estimated_cost': {'validators': [MinValueValidator(Decimal('0.00'))]},
         }
 
-    def get_total_cost(self, obj):
-        estimated_cost = obj.estimated_cost or Decimal('0.00')
-        additive_costs = sum(item.amount for item in obj.cost_breakdowns.filter(cost_type='Additive'))
-        subtractive_costs = sum(item.amount for item in obj.cost_breakdowns.filter(cost_type='Subtractive'))
-        return estimated_cost + additive_costs - subtractive_costs
-
     def get_outstanding_balance(self, obj):
-        total_cost = self.get_total_cost(obj)
-        paid_sum = sum(p.amount for p in obj.payments.all()) or Decimal('0.00')
-        return total_cost - paid_sum
+        return obj.total_cost - obj.paid_amount
 
     def validate(self, data):
         device_type = data.get('device_type')
@@ -129,6 +119,9 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             validated_data['status'] = 'In Progress'
         else:
             validated_data['status'] = 'Pending'
+
+        if 'estimated_cost' in validated_data:
+            validated_data['total_cost'] = validated_data['estimated_cost']
 
         device_notes = validated_data.get('device_notes', None)
         task = super().create(validated_data)

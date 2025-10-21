@@ -9,7 +9,7 @@ class CostBreakdownSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CostBreakdown
-        fields = ['id', 'description', 'amount', 'cost_type', 'category', 'created_at', 'reason', 'payment_method', 'task_title']
+        fields = ['id', 'description', 'amount', 'cost_type', 'category', 'created_at', 'reason', 'payment_method', 'task_title', 'status']
         extra_kwargs = {
             'payment_method': {'write_only': True}
         }
@@ -43,7 +43,7 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = ('id', 'task', 'task_title', 'task_status', 'amount', 'date', 'method', 'method_name', 'description', 'category', 'category_name')
-        read_only_fields = ('task',)
+        read_only_fields = ['task']
         extra_kwargs = {
             'amount': {'validators': [MinValueValidator(Decimal('0.00'))]},
         }

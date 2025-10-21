@@ -62,7 +62,7 @@ const getWorkshopStatusBadge = (workshopStatus: string) => {
 
 export function InProgressTasksList({ isWorkshopView = false }: { isWorkshopView?: boolean }) {
   const { user } = useAuth()
-  const { data: tasks, isLoading, isError, error } = useInProgressTasks(isWorkshopView, user?.id);
+  const { data: tasks, isLoading, isError, error } = useInProgressTasks(isWorkshopView, user?.id ? user.id.toString() : undefined);
 
   if (isLoading) {
     return (

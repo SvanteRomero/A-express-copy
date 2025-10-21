@@ -91,6 +91,7 @@ export function TasksDisplay({ tasks, technicians, onRowClick, showActions, onDe
         searchQuery === "" ||
         task.title.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
         (task.customer_details?.name && task.customer_details.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (task.customer_details?.phone_numbers && task.customer_details.phone_numbers.some((p: any) => p.phone_number.toLowerCase().includes(searchQuery.toLowerCase()))) ||
         task.laptop_model.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.description.toLowerCase().includes(searchQuery.toLowerCase())
 
@@ -266,7 +267,10 @@ export function TasksDisplay({ tasks, technicians, onRowClick, showActions, onDe
                 <TableCell>
                   <div>
                     <p className="font-medium text-gray-900">{task.customer_details?.name}</p>
-                    <p className="text-sm text-gray-500">{task.customer_details?.phone}</p>
+                    <p className="text-sm text-gray-500">
+                      {task.customer_details?.phone_numbers?.[0]?.phone_number}
+                      {task.customer_details?.phone_numbers?.length > 1 && ' ...'}
+                    </p>
                   </div>
                 </TableCell>
                 <TableCell>

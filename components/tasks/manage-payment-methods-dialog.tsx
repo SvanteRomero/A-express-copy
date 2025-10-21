@@ -18,7 +18,7 @@ export default function ManagePaymentMethodsDialog({
   onClose,
 }: ManagePaymentMethodsDialogProps) {
   const queryClient = useQueryClient();
-  const { data: paymentMethods, refetch: refetchPaymentMethods } = usePaymentMethods();
+  const { data: paymentMethods, mutate: refetchPaymentMethods } = usePaymentMethods();
   const [newPaymentMethodName, setNewPaymentMethodName] = useState("");
   const [editingPaymentMethod, setEditingPaymentMethod] = useState<any | null>(null);
 

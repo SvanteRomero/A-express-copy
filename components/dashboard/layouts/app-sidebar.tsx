@@ -177,13 +177,8 @@ const navigationItems = {
   "Front Desk": [
     {
       title: "Dashboard",
-      url: "/dashboard",
-      icon: Home,
-    },
-    {
-      title: "Front Desk",
       url: "/dashboard/front-desk",
-      icon: Calendar,
+      icon: Home,
     },
     {
       title: "Customers",
@@ -199,11 +194,6 @@ const navigationItems = {
         title: "History",
         url: "/dashboard/front-desk/history",
         icon: FileText,
-    },
-    {
-      title: "Payments",
-      url: "/dashboard/payments",
-      icon: CreditCard,
     },
     {
       title: "Profile",

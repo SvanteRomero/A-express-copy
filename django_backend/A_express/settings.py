@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'common',
     'customers',
     'rest_framework',
+    'reports',
     
 ]
 

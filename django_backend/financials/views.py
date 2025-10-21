@@ -88,7 +88,9 @@ class ExpenditureRequestViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = ExpenditureRequest.objects.all()
+        queryset = ExpenditureRequest.objects.select_related(
+            'task', 'category', 'payment_method', 'requester', 'approver'
+        )
 
         if not user.is_staff and not user.role in ['Manager', 'Admin']:
             queryset = queryset.filter(requester=user)
@@ -124,7 +126,7 @@ class ExpenditureRequestViewSet(viewsets.ModelViewSet):
             task=expenditure.task,
             amount=-expenditure.amount,  # Expenditures are negative amounts
             method=expenditure.payment_method,
-            description=f"Expenditure: {expenditure.description}",
+            description=f"{expenditure.description}",
             category=expenditure.category
         )
 
@@ -136,7 +138,8 @@ class ExpenditureRequestViewSet(viewsets.ModelViewSet):
                 amount=expenditure.amount,
                 cost_type=expenditure.cost_type,
                 category=expenditure.category.name,
-                payment_method=expenditure.payment_method
+                payment_method=expenditure.payment_method,
+                status=CostBreakdown.Status.APPROVED
             )
 
         serializer = self.get_serializer(expenditure)

@@ -11,10 +11,16 @@ import { useToast } from "@/hooks/use-toast";
 import { useTechnicians } from "@/hooks/use-data";
 import { useAuth } from "@/lib/auth-context";
 
+type PageState = {
+  "not-completed": number;
+  completed: number;
+  pickup: number;
+};
+
 export function FrontDeskTasksPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [pages, setPages] = useState({
+  const [pages, setPages] = useState<PageState>({
     "not-completed": 1,
     completed: 1,
     pickup: 1,
@@ -85,7 +91,7 @@ export function FrontDeskTasksPage() {
     alert(`Notifying ${customerName} for task ${taskTitle}`);
   }, []);
 
-  const handlePageChange = (tab: string, direction: 'next' | 'previous') => {
+  const handlePageChange = (tab: keyof PageState, direction: 'next' | 'previous') => {
     setPages(prev => ({
       ...prev,
       [tab]: direction === 'next' ? prev[tab] + 1 : prev[tab] - 1,

@@ -92,7 +92,7 @@ export function ReturnTaskDialog({ task, isOpen, onClose }: ReturnTaskDialogProp
             />
           </div>
           <div className="flex items-center space-x-2">
-            <Checkbox id="renegotiate" checked={renegotiate} onCheckedChange={setRenegotiate} />
+            <Checkbox id="renegotiate" checked={renegotiate} onCheckedChange={(checked) => setRenegotiate(checked === true)} />
             <Label htmlFor="renegotiate">Renegotiate</Label>
           </div>
           {renegotiate && (
@@ -112,7 +112,7 @@ export function ReturnTaskDialog({ task, isOpen, onClose }: ReturnTaskDialogProp
                 <SelectValue placeholder="Select urgency" />
               </SelectTrigger>
               <SelectContent>
-                {urgencyOptions?.map((option: [string, string]) => (
+                {urgencyOptions?.map((option: string[]) => (
                   <SelectItem key={option[0]} value={option[0]}>
                     {option[1]}
                   </SelectItem>

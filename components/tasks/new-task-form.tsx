@@ -15,7 +15,7 @@ import { useAuth } from '@/lib/auth-context'
 import { Checkbox } from '@/components/ui/core/checkbox'
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/feedback/alert-dialog";
 import { CurrencyInput } from "@/components/ui/core/currency-input";
-import { useTechnicians, useManagers, useBrands, useLocations } from '@/hooks/use-data'
+import { useTechnicians, useManagers, useBrands, useLocations, useWorkshopTechnicians } from '@/hooks/use-data'
 import { useCustomers } from '@/hooks/use-customers'
 import { useReferrers } from '@/hooks/use-referrers'
 import { SimpleCombobox } from '@/components/ui/core/combobox'
@@ -27,12 +27,10 @@ interface FormData {
   title: string;
   customer_id: string;
   customer_name: string
-  customer_phone: string
-  customer_email: string
+  customer_phone_numbers: { phone_number: string }[]
   customer_type?: string
   brand: string
   laptop_model: string
-  serial_number: string
   description: string
   urgency: string
   current_location: string
@@ -78,22 +76,22 @@ export function NewTaskForm({}: NewTaskFormProps) {
   const [referrerSearch, setReferrerSearch] = useState('')
 
   const { data: technicians, isLoading: isLoadingTechnicians } = useTechnicians()
+  const { data: workshopTechnicians, isLoading: isLoadingWorkshopTechnicians } = useWorkshopTechnicians()
   const { data: managers, isLoading: isLoadingManagers } = useManagers()
   const { data: brands, isLoading: isLoadingBrands } = useBrands()
   const { data: locations, isLoading: isLoadingLocations } = useLocations()
   const { data: customers, isLoading: isLoadingCustomers } = useCustomers(customerSearch)
   const { data: referrers, isLoading: isLoadingReferrers } = useReferrers(referrerSearch)
 
+
   const [formData, setFormData] = useState<FormData>({
     title: '',
     customer_id: '',
     customer_name: '',
-    customer_phone: '',
-    customer_email: '',
+    customer_phone_numbers: [{ phone_number: '' }],
     customer_type: 'Normal',
     brand: '',
     laptop_model: '',
-    serial_number: '',
     description: '',
     urgency: 'Yupo',
     current_location: '',
@@ -106,6 +104,21 @@ export function NewTaskForm({}: NewTaskFormProps) {
     referred_by: ''
   })
   const [errors, setErrors] = useState<FormErrors>({})
+  const [filteredLocations, setFilteredLocations] = useState(locations)
+
+  useEffect(() => {
+    if (locations) {
+      const selectedTechnicianId = formData.assigned_to;
+      const allTechnicians = [...(technicians || []), ...(workshopTechnicians || [])];
+      const selectedTechnician = allTechnicians.find(t => t.id.toString() === selectedTechnicianId);
+
+      if (selectedTechnician?.is_workshop) {
+        setFilteredLocations(locations.filter(l => l.is_workshop));
+      } else {
+        setFilteredLocations(locations);
+      }
+    }
+  }, [formData.assigned_to, locations, technicians, workshopTechnicians]);
 
   useEffect(() => {
     if (locations && locations.length > 0) {
@@ -123,15 +136,17 @@ export function NewTaskForm({}: NewTaskFormProps) {
     const newErrors: FormErrors = {}
 
     if (!formData.customer_name.trim()) newErrors.customer_name = 'Name is required'
-    
-    if (!formData.customer_phone.trim()) {
-        newErrors.customer_phone = 'Phone is required'
-    } else {
-        const phoneRegex = /^0\s?\d{3}\s?\d{3}\s?\d{3}$/;
-        if (!phoneRegex.test(formData.customer_phone)) {
-            newErrors.customer_phone = 'Invalid phone number format. Example: 0XXX XXX XXX'
+
+    formData.customer_phone_numbers.forEach((phone, index) => {
+        if (!phone.phone_number.trim()) {
+            newErrors[`customer_phone_${index}`] = 'Phone is required'
+        } else {
+            const phoneRegex = /^0\s?\d{3}\s?\d{3}\s?\d{3}$/;
+            if (!phoneRegex.test(phone.phone_number)) {
+                newErrors[`customer_phone_${index}`] = 'Invalid phone number format. Example: 0XXX XXX XXX'
+            }
         }
-    }
+    })
 
     if (!formData.brand && !formData.laptop_model.trim()) {
         newErrors.brand = 'Either brand or model is required';
@@ -149,7 +164,7 @@ export function NewTaskForm({}: NewTaskFormProps) {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleInputChange = (field: keyof FormData, value: string | number | boolean) => {
+  const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData(prev => {
         const newFormData = { ...prev, [field]: value };
         if (field === 'device_type' && value === 'Motherboard Only') {
@@ -164,6 +179,22 @@ export function NewTaskForm({}: NewTaskFormProps) {
     }
   }
 
+  const handlePhoneNumberChange = (index: number, value: string) => {
+    const newPhoneNumbers = [...formData.customer_phone_numbers];
+    newPhoneNumbers[index].phone_number = value;
+    handleInputChange('customer_phone_numbers', newPhoneNumbers);
+  };
+
+  const addPhoneNumber = () => {
+    handleInputChange('customer_phone_numbers', [...formData.customer_phone_numbers, { phone_number: '' }]);
+  };
+
+  const removePhoneNumber = (index: number) => {
+    const newPhoneNumbers = [...formData.customer_phone_numbers];
+    newPhoneNumbers.splice(index, 1);
+    handleInputChange('customer_phone_numbers', newPhoneNumbers);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateForm()) return
@@ -172,7 +203,12 @@ export function NewTaskForm({}: NewTaskFormProps) {
     try {
       const taskData = {
         ...formData,
-        customer: formData.customer_id,
+        customer: {
+          id: formData.customer_id,
+          name: formData.customer_name,
+          phone_numbers: formData.customer_phone_numbers,
+          customer_type: formData.customer_type,
+        },
         negotiated_by: formData.negotiated_by || null,
         referred_by: formData.is_referred ? formData.referred_by : null,
       };
@@ -235,8 +271,7 @@ export function NewTaskForm({}: NewTaskFormProps) {
                   if(selectedCustomer){
                     handleInputChange('customer_id', selectedCustomer.id)
                     handleInputChange('customer_name', selectedCustomer.name)
-                    handleInputChange('customer_phone', selectedCustomer.phone)
-                    handleInputChange('customer_email', selectedCustomer.email)
+                    handleInputChange('customer_phone_numbers', selectedCustomer.phone_numbers)
                     handleInputChange('customer_type', selectedCustomer.customer_type)
                   } else {
                     handleInputChange('customer_id', '')
@@ -249,26 +284,24 @@ export function NewTaskForm({}: NewTaskFormProps) {
                 placeholder="Search or create customer..."
               />
             </FormField>
-            <FormField id='customer_phone' label='Phone Number' required error={errors.customer_phone}>
-              <Input
-                id='customer_phone'
-                type='text'
-                value={formData.customer_phone}
-                onChange={(e) => handleInputChange('customer_phone', e.target.value)}
-                className={errors.customer_phone ? 'border-red-500' : ''}
-                placeholder="e.g. 0712 345 678"
-              />
-            </FormField>
-            <FormField id='customer_email' label='Email Address' error={errors.customer_email}>
-              <Input
-                id='customer_email'
-                type='email'
-                value={formData.customer_email}
-                onChange={(e) => handleInputChange('customer_email', e.target.value)}
-                className={errors.customer_email ? 'border-red-500' : ''}
-                placeholder="e.g. john.doe@example.com"
-              />
-            </FormField>
+            {formData.customer_phone_numbers.map((phone, index) => (
+              <FormField key={index} id={`customer_phone_${index}`} label={`Phone Number ${index + 1}`} required error={errors[`customer_phone_${index}`]}>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id={`customer_phone_${index}`}
+                    type='text'
+                    value={phone.phone_number}
+                    onChange={(e) => handlePhoneNumberChange(index, e.target.value)}
+                    className={errors[`customer_phone_${index}`] ? 'border-red-500' : ''}
+                    placeholder="e.g. 0712 345 678"
+                  />
+                  {formData.customer_phone_numbers.length > 1 && (
+                    <Button type="button" variant="outline" onClick={() => removePhoneNumber(index)}>-</Button>
+                  )}
+                </div>
+              </FormField>
+            ))}
+            <Button type="button" variant="outline" onClick={addPhoneNumber}>+ Add Phone Number</Button>
             <FormField id='customer_type' label='Customer Type'>
               <Tabs
                 value={formData.customer_type}
@@ -312,15 +345,6 @@ export function NewTaskForm({}: NewTaskFormProps) {
                 />
               </FormField>
             </div>
-            <FormField id='serial_number' label='Serial Number' error={errors.serial_number}>
-              <Input
-                id='serial_number'
-                value={formData.serial_number}
-                onChange={(e) => handleInputChange('serial_number', e.target.value)}
-                className={errors.serial_number ? 'border-red-500' : ''}
-                placeholder="e.g. C02G812JHC85"
-              />
-            </FormField>
           </div>
 
           <div className='space-y-4'>
@@ -386,7 +410,7 @@ export function NewTaskForm({}: NewTaskFormProps) {
                   <SelectValue placeholder="Select location" />
                 </SelectTrigger>
                 <SelectContent>
-                  {locations?.map((location) => (
+                  {filteredLocations?.map((location) => (
                     <SelectItem key={location.id} value={location.name}>
                       {location.name}
                     </SelectItem>
@@ -419,12 +443,15 @@ export function NewTaskForm({}: NewTaskFormProps) {
               </FormField>
             {canAssignTechnician && (
               <FormField id='assigned_to' label='Assign Technician'>
-                <Select value={formData.assigned_to} onValueChange={(value) => handleInputChange('assigned_to', value)} disabled={isLoadingTechnicians}>
+                <Select value={formData.assigned_to} onValueChange={(value) => handleInputChange('assigned_to', value)} disabled={isLoadingTechnicians || isLoadingWorkshopTechnicians}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select technician" />
                   </SelectTrigger>
                   <SelectContent>
-                    {technicians?.map((technician) => (
+                    {(locations?.find(l => l.name === formData.current_location)?.is_workshop
+                      ? workshopTechnicians
+                      : technicians
+                    )?.map((technician) => (
                       <SelectItem key={technician.id} value={technician.id.toString()}>
                         {technician.first_name} {technician.last_name}
                       </SelectItem>
@@ -448,7 +475,7 @@ export function NewTaskForm({}: NewTaskFormProps) {
                   options={referrerOptions}
                   value={formData.referred_by}
                   onChange={(value) => {
-                    const selectedReferrer = referrers.find((r: any) => r.id.toString() === value)
+                    const selectedReferrer = referrers?.find((r: any) => r.id.toString() === value)
                     if(selectedReferrer){
                       handleInputChange('referred_by', selectedReferrer.name)
                     } else {

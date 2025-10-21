@@ -3,7 +3,6 @@ const nextConfig = {
   experimental: {
     optimizeCss: false,
   },
-  swcMinify: false,
   eslint: {
     ignoreDuringBuilds: true,
   },
