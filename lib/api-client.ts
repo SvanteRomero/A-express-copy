@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getApiUrl } from './config';
+import { ExpenditureRequest, PaginatedResponse } from './api';
 
 export const apiClient = axios.create({
   baseURL: getApiUrl(''),
@@ -20,23 +21,6 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-export interface ExpenditureRequest {
-  id: number;
-  description: string;
-  amount: string;
-  task: number | null;
-  task_title: string | null;
-  status: string;
-  requester: { username: string };
-  approver: { username: string } | null;
-}
-
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
 
 export const getProfile = () => apiClient.get('/profile/');
 export const getTasks = (params: any = {}) => apiClient.get('/tasks/', { params });
@@ -73,7 +57,6 @@ export const deleteLocation = (locationId: number) => apiClient.delete(`/locatio
 export const listWorkshopLocations = () => apiClient.get('locations/workshop-locations/');
 export const listWorkshopTechnicians = () => apiClient.get('list/workshop-technicians/');
 
-// Functions from ApiClient class
 export const login = (username: any, password: any) => apiClient.post('/login/', { username, password });
 export const registerUser = (userData: any) => apiClient.post('/users/', userData);
 export const listUsers = () => apiClient.get('/users/');

@@ -18,38 +18,44 @@ def revenue_overview(request):
     now = timezone.now()
     today = now.date()
 
-    # This month's revenue
-    this_month_start = today.replace(day=1)
-    this_month_revenue = Payment.objects.filter(
-        date__gte=this_month_start
-    ).aggregate(total=Sum('amount'))['total'] or 0
-
-    # Last month's revenue
-    last_month_end = this_month_start - timedelta(days=1)
-    last_month_start = last_month_end.replace(day=1)
-    last_month_revenue = Payment.objects.filter(
-        date__gte=last_month_start,
-        date__lt=this_month_start
+    # Opening balance
+    opening_balance = Payment.objects.filter(
+        date__lt=today
     ).aggregate(total=Sum('amount'))['total'] or 0
 
     # Today's revenue
     today_revenue = Payment.objects.filter(
-        date=today
+        date=today,
+        amount__gt=0
     ).aggregate(total=Sum('amount'))['total'] or 0
 
     # Yesterday's revenue
     yesterday = today - timedelta(days=1)
     yesterday_revenue = Payment.objects.filter(
-        date=yesterday
+        date=yesterday,
+        amount__gt=0
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    # Today's expenditure
+    today_expenditure = Payment.objects.filter(
+        date=today,
+        amount__lt=0
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    # Yesterday's expenditure
+    yesterday_expenditure = Payment.objects.filter(
+        date=yesterday,
+        amount__lt=0
     ).aggregate(total=Sum('amount'))['total'] or 0
 
     # Percentage changes
-    month_over_month_change = ((this_month_revenue - last_month_revenue) / last_month_revenue * 100) if last_month_revenue else 100
     day_over_day_change = ((today_revenue - yesterday_revenue) / yesterday_revenue * 100) if yesterday_revenue else 100
+    expenditure_day_over_day_change = ((today_expenditure - yesterday_expenditure) / yesterday_expenditure * 100) if yesterday_expenditure else 100
 
     return Response({
-        'this_month_revenue': this_month_revenue,
-        'month_over_month_change': month_over_month_change,
+        'opening_balance': opening_balance,
         'today_revenue': today_revenue,
         'day_over_day_change': day_over_day_change,
+        'today_expenditure': abs(today_expenditure),
+        'expenditure_day_over_day_change': expenditure_day_over_day_change,
     })
