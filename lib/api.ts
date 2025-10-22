@@ -131,3 +131,14 @@ export interface TaskPayment {
   date: string;
   reference: string;
 }
+
+export interface ExpenditureRequest {
+  id: number;
+  description: string;
+  amount: string;
+  task: number | null;
+  task_title: string | null;
+  status: string;
+  requester: { username: string };
+  approver: { username: string } | null;
+}

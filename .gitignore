@@ -48,3 +48,6 @@ db.sqlite3-journal
 .idea/
 venv/
 .env.local 
+
+#GEMINI 
+GEMINI.md
