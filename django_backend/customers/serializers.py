@@ -1,7 +1,5 @@
 from rest_framework import serializers
 from .models import Customer, PhoneNumber, Referrer
-from Eapp.models import Task
-
 
 class PhoneNumberSerializer(serializers.ModelSerializer):
     class Meta:

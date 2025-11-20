@@ -1,10 +1,7 @@
 from django.db import models
 from django.utils import timezone
-from django.core.exceptions import PermissionDenied
 from django.utils.translation import gettext_lazy as _
-from customers.models import Customer, Referrer
 from decimal import Decimal
-from datetime import datetime
 from users.models import User
 
 def get_current_date():

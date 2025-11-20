@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/layout/card"
-import { Button } from "@/components/ui/core/button"
 import { Download, Eye, BarChart3, PieChart as PieChartIcon, Users, Clock, DollarSign, ClipboardList, MapPin, CreditCard, TrendingUp } from "lucide-react"
 import { ReportPreview } from "./previews/report-previews"
 
@@ -73,42 +72,6 @@ export function ReportViewer({ apiResponse, reportData, reportType, onGeneratePD
 
     return (
         <div className="space-y-6">
-            {/* Header with Download Button */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-red-50 rounded-lg">
-                        {getReportIcon()}
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-900 capitalize">
-                            {type.replace(/_/g, ' ')} Report
-                        </h2>
-                        <p className="text-gray-600">Live data from your backend API</p>
-                    </div>
-                </div>
-
-                {/* Download PDF Button */}
-                {onGeneratePDF && (
-                    <Button
-                        onClick={onGeneratePDF}
-                        disabled={isGeneratingPDF}
-                        className="bg-red-600 hover:bg-red-700"
-                    >
-                        {isGeneratingPDF ? (
-                            <div className="flex items-center gap-2">
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                Generating PDF...
-                            </div>
-                        ) : (
-                            <>
-                                <Download className="h-4 w-4 mr-2" />
-                                Download PDF
-                            </>
-                        )}
-                    </Button>
-                )}
-            </div>
-
             {/* Report Content */}
             <ReportPreview type={type} data={data} searchTerm={searchTerm} />
         </div>
