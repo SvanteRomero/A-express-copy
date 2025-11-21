@@ -41,4 +41,9 @@ urlpatterns = [
         views.generate_custom_report,
         name="generate_custom_report",
     ),
+    path(
+        "reports/laptops-in-shop/",
+        views.get_laptops_in_shop_by_location,
+        name="laptops_in_shop_by_location",
+    ),
 ]
