@@ -130,8 +130,9 @@ class Task(models.Model):
         ordering = ['-created_at']
 
     def save(self, *args, **kwargs):
-        if self.pk:
-            pass
+        if not self.pk:  # Only for new instances
+            if self.estimated_cost is not None:
+                self.total_cost = self.estimated_cost
         super().save(*args, **kwargs)
 
     def _calculate_total_cost(self):
