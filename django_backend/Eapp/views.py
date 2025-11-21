@@ -354,9 +354,9 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAdminOrManagerOrAccountant])
     def debts(self, request):
         """
-        Returns a list of tasks that are 'Picked Up' but not 'Fully Paid'.
+        Returns a list of tasks that are marked as debt.
         """
-        tasks = self.get_queryset().filter(status='Picked Up').exclude(payment_status='Fully Paid')
+        tasks = self.get_queryset().filter(is_debt=True)
         page = self.paginate_queryset(tasks)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
