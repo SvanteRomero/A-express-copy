@@ -116,6 +116,7 @@ export const getSessions = () => apiClient.get('/users/profile/sessions/');
 export const revokeSession = (sessionId: string) => apiClient.post(`/users/profile/sessions/${sessionId}/revoke/`);
 export const revokeAllSessions = () => apiClient.post('/users/profile/sessions/revoke-all/');
 export const getAuditLogs = (params: any = {}) => apiClient.get('/users/audit/logs/', { params });
+export const getProfileActivity = (params: any = {}) => apiClient.get('/users/profile/activity/', { params });
 export const getUserDetail = (userId: any) => apiClient.get(`/users/${userId}/`);
 export const updateUser = (userId: any, userData: any) => apiClient.patch(`/users/${userId}/update/`, userData);
 export const deleteUser = (userId: any) => apiClient.delete(`/users/${userId}/delete/`);

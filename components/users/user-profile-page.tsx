@@ -16,7 +16,6 @@ import {
   User,
   Calendar,
   Shield,
-  Bell,
   Activity,
   Edit,
   Save,
@@ -33,7 +32,7 @@ import {
 import { useAuth } from "@/lib/auth-context"
 
 import { useProfile } from "@/lib/use-profile"
-import { getSessions, revokeSession, revokeAllSessions, getAuditLogs } from "@/lib/api-client"
+import { getSessions, revokeSession, revokeAllSessions, getAuditLogs, getProfileActivity, getTaskActivities } from "@/lib/api-client"
 import { profile } from "console"
 import { create } from "domain"
 
@@ -56,43 +55,8 @@ import { create } from "domain"
 // }
 
 // Mock activity data
-const mockActivity = [
-  {
-    id: "1",
-    type: "task",
-    action: "Created new task T-1025",
-    timestamp: "2024-01-15 14:30",
-    details: "MacBook Air repair for David Wilson",
-  },
-  {
-    id: "2",
-    type: "profile",
-    action: "Updated profile information",
-    timestamp: "2024-01-15 10:15",
-    details: "Changed phone number",
-  },
-  {
-    id: "3",
-    type: "security",
-    action: "Password changed",
-    timestamp: "2024-01-14 16:45",
-    details: "Security credentials updated",
-  },
-  {
-    id: "4",
-    type: "report",
-    action: "Generated monthly report",
-    timestamp: "2024-01-14 09:00",
-    details: "Revenue report for December 2023",
-  },
-  {
-    id: "5",
-    type: "task",
-    action: "Completed task T-1020",
-    timestamp: "2024-01-13 15:20",
-    details: "Surface Laptop repair completed",
-  },
-]
+  // Mock activity data
+  
 
 
 export function UserProfilePage() {
@@ -128,6 +92,12 @@ export function UserProfilePage() {
   // Sessions state for Security tab
   const [sessions, setSessions] = useState<any[]>([])
   const [loadingSessions, setLoadingSessions] = useState(false)
+
+  // Activity items loaded from server
+  const [activityItems, setActivityItems] = useState<any[]>([])
+  const [activityLoading, setActivityLoading] = useState(false)
+  const [activityPage, setActivityPage] = useState(1)
+  const [activityHasMore, setActivityHasMore] = useState(false)
 
   const [passwordData, setPasswordData] = useState({
     current_password: "",
@@ -215,7 +185,7 @@ export function UserProfilePage() {
   }
 
   useEffect(() => {
-    // Load sessions when component mounts
+    // Load sessions and activity when component mounts
     const loadSessions = async () => {
       setLoadingSessions(true)
       try {
@@ -227,7 +197,24 @@ export function UserProfilePage() {
         setLoadingSessions(false)
       }
     }
+
+    const loadActivity = async (page = 1) => {
+      setActivityLoading(true)
+      try {
+        const resp = await getProfileActivity({ page, page_size: 25 })
+        const data = resp.data || {}
+        setActivityItems(data.results || [])
+        setActivityHasMore(!!data.has_more)
+        setActivityPage(data.page || 1)
+      } catch (err) {
+        console.error('Failed to load profile activity', err)
+      } finally {
+        setActivityLoading(false)
+      }
+    }
+
     loadSessions()
+    loadActivity()
   }, [])
 
 
@@ -285,10 +272,9 @@ export function UserProfilePage() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
@@ -653,61 +639,7 @@ export function UserProfilePage() {
           </div>
         </TabsContent>
 
-        {/* Notifications Tab */}
-        <TabsContent value="notifications" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Notification Preferences
-              </CardTitle>
-              <CardDescription>Choose how you want to be notified about important updates</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="font-medium">Email Notifications</p>
-                    <p className="text-sm text-gray-600">Receive notifications via email</p>
-                  </div>
-                  {/* <Switch checked={userData.emailNotifications} /> */}
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="font-medium">Push Notifications</p>
-                    <p className="text-sm text-gray-600">Receive push notifications in your browser</p>
-                  </div>
-                  {/* <Switch checked={userData.pushNotifications} /> */}
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="font-medium">Task Updates</p>
-                    <p className="text-sm text-gray-600">Get notified when tasks are assigned or updated</p>
-                  </div>
-                  {/* <Switch checked={userData.taskUpdates} /> */}
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="font-medium">System Alerts</p>
-                    <p className="text-sm text-gray-600">Important system notifications and maintenance alerts</p>
-                  </div>
-                  {/* <Switch checked={userData.systemAlerts} /> */}
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="font-medium">Weekly Reports</p>
-                    <p className="text-sm text-gray-600">Receive weekly performance and activity reports</p>
-                  </div>
-                  {/* <Switch checked={userData.weeklyReports} /> */}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        
 
         {/* Activity Tab */}
         <TabsContent value="activity" className="space-y-6">
@@ -721,21 +653,58 @@ export function UserProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50">
-                    <div className="p-2 bg-gray-100 rounded-full">{getActivityIcon(activity.type)}</div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-medium text-gray-900">{activity.action}</p>
-                        <p className="text-sm text-gray-500">{activity.timestamp}</p>
+                {activityLoading ? (
+                  <p className="text-sm text-gray-600">Loading activity...</p>
+                ) : (
+                  activityItems.map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50">
+                      <div className="p-2 bg-gray-100 rounded-full">{getActivityIcon(activity.category || activity.source)}</div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="font-medium text-gray-900">{activity.message}</p>
+                          <p className="text-sm text-gray-500">{new Date(activity.timestamp).toLocaleString()}</p>
+                        </div>
+                        <p className="text-sm text-gray-600">{activity.metadata?.summary || JSON.stringify(activity.metadata || '')}</p>
+                        {activity.related_task && (
+                            <div className="mt-2">
+                              <Button size="sm" variant="outline" onClick={async () => {
+                                try {
+                                  // TaskViewSet uses title as the lookup field; call with title to avoid 404
+                                  const taskLookup = activity.related_task.title
+                                  const resp = await getTaskActivities(taskLookup)
+                                  // show simple alert/modal with activities for now
+                                  alert(JSON.stringify(resp.data || [], null, 2))
+                                } catch (err) {
+                                  console.error('Failed to load task activities', err)
+                                }
+                              }}>
+                                View Task Activity
+                              </Button>
+                            </div>
+                        )}
                       </div>
-                      <p className="text-sm text-gray-600">{activity.details}</p>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
               <div className="mt-6 text-center">
-                <Button variant="outline">View Full Activity Log</Button>
+                {activityHasMore && (
+                  <Button variant="outline" onClick={async () => {
+                    // load next page and append
+                    const nextPage = activityPage + 1
+                    try {
+                      const resp = await getProfileActivity({ page: nextPage, page_size: 25 })
+                      const data = resp.data || {}
+                      setActivityItems((prev) => [...prev, ...(data.results || [])])
+                      setActivityHasMore(!!data.has_more)
+                      setActivityPage(data.page || nextPage)
+                    } catch (err) {
+                      console.error('Failed to load more activity', err)
+                    }
+                  }}>
+                    Load more
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

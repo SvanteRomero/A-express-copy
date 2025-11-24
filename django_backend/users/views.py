@@ -16,6 +16,7 @@ from .serializers import (
 )
 from .serializers import SessionSerializer, AuditLogSerializer
 from .models import Session, AuditLog
+from Eapp.models import TaskActivity
 from .permissions import IsAdminOrManager
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -278,6 +279,98 @@ class AuthViewSet(viewsets.ViewSet):
         qs = qs.order_by('-created_at')[:1000]
         serializer = AuditLogSerializer(qs, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='profile/activity')
+    def profile_activity(self, request):
+        """Merged timeline for the current user combining AuditLog and a filtered set of TaskActivity entries.
+
+        Returns a time-ordered list of recent events authored by the user.
+        Query params: page, page_size, category (audit|task|all), since, until
+        """
+        # Params
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 25))
+        category = request.query_params.get('category', 'all')
+        since = request.query_params.get('since')
+        until = request.query_params.get('until')
+
+        # Keep the set of TaskActivity types small and important for profile timeline
+        IMPORTANT_TASK_TYPES = [
+            TaskActivity.ActivityType.ASSIGNMENT,
+            TaskActivity.ActivityType.PICKED_UP,
+            TaskActivity.ActivityType.RETURNED,
+            TaskActivity.ActivityType.WORKSHOP,
+            TaskActivity.ActivityType.READY,
+            TaskActivity.ActivityType.STATUS_UPDATE,
+        ]
+
+        fetch_factor = 2
+        fetch_limit = page_size * fetch_factor
+
+        # Audit logs authored by the user
+        audit_qs = AuditLog.objects.filter(user=request.user)
+        if since:
+            audit_qs = audit_qs.filter(created_at__gte=since)
+        if until:
+            audit_qs = audit_qs.filter(created_at__lte=until)
+        audit_list = []
+        if category in ('all', 'audit'):
+            audit_items = audit_qs.order_by('-created_at')[:fetch_limit]
+            for a in audit_items:
+                audit_list.append({
+                    'id': f'audit-{a.id}',
+                    'timestamp': a.created_at,
+                    'source': 'audit',
+                    'category': 'audit',
+                    'message': a.action,
+                    'severity': a.severity,
+                    'metadata': a.metadata,
+                    'related_task': None,
+                    'user': a.user.username if a.user else None,
+                })
+
+        # Task activities authored by the user (filtered set)
+        task_list = []
+        if category in ('all', 'task'):
+            task_qs = TaskActivity.objects.filter(user=request.user, type__in=IMPORTANT_TASK_TYPES)
+            if since:
+                task_qs = task_qs.filter(timestamp__gte=since)
+            if until:
+                task_qs = task_qs.filter(timestamp__lte=until)
+            task_items = task_qs.select_related('task').order_by('-timestamp')[:fetch_limit]
+            for t in task_items:
+                task_list.append({
+                    'id': f'task-{t.id}',
+                    'timestamp': t.timestamp,
+                    'source': 'task',
+                    'category': 'task',
+                    'message': t.message,
+                    'severity': 'info',
+                    'metadata': t.details,
+                    'related_task': {'id': t.task.id, 'title': t.task.title} if getattr(t, 'task', None) else None,
+                    'user': t.user.username if t.user else None,
+                })
+
+        # Merge and sort
+        merged = sorted(audit_list + task_list, key=lambda x: x['timestamp'], reverse=True)
+
+        # Simple pagination on merged results
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_items = merged[start:end]
+
+        # Convert timestamps to ISO strings for JSON
+        for item in page_items:
+            item['timestamp'] = item['timestamp'].isoformat()
+
+        has_more = end < len(merged)
+
+        return Response({
+            'page': page,
+            'page_size': page_size,
+            'has_more': has_more,
+            'results': page_items,
+        })
 
 
 class UserListViewSet(viewsets.ViewSet):
