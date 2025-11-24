@@ -12,66 +12,8 @@ class PredefinedReportGenerator:
 
 
     @staticmethod
-    def generate_revenue_summary_report(date_range="last_7_days", start_date=None, end_date=None):
-        """Generate an accurate financial revenue summary report"""
-        date_filter, actual_date_range, duration_days, duration_description = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date)
-
-        # FILTER: Only positive amounts = actual revenue
-        revenue_filter = Q(date_filter) & Q(amount__gt=0)
-
-        # Optional: Capture refunds separately (negative amounts)
-        refund_filter = Q(date_filter) & Q(amount__lt=0)
-
-        # --- 1. Daily Revenue (only income) ---
-        payments = (
-            Payment.objects.filter(revenue_filter)
-            .values("date")
-            .annotate(daily_revenue=Sum("amount"))
-            .order_by("date")
-        )
-
-        # --- 2. Monthly Totals (Revenue-focused) ---
-        monthly_revenue = Payment.objects.filter(revenue_filter).aggregate(
-            total_revenue=Sum("amount"),
-            average_payment=Avg("amount"),
-            payment_count=Count("id"),
-        )
-
-        # --- 3. Refund Summary (for transparency) ---
-        refund_summary = Payment.objects.filter(refund_filter).aggregate(
-            total_refunds=Sum("amount"),  # This will be negative
-            refund_count=Count("id"),
-        )
-        total_refunds = abs(refund_summary["total_refunds"] or 0)
-        net_revenue = (monthly_revenue["total_revenue"] or 0) - total_refunds
-
-        # --- 4. Payment Methods (only for revenue, not refunds) ---
-        payment_methods = (
-            Payment.objects.filter(revenue_filter)
-            .values("method__name")
-            .annotate(total=Sum("amount"), count=Count("id"))
-            .order_by("-total")
-        )
-
-        return {
-            "payments_by_date": list(payments),
-            "monthly_totals": {
-                "total_revenue": monthly_revenue["total_revenue"] or 0,
-                "total_refunds": total_refunds,
-                "net_revenue": net_revenue,
-                "average_payment": monthly_revenue["average_payment"] or 0,
-                "payment_count": monthly_revenue["payment_count"] or 0,
-                "refund_count": refund_summary["refund_count"] or 0,
-            },
-            "payment_methods": list(payment_methods),
-            "date_range": actual_date_range,
-            "duration_info": {
-                "days": duration_days,
-                "description": duration_description
-            },
-            "start_date": start_date,
-            "end_date": end_date,
-        }
+    # NOTE: The revenue summary generator has been removed.
+    # If you need to restore revenue reporting, reintroduce a generator here.
 
  
         

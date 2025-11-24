@@ -2,7 +2,6 @@
 
 import { OutstandingPaymentsPreview } from "./outstanding-payments-preview"
 import { TechnicianPerformancePreview } from "./technician-performance-preview"
-import { RevenueSummaryPreview } from "./revenue-summary-preview"
 import { TaskStatusPreview } from "./task-status-preview"
 import { TechnicianWorkloadPreview } from "./technician-workload-preview"
 import { PaymentMethodsPreview } from "./payment-methods-preview"
@@ -271,13 +270,7 @@ export const ReportPreview = ({
             )
         case "technician_performance":
             return <TechnicianPerformancePreview report={data as TechnicianPerformanceReport} />
-        case "revenue_summary":
-            return (
-                <RevenueSummaryPreview
-                    report={data as RevenueSummaryReport}
-                    onPageChange={onPageChange}
-                />
-            )
+        // 'revenue_summary' preview removed
         case "task_status":
             return <TaskStatusPreview report={data as TaskStatusReport} />
         case "technician_workload":

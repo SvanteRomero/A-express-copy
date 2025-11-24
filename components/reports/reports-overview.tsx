@@ -35,7 +35,6 @@ export function ReportsOverview() {
 
     try {
       const apiEndpoints: { [key: string]: string } = {
-        'revenue-summary': '/api/reports/revenue-summary/',
         'outstanding-payments': '/api/reports/outstanding-payments/',
         'payment-methods': '/api/reports/payment-methods/',
         'task-status': '/api/reports/task-status/',
@@ -61,20 +60,10 @@ export function ReportsOverview() {
         params.append('start_date', formatDate(dateRange.start))
         params.append('end_date', formatDate(dateRange.end))
         console.log('📅 DEBUG - Added date range params')
-      } else {
-        // Add default date range for revenue summary if none provided
-        if (reportId === 'revenue-summary') {
-          const end = new Date()
-          const start = new Date()
-          start.setDate(end.getDate() - 30)
-          params.append('start_date', start.toISOString().split('T')[0])
-          params.append('end_date', end.toISOString().split('T')[0])
-          console.log('📅 DEBUG - Added default date range for revenue summary')
-        }
       }
 
       // Add pagination parameters
-      const paginatedReports = ['outstanding-payments', 'turnaround-time', 'revenue-summary']
+      const paginatedReports = ['outstanding-payments', 'turnaround-time']
       if (paginatedReports.includes(reportId)) {
         params.append('page', page.toString())
         params.append('page_size', pageSize.toString())
