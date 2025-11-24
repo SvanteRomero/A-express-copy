@@ -76,24 +76,37 @@ export const RevenueSummaryPreview = ({ report, onPageChange }: RevenueSummaryPr
     }
 
     // Helper function to format payment method names
-    const formatPaymentMethodName = (name: string) => {
-        if (!name) return 'Unknown'
+    const formatPaymentMethodName = (name: any) => {
+        if (name === null || name === undefined) return 'Unknown'
 
-        const formatted = name
+        // Normalize input to a string. If it's an object, prefer common properties.
+        let raw: string
+        if (typeof name === 'string') {
+            raw = name
+        } else if (typeof name === 'object') {
+            if (typeof (name as any).method__name === 'string') raw = (name as any).method__name
+            else if (typeof (name as any).name === 'string') raw = (name as any).name
+            else raw = String(name)
+        } else {
+            raw = String(name)
+        }
+
+        const formatted = String(raw)
             .replace(/-/g, ' ')
             .replace(/\b\w/g, l => l.toUpperCase())
 
-        // Handle specific cases
-        if (formatted.toLowerCase().includes('t pesa')) {
+        // Handle specific cases using the lowercase form
+        const lower = formatted.toLowerCase()
+        if (lower.includes('t pesa')) {
             return 'T-Pesa'
         }
-        if (formatted.toLowerCase().includes('tigopesa')) {
+        if (lower.includes('tigopesa')) {
             return 'Tigo Pesa'
         }
-        if (formatted.toLowerCase().includes('airtel')) {
+        if (lower.includes('airtel')) {
             return 'Airtel Money'
         }
-        if (formatted.toLowerCase().includes('mpesa')) {
+        if (lower.includes('mpesa')) {
             return 'M-Pesa'
         }
 
@@ -101,8 +114,20 @@ export const RevenueSummaryPreview = ({ report, onPageChange }: RevenueSummaryPr
     }
 
     // Get color for payment method
-    const getPaymentMethodColor = (name: string) => {
-        const lowerName = name.toLowerCase()
+    const getPaymentMethodColor = (name: any) => {
+        // Normalize to string similarly to the formatter
+        let raw: string
+        if (typeof name === 'string') {
+            raw = name
+        } else if (typeof name === 'object') {
+            if (typeof (name as any).method__name === 'string') raw = (name as any).method__name
+            else if (typeof (name as any).name === 'string') raw = (name as any).name
+            else raw = String(name)
+        } else {
+            raw = String(name)
+        }
+
+        const lowerName = String(raw).toLowerCase()
         if (lowerName.includes('airtel')) return '#22c55e' // green
         if (lowerName.includes('mpesa')) return '#f59e0b' // orange
         if (lowerName.includes('tigo') || lowerName.includes('t pesa')) return '#3b82f6' // blue
