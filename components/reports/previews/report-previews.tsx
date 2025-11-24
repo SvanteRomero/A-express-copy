@@ -278,7 +278,7 @@ export const ReportPreview = ({
         case "payment_methods":
             return <PaymentMethodsPreview report={data as PaymentMethodsReport} />
         case "turnaround_time":
-            return <TurnaroundTimePreview report={data} />
+            return <TurnaroundTimePreview report={data} searchTerm={""} />
         case "laptops_in_shop_by_location":
             return <InventoryLocationPreview report={data as InventoryLocationReport} />
         default:
