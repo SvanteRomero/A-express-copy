@@ -52,8 +52,8 @@ export const financialReports: ReportCard[] = [
   },
   {
     id: "payment-methods",
-    title: "Payment Method Breakdown",
-    description: "Analyze payments by cash, card, and digital methods",
+      title: "Revenue Summary Report",
+      description: "Comprehensive summary of revenue by payment methods and channels",
     icon: PieChart,
     href: "/dashboard/reports/payment-methods",
     category: "Financial",

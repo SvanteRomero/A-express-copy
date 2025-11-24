@@ -83,8 +83,8 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                 <CardContent className="p-6">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">Payment Methods Report</h1>
-                            <p className="text-gray-600 mt-1">Live data from your backend API</p>
+                                <h1 className="text-2xl font-bold text-gray-900">Revenue Summary Report</h1>
+                                <p className="text-gray-600 mt-1">Live data from your backend API</p>
                         </div>
                         <div className="flex flex-col items-end gap-2">
                             <Badge variant="secondary" className="bg-white text-blue-700 border-blue-200">
@@ -100,9 +100,9 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                             )}
                         </div>
                     </div>
-                    <p className="text-gray-700 mt-3">
-                        Analyze payments by cash, card, and digital methods. Track revenue and expenditure across different payment channels.
-                    </p>
+                        <p className="text-gray-700 mt-3">
+                            Comprehensive summary of revenue by payment methods and channels. Track revenue and expenditure across different payment channels.
+                        </p>
                 </CardContent>
             </Card>
 
@@ -297,9 +297,9 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                     {/* Detailed Table */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Payment Methods Breakdown</CardTitle>
+                            <CardTitle>Revenue Summary Breakdown</CardTitle>
                             <CardDescription>
-                                Comprehensive view of all payment methods with detailed metrics
+                                Comprehensive view of all revenue and payment methods with detailed metrics
                                 {durationInfo && (
                                     <span className="block text-gray-600 text-sm mt-1">
                                         Data from {getDateRangeDisplay()} ({durationInfo.description})
