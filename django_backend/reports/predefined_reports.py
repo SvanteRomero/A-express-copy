@@ -280,6 +280,20 @@ class PredefinedReportGenerator:
                 "total_technicians": 0,
             }
 
+        # --- New: Get activity counts for all technicians in one go ---
+        assignment_activities = TaskActivity.objects.filter(
+            type=TaskActivity.ActivityType.ASSIGNMENT,
+            user__in=technicians
+        ).values('user').annotate(count=Count('id'))
+        assignment_counts = {item['user']: item['count'] for item in assignment_activities}
+
+        workshop_activities = TaskActivity.objects.filter(
+            type=TaskActivity.ActivityType.WORKSHOP,
+            user__in=technicians
+        ).values('user').annotate(count=Count('id'))
+        workshop_counts = {item['user']: item['count'] for item in workshop_activities}
+        # --- End New ---
+
         final_report = []
 
         for technician in technicians:
@@ -350,7 +364,15 @@ class PredefinedReportGenerator:
                         }
                     )
 
-            # Calculate performance metrics
+            # --- New: Calculate performance metrics using activity counts ---
+            total_tasks_assigned = assignment_counts.get(technician.id, 0)
+            tasks_sent_to_workshop = workshop_counts.get(technician.id, 0)
+            workshop_rate = (
+                (tasks_sent_to_workshop / total_tasks_assigned * 100)
+                if total_tasks_assigned > 0
+                else 0
+            )
+
             completed_tasks_count = len(completed_tasks_data)
             total_revenue = sum(task["revenue"] for task in completed_tasks_data)
             avg_completion_hours = (
@@ -380,23 +402,20 @@ class PredefinedReportGenerator:
                 "avg_completion_hours": round(avg_completion_hours, 1),
                 "current_in_progress_tasks": in_progress_tasks,
                 "current_assigned_tasks": current_task_count,
+                # New metrics
+                "tasks_sent_to_workshop": tasks_sent_to_workshop,
+                "workshop_rate": round(workshop_rate, 2),
                 # Task status breakdown
                 "tasks_by_status": tasks_by_status,
                 "status_counts": status_counts,
                 # Detailed completed tasks
                 "completed_tasks_detail": completed_tasks_data,
                 # Summary stats
-                "total_tasks_handled": all_tasks.count(),
+                "total_tasks_handled": total_tasks_assigned, # Use activity-based count
                 "completion_rate": (
-                    (completed_tasks_count / all_tasks.count() * 100)
-                    if all_tasks.count() > 0
+                    (completed_tasks_count / total_tasks_assigned * 100)
+                    if total_tasks_assigned > 0
                     else 0
-                ),
-                # Current workload indicators
-                "workload_level": (
-                    "High"
-                    if current_task_count > 8
-                    else "Medium" if current_task_count > 4 else "Low"
                 ),
             }
 
