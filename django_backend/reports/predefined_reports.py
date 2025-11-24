@@ -12,66 +12,8 @@ class PredefinedReportGenerator:
 
 
     @staticmethod
-    def generate_revenue_summary_report(date_range="last_7_days", start_date=None, end_date=None):
-        """Generate an accurate financial revenue summary report"""
-        date_filter, actual_date_range, duration_days, duration_description = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date)
-
-        # FILTER: Only positive amounts = actual revenue
-        revenue_filter = Q(date_filter) & Q(amount__gt=0)
-
-        # Optional: Capture refunds separately (negative amounts)
-        refund_filter = Q(date_filter) & Q(amount__lt=0)
-
-        # --- 1. Daily Revenue (only income) ---
-        payments = (
-            Payment.objects.filter(revenue_filter)
-            .values("date")
-            .annotate(daily_revenue=Sum("amount"))
-            .order_by("date")
-        )
-
-        # --- 2. Monthly Totals (Revenue-focused) ---
-        monthly_revenue = Payment.objects.filter(revenue_filter).aggregate(
-            total_revenue=Sum("amount"),
-            average_payment=Avg("amount"),
-            payment_count=Count("id"),
-        )
-
-        # --- 3. Refund Summary (for transparency) ---
-        refund_summary = Payment.objects.filter(refund_filter).aggregate(
-            total_refunds=Sum("amount"),  # This will be negative
-            refund_count=Count("id"),
-        )
-        total_refunds = abs(refund_summary["total_refunds"] or 0)
-        net_revenue = (monthly_revenue["total_revenue"] or 0) - total_refunds
-
-        # --- 4. Payment Methods (only for revenue, not refunds) ---
-        payment_methods = (
-            Payment.objects.filter(revenue_filter)
-            .values("method__name")
-            .annotate(total=Sum("amount"), count=Count("id"))
-            .order_by("-total")
-        )
-
-        return {
-            "payments_by_date": list(payments),
-            "monthly_totals": {
-                "total_revenue": monthly_revenue["total_revenue"] or 0,
-                "total_refunds": total_refunds,
-                "net_revenue": net_revenue,
-                "average_payment": monthly_revenue["average_payment"] or 0,
-                "payment_count": monthly_revenue["payment_count"] or 0,
-                "refund_count": refund_summary["refund_count"] or 0,
-            },
-            "payment_methods": list(payment_methods),
-            "date_range": actual_date_range,
-            "duration_info": {
-                "days": duration_days,
-                "description": duration_description
-            },
-            "start_date": start_date,
-            "end_date": end_date,
-        }
+    # NOTE: The revenue summary generator has been removed.
+    # If you need to restore revenue reporting, reintroduce a generator here.
 
  
         
@@ -280,6 +222,20 @@ class PredefinedReportGenerator:
                 "total_technicians": 0,
             }
 
+        # --- New: Get activity counts for all technicians in one go ---
+        assignment_activities = TaskActivity.objects.filter(
+            type=TaskActivity.ActivityType.ASSIGNMENT,
+            user__in=technicians
+        ).values('user').annotate(count=Count('id'))
+        assignment_counts = {item['user']: item['count'] for item in assignment_activities}
+
+        workshop_activities = TaskActivity.objects.filter(
+            type=TaskActivity.ActivityType.WORKSHOP,
+            user__in=technicians
+        ).values('user').annotate(count=Count('id'))
+        workshop_counts = {item['user']: item['count'] for item in workshop_activities}
+        # --- End New ---
+
         final_report = []
 
         for technician in technicians:
@@ -350,7 +306,15 @@ class PredefinedReportGenerator:
                         }
                     )
 
-            # Calculate performance metrics
+            # --- New: Calculate performance metrics using activity counts ---
+            total_tasks_assigned = assignment_counts.get(technician.id, 0)
+            tasks_sent_to_workshop = workshop_counts.get(technician.id, 0)
+            workshop_rate = (
+                (tasks_sent_to_workshop / total_tasks_assigned * 100)
+                if total_tasks_assigned > 0
+                else 0
+            )
+
             completed_tasks_count = len(completed_tasks_data)
             total_revenue = sum(task["revenue"] for task in completed_tasks_data)
             avg_completion_hours = (
@@ -380,23 +344,20 @@ class PredefinedReportGenerator:
                 "avg_completion_hours": round(avg_completion_hours, 1),
                 "current_in_progress_tasks": in_progress_tasks,
                 "current_assigned_tasks": current_task_count,
+                # New metrics
+                "tasks_sent_to_workshop": tasks_sent_to_workshop,
+                "workshop_rate": round(workshop_rate, 2),
                 # Task status breakdown
                 "tasks_by_status": tasks_by_status,
                 "status_counts": status_counts,
                 # Detailed completed tasks
                 "completed_tasks_detail": completed_tasks_data,
                 # Summary stats
-                "total_tasks_handled": all_tasks.count(),
+                "total_tasks_handled": total_tasks_assigned, # Use activity-based count
                 "completion_rate": (
-                    (completed_tasks_count / all_tasks.count() * 100)
-                    if all_tasks.count() > 0
+                    (completed_tasks_count / total_tasks_assigned * 100)
+                    if total_tasks_assigned > 0
                     else 0
-                ),
-                # Current workload indicators
-                "workload_level": (
-                    "High"
-                    if current_task_count > 8
-                    else "Medium" if current_task_count > 4 else "Low"
                 ),
             }
 

@@ -119,71 +119,8 @@ def get_report_field_options(request):
 @permission_classes([permissions.IsAuthenticated, IsAdminOrManagerOrFrontDeskOrAccountant])
 def get_revenue_summary(request):
     """Get revenue summary report with custom date range and pagination support"""
-    
-    date_range = request.GET.get("date_range", "last_30_days")
-    start_date = request.GET.get("start_date")
-    end_date = request.GET.get("end_date")
-    page = int(request.GET.get("page", 1))
-    page_size = int(request.GET.get("page_size", 10))
-   
-    try:
-        print("🔄 Calling PredefinedReportGenerator.generate_revenue_summary_report...")
-        
-        report_data = PredefinedReportGenerator.generate_revenue_summary_report(
-            date_range, start_date, end_date
-        )
-        
-        print("✅ Report data generated successfully")
-        
-        # Add pagination to payments_by_date
-        payments_by_date = report_data.get("payments_by_date", [])
-        total_payments = len(payments_by_date)
-        start_index = (page - 1) * page_size
-        end_index = start_index + page_size
-        
-        # Handle pagination bounds
-        if start_index >= total_payments:
-            paginated_payments = []
-        else:
-            paginated_payments = payments_by_date[start_index:end_index]
-        
-        # Create paginated response
-        paginated_report = {
-            "payments_by_date": paginated_payments,
-            "monthly_totals": report_data.get("monthly_totals", {}),
-            "payment_methods": report_data.get("payment_methods", []),
-            "date_range": report_data.get("date_range"),
-            "duration_info": report_data.get("duration_info", {}),
-            "start_date": report_data.get("start_date"),
-            "end_date": report_data.get("end_date"),
-            "pagination": {
-                "current_page": page,
-                "page_size": page_size,
-                "total_payments": total_payments,
-                "total_pages": (total_payments + page_size - 1) // page_size,
-                "has_next": end_index < total_payments,
-                "has_previous": page > 1
-            }
-        }
-        
-        return Response(
-            {"success": True, "report": paginated_report, "type": "revenue_summary"}
-        )
-        
-    except Exception as e:
-        print(f"❌ ERROR in get_revenue_summary view:")
-        print(f"❌ Error type: {type(e).__name__}")
-        print(f"❌ Error message: {str(e)}")
-        
-        # Print full traceback to see exactly where the error occurs
-        import traceback
-        print("🔍 Full traceback:")
-        traceback.print_exc()
-        
-        return Response(
-            {"success": False, "error": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
+    # NOTE: This report has been removed. The endpoint and generator were deleted.
+    return Response({"success": False, "error": "Revenue summary report has been removed."}, status=status.HTTP_410_GONE)
 
 
 @api_view(["GET"])

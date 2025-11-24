@@ -18,123 +18,7 @@ const initializePDF = () => {
     return pdf;
 };
 
-// Revenue Summary PDF
-const generateRevenueSummaryPDF = (pdf: jsPDF, data: any, startY: number) => {
-    let yPosition = startY
-
-    pdf.setFontSize(14)
-    pdf.setTextColor(0, 0, 0)
-    pdf.text("Revenue Summary Report", 20, yPosition)
-    yPosition += 15
-
-    // Summary Statistics
-    const monthlyTotals = data.monthly_totals || {}
-    const paymentMethods = data.payment_methods || []
-    const paymentsByDate = data.payments_by_date || []
-    const dateRange = data.date_range || 'last_7_days'
-
-    const summaryData = [
-        ["Total Revenue", `TSh ${monthlyTotals.total_revenue?.toLocaleString() || '0'}`],
-        ["Total Payments", monthlyTotals.payment_count?.toString() || "0"],
-        ["Average Payment", `TSh ${monthlyTotals.average_payment?.toLocaleString() || '0'}`],
-        ["Date Range", dateRange.replace(/_/g, ' ')]
-    ]
-
-    autoTable(pdf, {
-        head: [["Metric", "Value"]],
-        body: summaryData,
-        startY: yPosition,
-        theme: "grid",
-        headStyles: { fillColor: [34, 197, 94] },
-        margin: { left: 20, right: 20 },
-    })
-
-    yPosition = (pdf as any).lastAutoTable.finalY + 15
-
-    // Daily Revenue Data
-    if (paymentsByDate.length > 0) {
-        pdf.setFontSize(12)
-        pdf.text("Daily Revenue Breakdown", 20, yPosition)
-        yPosition += 10
-
-        const dailyData = paymentsByDate.map((day: any) => [
-            new Date(day.date).toLocaleDateString(),
-            `TSh ${day.daily_revenue?.toLocaleString() || '0'}`,
-            day.payment_count?.toString() || "1"
-        ])
-
-        autoTable(pdf, {
-            head: [["Date", "Daily Revenue", "Payments"]],
-            body: dailyData,
-            startY: yPosition,
-            theme: "grid",
-            headStyles: { fillColor: [59, 130, 246] },
-            margin: { left: 20, right: 20 },
-        })
-
-        yPosition = (pdf as any).lastAutoTable.finalY + 15
-    }
-
-    // Payment Methods Breakdown
-    if (paymentMethods.length > 0) {
-        pdf.setFontSize(12)
-        pdf.text("Payment Methods Breakdown", 20, yPosition)
-        yPosition += 10
-
-        const paymentMethodData = paymentMethods.map((method: any) => [
-            method.method__name?.replace(/-/g, ' ') || 'Unknown',
-            `TSh ${method.total?.toLocaleString() || '0'}`,
-            method.count?.toString() || "0",
-            monthlyTotals.total_revenue ? `${((method.total / monthlyTotals.total_revenue) * 100).toFixed(1)}%` : "0%"
-        ])
-
-        autoTable(pdf, {
-            head: [["Payment Method", "Total Amount", "Payment Count", "Percentage"]],
-            body: paymentMethodData,
-            startY: yPosition,
-            theme: "grid",
-            headStyles: { fillColor: [168, 85, 247] },
-            margin: { left: 20, right: 20 },
-        })
-
-        yPosition = (pdf as any).lastAutoTable.finalY + 10
-
-        // Revenue Insights
-        const topPaymentMethod = paymentMethods[0]
-        const totalDays = paymentsByDate.length
-        const averageDailyRevenue = monthlyTotals.total_revenue && totalDays > 0
-            ? monthlyTotals.total_revenue / totalDays
-            : 0
-
-        pdf.setFontSize(11)
-        pdf.setTextColor(59, 130, 246)
-        pdf.text("Revenue Insights:", 20, yPosition)
-        yPosition += 8
-
-        pdf.setFontSize(9)
-        pdf.setTextColor(80, 80, 80)
-
-        if (topPaymentMethod) {
-            pdf.text(`• Top Payment Method: ${topPaymentMethod.method__name?.replace(/-/g, ' ')} (TSh ${topPaymentMethod.total?.toLocaleString()})`, 20, yPosition)
-            yPosition += 5
-        }
-
-        pdf.text(`• Period Covered: ${totalDays} day${totalDays !== 1 ? 's' : ''}`, 20, yPosition)
-        yPosition += 5
-
-        if (averageDailyRevenue > 0) {
-            pdf.text(`• Average Daily Revenue: TSh ${averageDailyRevenue.toLocaleString()}`, 20, yPosition)
-            yPosition += 5
-        }
-
-        pdf.text(`• Total Payment Methods: ${paymentMethods.length}`, 20, yPosition)
-    } else {
-        // No payment methods data
-        pdf.setFontSize(10)
-        pdf.setTextColor(100, 100, 100)
-        pdf.text("No payment method data available for this period", 20, yPosition)
-    }
-}
+// Revenue summary PDF generation removed
 
 // Outstanding Payments PDF
 const generateOutstandingPaymentsPDF = (pdf: jsPDF, data: any, startY: number) => {
@@ -950,7 +834,6 @@ export const generatePDF = async (
         } else {
             // Otherwise fetch the report data
             const apiEndpoints: { [key: string]: string } = {
-                'revenue-summary': '/api/reports/revenue-summary/',
                 'outstanding-payments': '/api/reports/outstanding-payments/',
                 'payment-methods': '/api/reports/payment-methods/',
                 'task-status': '/api/reports/task-status/',
@@ -967,7 +850,7 @@ export const generatePDF = async (
             }
 
             let url = `http://localhost:8000${endpoint}`
-            const dateRangeReports = ['revenue-summary', 'technician-performance', 'payment-methods']
+            const dateRangeReports = ['technician-performance', 'payment-methods']
             if (dateRangeReports.includes(reportId)) {
                 const params = new URLSearchParams({ date_range: 'last_30_days' })
                 url += `?${params.toString()}`
@@ -1046,9 +929,6 @@ export const generatePDF = async (
                 break
             case 'outstanding_payments':
                 generateOutstandingPaymentsPDF(pdf, reportData, yPosition)
-                break
-            case 'revenue_summary':
-                generateRevenueSummaryPDF(pdf, reportData, yPosition)
                 break
             case 'turnaround_time':
                 generateTurnaroundTimePDF(pdf, reportData, yPosition)

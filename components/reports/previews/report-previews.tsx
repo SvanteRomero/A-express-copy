@@ -2,7 +2,6 @@
 
 import { OutstandingPaymentsPreview } from "./outstanding-payments-preview"
 import { TechnicianPerformancePreview } from "./technician-performance-preview"
-import { RevenueSummaryPreview } from "./revenue-summary-preview"
 import { TaskStatusPreview } from "./task-status-preview"
 import { TechnicianWorkloadPreview } from "./technician-workload-preview"
 import { PaymentMethodsPreview } from "./payment-methods-preview"
@@ -271,13 +270,7 @@ export const ReportPreview = ({
             )
         case "technician_performance":
             return <TechnicianPerformancePreview report={data as TechnicianPerformanceReport} />
-        case "revenue_summary":
-            return (
-                <RevenueSummaryPreview
-                    report={data as RevenueSummaryReport}
-                    onPageChange={onPageChange}
-                />
-            )
+        // 'revenue_summary' preview removed
         case "task_status":
             return <TaskStatusPreview report={data as TaskStatusReport} />
         case "technician_workload":
@@ -285,7 +278,7 @@ export const ReportPreview = ({
         case "payment_methods":
             return <PaymentMethodsPreview report={data as PaymentMethodsReport} />
         case "turnaround_time":
-            return <TurnaroundTimePreview report={data} />
+            return <TurnaroundTimePreview report={data} searchTerm={""} />
         case "laptops_in_shop_by_location":
             return <InventoryLocationPreview report={data as InventoryLocationReport} />
         default:

@@ -10,7 +10,6 @@ urlpatterns = [
         views.get_report_field_options,
         name="get_report_field_options",
     ),
-    path("reports/revenue-summary/", views.get_revenue_summary, name="revenue_summary"),
     path("revenue-overview/", views.revenue_overview, name="revenue_overview"),
     path(
         "reports/outstanding-payments/",

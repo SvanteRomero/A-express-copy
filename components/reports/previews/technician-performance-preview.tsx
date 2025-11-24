@@ -42,6 +42,8 @@ interface TechnicianPerformance {
     avg_completion_hours: number
     current_in_progress_tasks: number
     current_assigned_tasks: number
+    tasks_sent_to_workshop: number
+    workshop_rate: number
     tasks_by_status: {
         [status: string]: TaskDetail[]
     }
@@ -51,7 +53,6 @@ interface TechnicianPerformance {
     completed_tasks_detail: CompletedTaskDetail[]
     total_tasks_handled: number
     completion_rate: number
-    workload_level: string
 }
 
 interface TechnicianPerformanceReport {
@@ -84,14 +85,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
         }
     }
 
-    const getWorkloadColor = (level: string) => {
-        switch (level) {
-            case 'High': return 'bg-red-100 text-red-800'
-            case 'Medium': return 'bg-yellow-100 text-yellow-800'
-            case 'Low': return 'bg-green-100 text-green-800'
-            default: return 'bg-gray-100 text-gray-800'
-        }
-    }
+
 
     const toggleTechnicianDetails = (technicianId: number) => {
         setExpandedTechnician(expandedTechnician === technicianId ? null : technicianId)
@@ -148,7 +142,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                     <TableHead>Total Revenue</TableHead>
                                     <TableHead>Avg Completion</TableHead>
                                     <TableHead>Completion Rate</TableHead>
-                                    <TableHead>Workload</TableHead>
+                                    <TableHead>Workshop Rate</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -193,8 +187,8 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge className={getWorkloadColor(tech.workload_level)}>
-                                                    {tech.workload_level}
+                                                <Badge variant={tech.workshop_rate >= 50 ? "destructive" : "secondary"}>
+                                                    {tech.workshop_rate.toFixed(1)}%
                                                 </Badge>
                                             </TableCell>
                                         </TableRow>
@@ -206,7 +200,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                     <div className="space-y-4">
                                                         {/* Task Status Breakdown */}
                                                         <div>
-                                                            <h4 className="font-semibold mb-2">Task Status Breakdown</h4>
+                                                            <h4 className="font-semibold mb-2">Performance Metrics</h4>
                                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                                                 {Object.entries(tech.status_counts).map(([status, count]) => (
                                                                     <div key={`${tech.technician_id}-status-${status}`} className="text-center p-2 bg-white rounded border">
@@ -214,6 +208,11 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                                         <div className="text-sm text-gray-600">{status}</div>
                                                                     </div>
                                                                 ))}
+
+                                                                <div className="text-center p-2 bg-white rounded border">
+                                                                    <div className="font-semibold">{tech.workshop_rate.toFixed(1)}%</div>
+                                                                    <div className="text-sm text-gray-600">Workshop Rate</div>
+                                                                </div>
                                                             </div>
                                                         </div>
 
@@ -238,25 +237,9 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                         {/* Current Tasks by Status */}
                                                         <div>
                                                             <h4 className="font-semibold mb-2">Current Tasks</h4>
-                                                            <div className="space-y-2">
-                                                                {Object.entries(tech.tasks_by_status)
-                                                                    .filter(([status]) => !['Completed', 'Picked Up', 'Terminated'].includes(status))
-                                                                    .map(([status, tasks]) => (
-                                                                        <div key={`${tech.technician_id}-current-${status}`}>
-                                                                            <h5 className="font-medium text-sm mb-1">{status} ({tasks.length})</h5>
-                                                                            <div className="space-y-1">
-                                                                                {tasks.slice(0, 3).map((task) => (
-                                                                                    <div key={`${tech.technician_id}-task-${task.task_id}`} className="text-sm p-1 bg-white rounded">
-                                                                                        {task.task_title} - {task.customer_name} ({task.laptop_model})
-                                                                                    </div>
-                                                                                ))}
-                                                                                {tasks.length > 3 && (
-                                                                                    <div className="text-xs text-gray-500">+{tasks.length - 3} more tasks</div>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
-                                                            </div>
+                             .
+.
+.
                                                         </div>
                                                     </div>
                                                 </TableCell>

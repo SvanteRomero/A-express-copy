@@ -6,131 +6,14 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { Button } from "@/components/ui/core/button"
 import { ChevronLeft, ChevronRight } from "lucide-react" // Import icons
 
-const ChartContainer = ({ children, className }: any) => {
-    return <div className={className}>{children}</div>
+// Revenue summary preview removed. Keep a small stub to avoid accidental import errors.
+"use client"
+
+export const RevenueSummaryPreview = () => {
+  // This preview component was removed when the Revenue Summary report implementation
+  // was deleted. Returning null to avoid rendering.
+  return null
 }
-
-const ChartTooltip = (props: any) => {
-    return <Tooltip {...props} />
-}
-
-interface RevenueSummaryReport {
-    payments_by_date: {
-        date: string
-        daily_revenue: number
-    }[]
-    monthly_totals: {
-        total_revenue: number
-        total_refunds: number
-        net_revenue: number
-        average_payment: number
-        payment_count: number
-        refund_count: number
-    }
-    payment_methods: {
-        method__name: string
-        total: number
-        count: number
-    }[]
-    date_range: string
-    duration_info?: {
-        days: number
-        description: string
-    }
-    start_date?: string
-    end_date?: string
-    pagination?: {
-        current_page: number
-        page_size: number
-        total_payments: number
-        total_pages: number
-        has_next: boolean
-        has_previous: boolean
-    }
-}
-
-interface RevenueSummaryPreviewProps {
-    report: RevenueSummaryReport
-    onPageChange?: (page: number, pageSize: number) => void
-}
-
-export const RevenueSummaryPreview = ({ report, onPageChange }: RevenueSummaryPreviewProps) => {
-    // Use the actual data structure from your API response
-    const monthlyTotals = report.monthly_totals || {}
-    const paymentMethods = report.payment_methods || []
-    const paymentsByDate = report.payments_by_date || []
-    const dateRange = report.date_range || 'last_7_days'
-    const durationInfo = report.duration_info || null
-    const startDate = report.start_date
-    const endDate = report.end_date
-    const pagination = report.pagination
-
-    // Format date range display
-    const getDateRangeDisplay = () => {
-        if (dateRange === 'custom' && startDate && endDate) {
-            const start = new Date(startDate).toLocaleDateString()
-            const end = new Date(endDate).toLocaleDateString()
-            return `${start} - ${end}`
-        }
-        return dateRange.replace(/_/g, ' ')
-    }
-
-    // Helper function to format payment method names
-    const formatPaymentMethodName = (name: string) => {
-        if (!name) return 'Unknown'
-
-        const formatted = name
-            .replace(/-/g, ' ')
-            .replace(/\b\w/g, l => l.toUpperCase())
-
-        // Handle specific cases
-        if (formatted.toLowerCase().includes('t pesa')) {
-            return 'T-Pesa'
-        }
-        if (formatted.toLowerCase().includes('tigopesa')) {
-            return 'Tigo Pesa'
-        }
-        if (formatted.toLowerCase().includes('airtel')) {
-            return 'Airtel Money'
-        }
-        if (formatted.toLowerCase().includes('mpesa')) {
-            return 'M-Pesa'
-        }
-
-        return formatted
-    }
-
-    // Get color for payment method
-    const getPaymentMethodColor = (name: string) => {
-        const lowerName = name.toLowerCase()
-        if (lowerName.includes('airtel')) return '#22c55e' // green
-        if (lowerName.includes('mpesa')) return '#f59e0b' // orange
-        if (lowerName.includes('tigo') || lowerName.includes('t pesa')) return '#3b82f6' // blue
-        return '#6b7280' // gray
-    }
-
-    // Handle page change
-    const handlePageChange = (newPage: number) => {
-        console.log('Requested page change to:', newPage)
-        if (onPageChange && pagination) {
-            onPageChange(newPage, pagination.page_size)
-        }
-    }
-
-    return (
-        <div className="space-y-6">
-
-
-
-            <div className="grid gap-4 md:grid-cols-4">
-                <Card>
-                    <CardContent className="p-4">
-                        <p className="text-sm text-gray-600">Total Revenue</p>
-                        <p className="text-2xl font-bold text-green-600">
-                            TSh {monthlyTotals.total_revenue?.toLocaleString() || '0'}
-                        </p>
-                    </CardContent>
-                </Card>
                 <Card>
                     <CardContent className="p-4">
                         <p className="text-sm text-gray-600">Total Payments</p>

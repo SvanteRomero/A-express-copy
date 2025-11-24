@@ -96,8 +96,8 @@ export interface Task {
   approved_date: string;
   paid_date: string;
   date_out: string;
-  negotiated_by: number;
-  negotiated_by_details: UserResponse;
+  negotiated_by: number | null;
+  negotiated_by_details: UserResponse | null;
   activities: any[];
   payments: any[];
   outstanding_balance: number;
@@ -110,6 +110,12 @@ export interface Task {
   qc_notes: string;
   workshop_status: string | null;
   sent_out_by: number;
+  original_technician_snapshot?: number | null;
+  original_location_snapshot?: string | null;
+  latest_pickup_at?: string | null;
+  latest_pickup_by?: number | null;
+  original_technician?: number | null;
+  original_technician_details?: UserResponse | null;
   referred_by: string;
   referred_by_details: Referrer;
 }

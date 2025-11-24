@@ -63,7 +63,7 @@ apiClient.interceptors.response.use(
   }
 );
 
-export const getProfile = () => apiClient.get('/profile/');
+export const getProfile = () => apiClient.get('/users/profile/');
 export const getTasks = (params: any = {}) => apiClient.get('/tasks/', { params });
 export const getDebts = (params: any = {}) => apiClient.get('/tasks/debts/', { params });
 export const getTask = (id: string) => apiClient.get(`/tasks/${id}/`);
@@ -105,13 +105,18 @@ export const login = async (username: any, password: any) => {
 };
 export const registerUser = (userData: any) => apiClient.post('/users/', userData);
 export const listUsers = () => apiClient.get('/users/');
-export const updateProfile = (profileData: any) => apiClient.patch('/profile/update/', profileData);
-export const changePassword = (passwordData: any) => apiClient.post('/profile/change-password/', passwordData);
+export const updateProfile = (profileData: any) => apiClient.patch('/users/profile/update/', profileData);
+export const changePassword = (passwordData: any) => apiClient.post('/users/profile/change-password/', passwordData);
 export const uploadProfilePicture = (formData: any) => apiClient.post('/profile/upload-picture/', formData, {
   headers: {
     'Content-Type': 'multipart/form-data',
   },
 });
+export const getSessions = () => apiClient.get('/users/profile/sessions/');
+export const revokeSession = (sessionId: string) => apiClient.post(`/users/profile/sessions/${sessionId}/revoke/`);
+export const revokeAllSessions = () => apiClient.post('/users/profile/sessions/revoke-all/');
+export const getAuditLogs = (params: any = {}) => apiClient.get('/users/audit/logs/', { params });
+export const getProfileActivity = (params: any = {}) => apiClient.get('/users/profile/activity/', { params });
 export const getUserDetail = (userId: any) => apiClient.get(`/users/${userId}/`);
 export const updateUser = (userId: any, userData: any) => apiClient.patch(`/users/${userId}/update/`, userData);
 export const deleteUser = (userId: any) => apiClient.delete(`/users/${userId}/delete/`);

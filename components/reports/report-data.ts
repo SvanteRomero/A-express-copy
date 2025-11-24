@@ -41,17 +41,6 @@ export interface SelectedReport {
 // Data
 export const financialReports: ReportCard[] = [
   {
-    id: "revenue-summary",
-    title: "Revenue Summary",
-    description: "View daily, weekly, monthly income trends and patterns",
-    icon: DollarSign,
-    href: "/dashboard/reports/revenue",
-    badge: "Popular",
-    category: "Financial",
-    lastGenerated: "2 hours ago",
-    canGeneratePDF: true,
-  },
-  {
     id: "outstanding-payments",
     title: "Outstanding Payments",
     description: "List of unpaid or partially paid tasks requiring follow-up",
@@ -63,8 +52,8 @@ export const financialReports: ReportCard[] = [
   },
   {
     id: "payment-methods",
-    title: "Payment Method Breakdown",
-    description: "Analyze payments by cash, card, and digital methods",
+      title: "Revenue Summary Report",
+      description: "Comprehensive summary of revenue by payment methods and channels",
     icon: PieChart,
     href: "/dashboard/reports/payment-methods",
     category: "Financial",
@@ -100,7 +89,7 @@ export const operationalReports: ReportCard[] = [
 export const technicianReports: ReportCard[] = [
   {
     id: "performance",
-    title: "Completed Tasks by Technician",
+    title: "Technician Performance Report",
     description: "Performance metrics per technician over time periods",
     icon: TrendingUp,
     href: "/dashboard/reports/performance",

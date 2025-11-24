@@ -63,7 +63,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
             const end = new Date(endDate).toLocaleDateString()
             return `${start} - ${end}`
         }
-        return dateRange.replace(/_/g, ' ')
+        return String(dateRange || '').replace(/_/g, ' ')
     }
 
     // Prepare data for bar chart - show top 5 methods by absolute value
@@ -83,8 +83,8 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                 <CardContent className="p-6">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">Payment Methods Report</h1>
-                            <p className="text-gray-600 mt-1">Live data from your backend API</p>
+                                <h1 className="text-2xl font-bold text-gray-900">Revenue Summary Report</h1>
+                                <p className="text-gray-600 mt-1">Live data from your backend API</p>
                         </div>
                         <div className="flex flex-col items-end gap-2">
                             <Badge variant="secondary" className="bg-white text-blue-700 border-blue-200">
@@ -100,9 +100,9 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                             )}
                         </div>
                     </div>
-                    <p className="text-gray-700 mt-3">
-                        Analyze payments by cash, card, and digital methods. Track revenue and expenditure across different payment channels.
-                    </p>
+                        <p className="text-gray-700 mt-3">
+                            Comprehensive summary of revenue by payment methods and channels. Track revenue and expenditure across different payment channels.
+                        </p>
                 </CardContent>
             </Card>
 
@@ -159,12 +159,12 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                     <BarChart data={topMethods} layout="vertical" margin={{ top: 20, right: 30, left: 100, bottom: 20 }}>
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis type="number" />
-                                        <YAxis 
-                                            type="category" 
-                                            dataKey="method_name" 
+                                        <YAxis
+                                            type="category"
+                                            dataKey="method_name"
                                             width={80}
                                             tick={{ fontSize: 12 }}
-                                            tickFormatter={(value) => value.replace(/-/g, ' ')}
+                                            tickFormatter={(value) => String(value || '').replace(/-/g, ' ')}
                                         />
                                         <Tooltip
                                             formatter={(value: any, name: any, props: any) => {
@@ -175,13 +175,13 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                                 }
                                                 return [value, name]
                                             }}
-                                            labelFormatter={(label) => `Method: ${label.replace(/-/g, ' ')}`}
+                                            labelFormatter={(label) => `Method: ${String(label || '').replace(/-/g, ' ')}`}
                                         />
                                         <Legend />
-                                        <Bar 
-                                            dataKey="total_amount" 
-                                            name="Revenue" 
-                                            fill="#22c55e" 
+                                        <Bar
+                                            dataKey="total_amount"
+                                            name="Revenue"
+                                            fill="#22c55e"
                                             radius={[0, 4, 4, 0]}
                                             maxBarSize={40}
                                         />
@@ -217,7 +217,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                                 <div className="flex justify-between items-start">
                                                     <div>
                                                         <p className="font-medium capitalize text-gray-900">
-                                                            {method.method_name.replace(/-/g, ' ')}
+                                                            {String(method.method_name || '').replace(/-/g, ' ')}
                                                         </p>
                                                         <p className="text-sm text-gray-500 mt-1">
                                                             {method.payment_count} payments • Avg: TSh {method.average_payment?.toLocaleString()}
@@ -267,7 +267,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                                 <div className="flex justify-between items-start">
                                                     <div>
                                                         <p className="font-medium capitalize text-gray-900">
-                                                            {method.method_name.replace(/-/g, ' ')}
+                                                            {String(method.method_name || '').replace(/-/g, ' ')}
                                                         </p>
                                                         <p className="text-sm text-gray-500 mt-1">
                                                             {method.payment_count} payments • Avg: TSh {method.average_payment?.toLocaleString()}
@@ -297,9 +297,9 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                     {/* Detailed Table */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Payment Methods Breakdown</CardTitle>
+                            <CardTitle>Revenue Summary Breakdown</CardTitle>
                             <CardDescription>
-                                Comprehensive view of all payment methods with detailed metrics
+                                Comprehensive view of all revenue and payment methods with detailed metrics
                                 {durationInfo && (
                                     <span className="block text-gray-600 text-sm mt-1">
                                         Data from {getDateRangeDisplay()} ({durationInfo.description})
@@ -323,7 +323,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                     {revenueMethods.map((method: any) => (
                                         <TableRow key={`revenue-${method.method_name}`} className="hover:bg-green-50">
                                             <TableCell className="font-medium capitalize">
-                                                {method.method_name.replace(/-/g, ' ')}
+                                                {String(method.method_name || '').replace(/-/g, ' ')}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge className="bg-green-100 text-green-800 border-green-200">
@@ -347,7 +347,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                     {expenditureMethods.map((method: any) => (
                                         <TableRow key={`expenditure-${method.method_name}`} className="hover:bg-red-50">
                                             <TableCell className="font-medium capitalize">
-                                                {method.method_name.replace(/-/g, ' ')}
+                                                {String(method.method_name || '').replace(/-/g, ' ')}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge className="bg-red-100 text-red-800 border-red-200">
@@ -407,7 +407,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                     {revenueMethods.length > 0 ? (
                                         <>
                                             <span className="font-bold capitalize">
-                                                {revenueMethods[0]?.method_name.replace(/-/g, ' ')}
+                                                {String(revenueMethods[0]?.method_name || '').replace(/-/g, ' ')}
                                             </span> contributes {revenueMethods[0]?.percentage}% of total revenue
                                         </>
                                     ) : (
@@ -421,7 +421,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                     {expenditureMethods.length > 0 ? (
                                         <>
                                             <span className="font-bold capitalize">
-                                                {expenditureMethods[0]?.method_name.replace(/-/g, ' ')}
+                                                {String(expenditureMethods[0]?.method_name || '').replace(/-/g, ' ')}
                                             </span> accounts for {expenditureMethods[0]?.percentage}% of expenses
                                         </>
                                     ) : (
