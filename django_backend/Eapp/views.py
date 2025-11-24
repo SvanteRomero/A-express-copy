@@ -61,9 +61,8 @@ class TaskViewSet(viewsets.ModelViewSet):
             
         # For detail view, prefetch all related data
         return queryset.select_related(
-            'assigned_to', 'created_by', 'negotiated_by', 'approved_by', 
-            'sent_out_by', 'brand', 'referred_by', 'customer', 
-            'workshop_location', 'workshop_technician', 'original_technician', 'qc_rejected_by'
+            'assigned_to', 'created_by', 'negotiated_by', 'approved_by', 'brand', 'referred_by', 'customer', 
+            'workshop_location', 'workshop_technician'
         ).prefetch_related(
             'activities', 'payments', 'cost_breakdowns'
         )
@@ -234,15 +233,35 @@ class TaskViewSet(viewsets.ModelViewSet):
         if 'workshop_location' in data and 'workshop_technician' in data:
             workshop_technician = get_object_or_404(User, id=data.get('workshop_technician'))
             workshop_location = get_object_or_404(Location, id=data.get('workshop_location'))
-            TaskActivity.objects.create(
-                task=task, user=user, type=TaskActivity.ActivityType.WORKSHOP, 
-                message=f"Task sent to workshop technician {workshop_technician.get_full_name()} at {workshop_location.name}."
-            )
-
-        if data.get('workshop_status') in ['Solved', 'Not Solved']:
+            # Include structured metadata in activity details for robust parsing
+            details = {
+                'workshop_technician_id': workshop_technician.id,
+                'workshop_technician_name': workshop_technician.get_full_name(),
+                'workshop_location_id': workshop_location.id,
+                'workshop_location_name': workshop_location.name,
+            }
             TaskActivity.objects.create(
                 task=task, user=user, type=TaskActivity.ActivityType.WORKSHOP,
-                message=f"Task returned from workshop with status: {data['workshop_status']}."
+                message=f"Task sent to workshop technician {workshop_technician.get_full_name()} at {workshop_location.name}.",
+                details=details,
+            )
+            # Populate snapshot fields (first send) for performance and data-proofing
+            if not task.original_technician_snapshot:
+                task.original_technician_snapshot = user
+            if not task.original_location_snapshot:
+                task.original_location_snapshot = workshop_location.name
+            # Ensure workshop_location/technician are set (may be set earlier)
+            task.workshop_location = workshop_location
+            task.workshop_technician = workshop_technician
+            task.current_location = workshop_location.name
+            task.save(update_fields=['original_technician_snapshot', 'original_location_snapshot', 'workshop_location', 'workshop_technician', 'current_location'])
+
+        if data.get('workshop_status') in ['Solved', 'Not Solved']:
+            details = {'workshop_status': data.get('workshop_status')}
+            TaskActivity.objects.create(
+                task=task, user=user, type=TaskActivity.ActivityType.WORKSHOP,
+                message=f"Task returned from workshop with status: {data['workshop_status']}.",
+                details=details,
             )
 
         if 'assigned_to' in data:
@@ -272,28 +291,25 @@ class TaskViewSet(viewsets.ModelViewSet):
     def _handle_payment_status_update(self, data, task, user):
         if user.role == 'Accountant' and 'payment_status' in data:
             task.payment_status = data['payment_status']
-            if data['payment_status'] == 'Fully Paid':
-                task.paid_date = timezone.now().date()
+            # keep payment_status change; rely on Payment records and signals
+            # to maintain paid_date if needed
             task.save()
 
     def _handle_workshop_instance_update(self, data, task, user):
         if 'workshop_location' in data and 'workshop_technician' in data:
-            task.original_location = task.current_location
             task.workshop_status = 'In Workshop'
-            task.original_technician = user
-            task.workshop_sent_at = timezone.now()
             workshop_location = get_object_or_404(Location, id=data.get('workshop_location'))
+            task.workshop_location = workshop_location
+            task.workshop_technician = get_object_or_404(User, id=data.get('workshop_technician'))
             task.current_location = workshop_location.name
 
         if data.get('workshop_status') in ['Solved', 'Not Solved']:
-            if task.original_location:
-                task.current_location = task.original_location
-                task.original_location = None
-            task.assigned_to = task.original_technician
+            # On return, restore assignment from the workshop activity if available
+            if task.original_technician:
+                task.assigned_to = task.original_technician
             task.workshop_location = None
             task.workshop_technician = None
-            task.original_technician = None
-            task.workshop_returned_at = timezone.now()
+            task.workshop_status = None
 
     def _handle_status_update(self, data, task, user):
         new_status = data['status']
@@ -305,8 +321,6 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         # Handle rejection
         if new_status == 'In Progress' and 'qc_notes' in data and data['qc_notes']:
-            task.qc_rejected_by = user
-            task.qc_rejected_at = timezone.now()
             TaskActivity.objects.create(
                 task=task,
                 user=user,
@@ -325,11 +339,15 @@ class TaskViewSet(viewsets.ModelViewSet):
             activity_type = TaskActivity.ActivityType.STATUS_UPDATE
             if new_status == 'Picked Up':
                 activity_type = TaskActivity.ActivityType.PICKED_UP
-                data['sent_out_by'] = user.id
-                data['date_out'] = timezone.now()
+                # record structured pickup metadata and snapshot latest pickup
+                pickup_time = timezone.now()
+                details = {'pickup_by_id': user.id, 'pickup_by_name': user.get_full_name(), 'pickup_at': pickup_time.isoformat()}
+                task.latest_pickup_at = pickup_time
+                task.latest_pickup_by = user
+                task.save(update_fields=['latest_pickup_at', 'latest_pickup_by'])
             elif new_status == 'Ready for Pickup':
                 activity_type = TaskActivity.ActivityType.READY
-            TaskActivity.objects.create(task=task, user=user, type=activity_type, message=activity_messages[new_status])
+            TaskActivity.objects.create(task=task, user=user, type=activity_type, message=activity_messages[new_status], details=(details if 'details' in locals() else None))
 
         if new_status == 'In Progress' and user.role == 'Front Desk':
             technician_id = data.get('assigned_to')
@@ -379,8 +397,21 @@ class TaskViewSet(viewsets.ModelViewSet):
         task = self.get_object()
         serializer = TaskActivitySerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(task=task, user=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            activity = serializer.save(task=task, user=request.user)
+            # If activity contains structured details, update Task snapshots for performance
+            if activity.type == TaskActivity.ActivityType.WORKSHOP:
+                details = activity.details or {}
+                # set original snapshots if missing
+                if not task.original_technician_snapshot:
+                    task.original_technician_snapshot = activity.user
+                if not task.original_location_snapshot and details.get('workshop_location_name'):
+                    task.original_location_snapshot = details.get('workshop_location_name')
+                task.save(update_fields=['original_technician_snapshot', 'original_location_snapshot'])
+            if activity.type == TaskActivity.ActivityType.PICKED_UP:
+                task.latest_pickup_at = activity.timestamp
+                task.latest_pickup_by = activity.user
+                task.save(update_fields=['latest_pickup_at', 'latest_pickup_by'])
+            return Response(TaskActivitySerializer(activity).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get'])

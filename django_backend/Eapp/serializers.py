@@ -13,7 +13,7 @@ class TaskActivitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TaskActivity
-        fields = ("id", "user", "timestamp", "type", "message")
+        fields = ("id", "user", "timestamp", "type", "message", "details")
 
 class TaskListSerializer(serializers.ModelSerializer):
     customer_details = CustomerListSerializer(source='customer', read_only=True)
@@ -42,12 +42,8 @@ class TaskListSerializer(serializers.ModelSerializer):
         return obj.total_cost - obj.paid_amount
 
 class TaskDetailSerializer(serializers.ModelSerializer):
-    negotiated_by = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.filter(is_active=True), allow_null=True, required=False
-    )
     assigned_to_details = UserSerializer(source="assigned_to", read_only=True)
     created_by_details = UserSerializer(source="created_by", read_only=True)
-    negotiated_by_details = UserSerializer(source="negotiated_by", read_only=True)
     approved_by_details = UserSerializer(source="approved_by", read_only=True)
     sent_out_by_details = UserSerializer(source="sent_out_by", read_only=True)
     brand_details = BrandSerializer(source="brand", read_only=True)
@@ -65,10 +61,19 @@ class TaskDetailSerializer(serializers.ModelSerializer):
     workshop_technician_details = UserSerializer(
         source="workshop_technician", read_only=True
     )
-    original_technician_details = UserSerializer(
-        source="original_technician", read_only=True
+    original_technician_snapshot_details = UserSerializer(
+        source="original_technician_snapshot", read_only=True
     )
+    original_technician = serializers.PrimaryKeyRelatedField(source='original_technician', read_only=True)
+    original_technician_details = UserSerializer(source='original_technician', read_only=True)
+    original_location_snapshot = serializers.CharField(source='original_location_snapshot', read_only=True)
+    latest_pickup_at = serializers.DateTimeField(source='latest_pickup_at', read_only=True)
+    latest_pickup_by_details = UserSerializer(source='latest_pickup_by', read_only=True)
     cost_breakdowns = CostBreakdownSerializer(many=True, read_only=True)
+    negotiated_by = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.filter(is_active=True), allow_null=True, required=False
+    )
+    negotiated_by_details = UserSerializer(source="negotiated_by", read_only=True)
 
     class Meta:
         model = Task
@@ -83,14 +88,15 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             'current_location', 'date_in', 'approved_at', 'approved_by',
             'paid_date', 'next_payment_date', 'date_out', 'negotiated_by', 'negotiated_by_details',
             'activities', 'payments', 'outstanding_balance', 'is_referred', 'is_debt', 'referred_by', 'referred_by_details',
-            'workshop_status', 'workshop_location', 'workshop_technician', 'original_technician',
-            'workshop_location_details', 'workshop_technician_details', 'original_technician_details', 'approved_by_details',
+            'workshop_status', 'workshop_location', 'workshop_technician', 'original_technician_snapshot', 'original_location_snapshot', 'original_technician', 'original_technician_details',
+            'workshop_location_details', 'workshop_technician_details', 'original_technician_snapshot_details', 'approved_by_details',
+            'latest_pickup_at', 'latest_pickup_by', 'latest_pickup_by_details',
             'sent_out_by', 'sent_out_by_details',
             'qc_notes', 'qc_rejected_at', 'qc_rejected_by',
             'cost_breakdowns'
         )
         read_only_fields = ('created_at', 'updated_at', 'assigned_to_details', 'created_by_details', 'activities', 'payments',
-                            'workshop_location_details', 'workshop_technician_details', 'original_technician_details', 'approved_by_details', 'sent_out_by_details',
+                    'workshop_location_details', 'workshop_technician_details', 'original_technician_snapshot_details', 'approved_by_details', 'sent_out_by_details',
                             'total_cost', 'paid_amount')
         extra_kwargs = {
             "estimated_cost": {"validators": [MinValueValidator(Decimal("0.00"))]},

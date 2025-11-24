@@ -79,19 +79,12 @@ class Task(models.Model):
     current_location = models.CharField(max_length=100)
     urgency = models.CharField(max_length=20, choices=Urgency.choices, default=Urgency.YUPO)
     date_in = models.DateField(default=get_current_date)
-    approved_at = models.DateTimeField(null=True, blank=True)
-    approved_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_tasks'
-    )
+    # removed persistent event fields in favor of TaskActivity history
+    # Keep payment summary fields; individual events (approvals, pickups,
+    # workshop timestamps, QC rejections, negotiators, etc.) are represented
+    # by TaskActivity entries and exposed via properties below.
     paid_date = models.DateField(null=True, blank=True)
     next_payment_date = models.DateField(null=True, blank=True)
-    date_out = models.DateTimeField(null=True, blank=True)
-    sent_out_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='sent_out_tasks'
-    )
-    negotiated_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='negotiated_tasks'
-    )
     is_debt = models.BooleanField(default=False)
     is_referred = models.BooleanField(default=False)
     referred_by = models.ForeignKey(
@@ -111,17 +104,18 @@ class Task(models.Model):
     workshop_technician = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='workshop_assigned_tasks'
     )
-    original_technician = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='sent_to_workshop_tasks'
+    # Snapshot fields for performance and data-proofing
+    original_technician_snapshot = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='original_technician_snapshot_tasks'
     )
-    workshop_sent_at = models.DateTimeField(null=True, blank=True)
-    workshop_returned_at = models.DateTimeField(null=True, blank=True)
-    original_location = models.CharField(max_length=100, blank=True, null=True)
+    original_location_snapshot = models.CharField(max_length=200, null=True, blank=True)
+    latest_pickup_at = models.DateTimeField(null=True, blank=True)
+    latest_pickup_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='latest_pickup_tasks'
+    )
     qc_notes = models.TextField(blank=True, null=True)
-    qc_rejected_at = models.DateTimeField(null=True, blank=True)
-    qc_rejected_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='rejected_tasks'
-    )
+    # Derived properties below supply read-only access to event timestamps/users
+    # by querying the TaskActivity history.
 
     def __str__(self):
         return self.title
@@ -134,6 +128,86 @@ class Task(models.Model):
             if self.estimated_cost is not None:
                 self.total_cost = self.estimated_cost
         super().save(*args, **kwargs)
+
+    # --- Activity-derived helpers and properties ---
+    def _last_activity(self, activity_type):
+        return self.activities.filter(type=activity_type).order_by('-timestamp').first()
+
+    @property
+    def latest_pickup(self):
+        return self._last_activity(TaskActivity.ActivityType.PICKED_UP)
+
+    @property
+    def date_out(self):
+        act = self.latest_pickup
+        return act.timestamp if act else None
+
+    @property
+    def sent_out_by(self):
+        act = self.latest_pickup
+        return act.user if act else None
+
+    @property
+    def latest_workshop_activities(self):
+        return self.activities.filter(type=TaskActivity.ActivityType.WORKSHOP).order_by('timestamp')
+
+    @property
+    def workshop_sent_at(self):
+        acts = self.latest_workshop_activities
+        return acts.first().timestamp if acts.exists() else None
+
+    @property
+    def workshop_returned_at(self):
+        acts = self.latest_workshop_activities
+        return acts.last().timestamp if acts.exists() and acts.count() > 1 else None
+
+    @property
+    def original_technician(self):
+        # Prefer snapshot for performance/data-safety; fall back to activity log
+        if getattr(self, 'original_technician_snapshot', None):
+            return self.original_technician_snapshot
+        acts = self.latest_workshop_activities
+        return acts.first().user if acts.exists() else None
+
+    @property
+    def original_location(self):
+        # Prefer snapshot if available
+        if getattr(self, 'original_location_snapshot', None):
+            return self.original_location_snapshot
+        acts = self.latest_workshop_activities
+        if not acts.exists():
+            return None
+        msg = acts.first().message or ''
+        if ' at ' in msg:
+            try:
+                return msg.split(' at ')[-1].strip().rstrip('.')
+            except Exception:
+                return None
+        return None
+
+    @property
+    def qc_rejected_at(self):
+        act = self._last_activity(TaskActivity.ActivityType.REJECTED)
+        return act.timestamp if act else None
+
+    @property
+    def qc_rejected_by(self):
+        act = self._last_activity(TaskActivity.ActivityType.REJECTED)
+        return act.user if act else None
+
+    @property
+    def approved_at(self):
+        act = self._last_activity(TaskActivity.ActivityType.READY)
+        return act.timestamp if act else None
+
+    @property
+    def approved_by(self):
+        act = self._last_activity(TaskActivity.ActivityType.READY)
+        return act.user if act else None
+
+    negotiated_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='negotiated_tasks'
+    )
 
     def _calculate_total_cost(self):
         estimated_cost = self.estimated_cost or Decimal('0.00')
@@ -172,6 +246,7 @@ class TaskActivity(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     type = models.CharField(max_length=20, choices=ActivityType.choices)
     message = models.TextField()
+    details = models.JSONField(null=True, blank=True)
 
     def __str__(self):
         return f'{self.get_type_display()} for {self.task.title} at {self.timestamp}'
