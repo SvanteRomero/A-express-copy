@@ -63,7 +63,7 @@ apiClient.interceptors.response.use(
   }
 );
 
-export const getProfile = () => apiClient.get('/profile/');
+export const getProfile = () => apiClient.get('/users/profile/');
 export const getTasks = (params: any = {}) => apiClient.get('/tasks/', { params });
 export const getDebts = (params: any = {}) => apiClient.get('/tasks/debts/', { params });
 export const getTask = (id: string) => apiClient.get(`/tasks/${id}/`);
@@ -105,8 +105,8 @@ export const login = async (username: any, password: any) => {
 };
 export const registerUser = (userData: any) => apiClient.post('/users/', userData);
 export const listUsers = () => apiClient.get('/users/');
-export const updateProfile = (profileData: any) => apiClient.patch('/profile/update/', profileData);
-export const changePassword = (passwordData: any) => apiClient.post('/profile/change-password/', passwordData);
+export const updateProfile = (profileData: any) => apiClient.patch('/users/profile/update/', profileData);
+export const changePassword = (passwordData: any) => apiClient.post('/users/profile/change-password/', passwordData);
 export const uploadProfilePicture = (formData: any) => apiClient.post('/profile/upload-picture/', formData, {
   headers: {
     'Content-Type': 'multipart/form-data',

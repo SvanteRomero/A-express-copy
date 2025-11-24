@@ -61,7 +61,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             
         # For detail view, prefetch all related data
         return queryset.select_related(
-            'assigned_to', 'created_by', 'negotiated_by', 'approved_by', 'brand', 'referred_by', 'customer', 
+            'assigned_to', 'created_by', 'negotiated_by', 'brand', 'referred_by', 'customer', 
             'workshop_location', 'workshop_technician'
         ).prefetch_related(
             'activities', 'payments', 'cost_breakdowns'

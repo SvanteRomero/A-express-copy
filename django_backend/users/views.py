@@ -1,6 +1,8 @@
 from rest_framework import status, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 from .models import User
@@ -129,6 +131,22 @@ class UserViewSet(viewsets.ModelViewSet):
         users = User.objects.filter(role=role)
         serializer = UserSerializer(users, many=True, context={'request': request})
         return Response(serializer.data)
+
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_profile_picture(request):
+    """Accepts multipart/form-data with `profile_picture` file and updates current user's picture."""
+    user = request.user
+    if 'profile_picture' not in request.FILES:
+        return Response({'error': 'No profile_picture file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+    file = request.FILES['profile_picture']
+    user.profile_picture = file
+    user.save(update_fields=['profile_picture'])
+    serializer = UserSerializer(user, context={'request': request})
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class AuthViewSet(viewsets.ViewSet):

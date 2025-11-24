@@ -21,4 +21,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('', include(list_router.urls)),
     path('', include(auth_router.urls)),
+    # Expose profile upload endpoint expected by frontend: /api/profile/upload-picture/
+    path('profile/upload-picture/', views.upload_profile_picture, name='upload_profile_picture'),
 ]

@@ -64,10 +64,10 @@ class TaskDetailSerializer(serializers.ModelSerializer):
     original_technician_snapshot_details = UserSerializer(
         source="original_technician_snapshot", read_only=True
     )
-    original_technician = serializers.PrimaryKeyRelatedField(source='original_technician', read_only=True)
+    original_technician = serializers.PrimaryKeyRelatedField(read_only=True)
     original_technician_details = UserSerializer(source='original_technician', read_only=True)
-    original_location_snapshot = serializers.CharField(source='original_location_snapshot', read_only=True)
-    latest_pickup_at = serializers.DateTimeField(source='latest_pickup_at', read_only=True)
+    original_location_snapshot = serializers.CharField(read_only=True)
+    latest_pickup_at = serializers.DateTimeField(read_only=True)
     latest_pickup_by_details = UserSerializer(source='latest_pickup_by', read_only=True)
     cost_breakdowns = CostBreakdownSerializer(many=True, read_only=True)
     negotiated_by = serializers.PrimaryKeyRelatedField(
