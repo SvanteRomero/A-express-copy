@@ -228,7 +228,7 @@ export function ReportsOverview() {
         />
 
         <ReportSection
-          title="Technician Performance"
+          title="Staff Performance"
           description="Workload distribution, performance analysis, and productivity metrics"
           reports={technicianReports}
           onGeneratePDF={handleGeneratePDF}

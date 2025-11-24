@@ -100,7 +100,7 @@ export const operationalReports: ReportCard[] = [
 export const technicianReports: ReportCard[] = [
   {
     id: "performance",
-    title: "Completed Tasks by Technician",
+    title: "Technician Performance Report",
     description: "Performance metrics per technician over time periods",
     icon: TrendingUp,
     href: "/dashboard/reports/performance",
