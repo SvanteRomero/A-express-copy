@@ -23,4 +23,9 @@ urlpatterns = [
     path('', include(auth_router.urls)),
     # Expose profile upload endpoint expected by frontend: /api/profile/upload-picture/
     path('profile/upload-picture/', views.upload_profile_picture, name='upload_profile_picture'),
+
+    # Additional explicit routes so frontend can call /api/users/profile/sessions/
+    path('users/profile/sessions/', views.AuthViewSet.as_view({'get': 'list_sessions'}), name='users_profile_sessions'),
+    path('users/profile/sessions/revoke-all/', views.AuthViewSet.as_view({'post': 'revoke_all_sessions'}), name='users_profile_sessions_revoke_all'),
+    path('users/profile/sessions/<uuid:session_id>/revoke/', views.AuthViewSet.as_view({'post': 'revoke_session'}), name='users_profile_session_revoke'),
 ]

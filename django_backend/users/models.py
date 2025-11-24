@@ -79,7 +79,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         """Return the URL for the user's profile picture or a default"""
         if self.profile_picture and hasattr(self.profile_picture, 'url'):
             return self.profile_picture.url
-        return '/media/profile_pictures/default.png'
+        return '/api/media/profile_pictures/default.png'
     
     def save(self, *args, **kwargs):
         # Update last_login if password is being set (during login)
@@ -106,3 +106,44 @@ class User(AbstractBaseUser, PermissionsMixin):
     def has_add_user_permission(self):
         """Check if user has permission to add other users"""
         return self.is_superuser or self.role == 'Manager'
+
+
+class Session(models.Model):
+    """Track user sessions for session management and revocation."""
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sessions')
+    jti = models.CharField(max_length=255, null=True, blank=True)
+    # Storing raw refresh tokens is sensitive; consider hashing/encrypting in production.
+    refresh_token = models.TextField(null=True, blank=True)
+    user_agent = models.CharField(max_length=500, null=True, blank=True)
+    ip_address = models.CharField(max_length=100, null=True, blank=True)
+    device_name = models.CharField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_activity = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    is_revoked = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Session {self.id} for {self.user.username}"
+
+
+class AuditLog(models.Model):
+    """Simple audit log for security and administrative events."""
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    action = models.CharField(max_length=200)
+    resource_type = models.CharField(max_length=100, null=True, blank=True)
+    resource_id = models.CharField(max_length=200, null=True, blank=True)
+    ip_address = models.CharField(max_length=100, null=True, blank=True)
+    user_agent = models.CharField(max_length=500, null=True, blank=True)
+    severity = models.CharField(max_length=20, default='info')
+    metadata = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.created_at}] {self.action} by {self.user}"

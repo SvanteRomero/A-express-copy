@@ -1,6 +1,21 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import User
+from .models import Session, AuditLog
+
+
+class SessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Session
+        fields = ('id', 'device_name', 'user_agent', 'ip_address', 'created_at', 'last_activity', 'expires_at', 'is_revoked')
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    user = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = AuditLog
+        fields = ('id', 'created_at', 'user', 'action', 'resource_type', 'resource_id', 'severity', 'metadata')
 
 class UserSerializer(serializers.ModelSerializer):
     profile_picture_url = serializers.SerializerMethodField()

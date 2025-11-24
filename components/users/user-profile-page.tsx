@@ -1,6 +1,6 @@
 "use client"
 
-import { ChangeEvent, useRef, useState } from "react"
+import { ChangeEvent, useRef, useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { Button } from "@/components/ui/core/button"
 import { Input } from "@/components/ui/core/input"
@@ -33,6 +33,7 @@ import {
 import { useAuth } from "@/lib/auth-context"
 
 import { useProfile } from "@/lib/use-profile"
+import { getSessions, revokeSession, revokeAllSessions, getAuditLogs } from "@/lib/api-client"
 import { profile } from "console"
 import { create } from "domain"
 
@@ -124,6 +125,10 @@ export function UserProfilePage() {
     bio: user?.bio || "",
   })
 
+  // Sessions state for Security tab
+  const [sessions, setSessions] = useState<any[]>([])
+  const [loadingSessions, setLoadingSessions] = useState(false)
+
   const [passwordData, setPasswordData] = useState({
     current_password: "",
     new_password: "",
@@ -208,6 +213,22 @@ export function UserProfilePage() {
 
     fileInputRef.current?.click()
   }
+
+  useEffect(() => {
+    // Load sessions when component mounts
+    const loadSessions = async () => {
+      setLoadingSessions(true)
+      try {
+        const resp = await getSessions()
+        setSessions(resp.data || [])
+      } catch (err) {
+        console.error('Failed to load sessions', err)
+      } finally {
+        setLoadingSessions(false)
+      }
+    }
+    loadSessions()
+  }, [])
 
 
 
@@ -579,34 +600,52 @@ export function UserProfilePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-green-100 rounded-lg">
-                        <Monitor className="h-4 w-4 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Current Session</p>
-                        <p className="text-sm text-gray-600">Chrome on Windows</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-gray-100 rounded-lg">
-                        <Smartphone className="h-4 w-4 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Mobile Session</p>
-                        <p className="text-sm text-gray-600">Safari on iPhone</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Revoke
-                    </Button>
-                  </div>
+                  {loadingSessions ? (
+                    <p className="text-sm text-gray-600">Loading sessions...</p>
+                  ) : (
+                    sessions.length > 0 ? (
+                      sessions.map((s) => (
+                        <div key={s.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-gray-100 rounded-lg">
+                              <Monitor className="h-4 w-4 text-gray-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{s.device_name || (s.user_agent || 'Unknown device')}</p>
+                              <p className="text-sm text-gray-600">{s.ip_address || 'Unknown IP'} · {new Date(s.created_at).toLocaleString()}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {!s.is_revoked ? (
+                              <Button variant="outline" size="sm" onClick={async () => {
+                                try {
+                                  await revokeSession(s.id)
+                                  setSessions((prev) => prev.map((ps) => ps.id === s.id ? { ...ps, is_revoked: true } : ps))
+                                } catch (err) {
+                                  console.error('Failed to revoke session', err)
+                                }
+                              }}>
+                                Revoke
+                              </Button>
+                            ) : (
+                              <Badge className="bg-gray-100 text-gray-700">Revoked</Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-600">No active sessions found.</p>
+                    )
+                  )}
                 </div>
-                <Button variant="outline" className="w-full bg-transparent">
+                <Button variant="outline" className="w-full bg-transparent" onClick={async () => {
+                  try {
+                    await revokeAllSessions()
+                    setSessions((prev) => prev.map(s => ({ ...s, is_revoked: true })))
+                  } catch (err) {
+                    console.error('Failed to revoke all sessions', err)
+                  }
+                }}>
                   Sign Out All Devices
                 </Button>
               </CardContent>
