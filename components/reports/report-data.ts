@@ -6,6 +6,7 @@ import {
   ClipboardList,
   Clock,
   TrendingUp,
+  Users,
 } from "lucide-react"
 
 // Types
@@ -96,6 +97,16 @@ export const technicianReports: ReportCard[] = [
     badge: "Trending",
     category: "Performance",
     lastGenerated: "4 hours ago",
+    canGeneratePDF: true,
+  },
+  {
+    id: "front-desk-performance",
+    title: "Front Desk Performance",
+    description: "Percentage of tasks approved and sent out by each front desk staff.",
+    icon: Users,
+    href: "/dashboard/reports/front-desk-performance",
+    category: "Performance",
+    lastGenerated: "Never",
     canGeneratePDF: true,
   },
 ]

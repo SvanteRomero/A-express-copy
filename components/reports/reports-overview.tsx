@@ -41,7 +41,8 @@ export function ReportsOverview() {
         'turnaround-time': '/api/reports/turnaround-time/',
         'workload': '/api/reports/technician-workload/',
         'performance': '/api/reports/technician-performance/',
-        'inventory-location': '/api/reports/laptops-in-shop/'
+        'inventory-location': '/api/reports/laptops-in-shop/',
+        'front-desk-performance': '/api/reports/front-desk-performance/'
       }
 
       const endpoint = apiEndpoints[reportId]

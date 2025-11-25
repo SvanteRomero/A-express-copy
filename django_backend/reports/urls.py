@@ -36,6 +36,11 @@ urlpatterns = [
         name="payment_methods_report",
     ),
     path(
+        "reports/front-desk-performance/",
+        views.get_front_desk_performance,
+        name="front_desk_performance",
+    ),
+    path(
         "reports/custom/generate/",
         views.generate_custom_report,
         name="generate_custom_report",

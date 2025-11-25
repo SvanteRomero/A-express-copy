@@ -66,6 +66,7 @@ apiClient.interceptors.response.use(
 export const getProfile = () => apiClient.get('/users/profile/');
 export const getTasks = (params: any = {}) => apiClient.get('/tasks/', { params });
 export const getDebts = (params: any = {}) => apiClient.get('/tasks/debts/', { params });
+export const getFrontDeskPerformance = (params: any = {}) => apiClient.get('/reports/front-desk-performance/', { params });
 export const getTask = (id: string) => apiClient.get(`/tasks/${id}/`);
 export const createTask = (data: any) => apiClient.post('/tasks/', data);
 export const updateTask = (id: string, data: any) => apiClient.patch(`/tasks/${id}/`, data);
