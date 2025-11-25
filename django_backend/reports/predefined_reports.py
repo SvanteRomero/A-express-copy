@@ -234,6 +234,8 @@ class PredefinedReportGenerator:
             user__in=technicians
         ).values('user').annotate(count=Count('id'))
         workshop_counts = {item['user']: item['count'] for item in workshop_activities}
+        
+        total_tasks_in_period = TaskActivity.objects.filter(date_filter_q).values('task').distinct().count()
         # --- End New ---
 
         final_report = []
@@ -266,37 +268,12 @@ class PredefinedReportGenerator:
                     }
                 )
 
-            # Calculate completed tasks metrics (using READY activities for accuracy)
-            ready_activities = (
-                TaskActivity.objects.filter(
-                    task__assigned_to=technician, type=TaskActivity.ActivityType.READY
-                )
-                .filter(date_filter_q)
-                .select_related("task")
-            )
-
-            completed_tasks_data = []
-            
-            for ready_activity in ready_activities:
-                task = ready_activity.task
-
-                # Find intake time for this task
-                intake_activity = (
-                    TaskActivity.objects.filter(
-                        task=task, type=TaskActivity.ActivityType.INTAKE
-                    )
-                    .order_by("timestamp")
-                    .first()
-                )
-
-                if intake_activity:
-                    
-                    completed_tasks_data.append(
-                        {
-                            "task_id": task.id,
-                            "task_title": task.title,
-                        }
-                    )
+            # Calculate completed tasks metrics (using STATUS_UPDATE activities)
+            completed_tasks_count = TaskActivity.objects.filter(
+                date_filter_q, 
+                user=technician, 
+                type=TaskActivity.ActivityType.STATUS_UPDATE
+            ).values('task').distinct().count()
 
             # --- New: Calculate performance metrics using activity counts ---
             total_tasks_assigned = assignment_counts.get(technician.id, 0)
@@ -307,7 +284,6 @@ class PredefinedReportGenerator:
                 else 0
             )
 
-            completed_tasks_count = len(completed_tasks_data)
             
             in_progress_tasks = len(tasks_by_status.get("In Progress", []))
 
@@ -321,6 +297,13 @@ class PredefinedReportGenerator:
                 status__in=["Completed", "Picked Up", "Terminated"]
             )
             current_task_count = current_tasks.count()
+            
+            tasks_involved_count = TaskActivity.objects.filter(
+                date_filter_q, 
+                user=technician,
+                type__in=[TaskActivity.ActivityType.WORKSHOP, TaskActivity.ActivityType.NOTE, TaskActivity.ActivityType.STATUS_UPDATE, TaskActivity.ActivityType.DIAGNOSIS]
+            ).values('task').distinct().count()
+            percentage_of_tasks_involved = (tasks_involved_count / total_tasks_in_period * 100) if total_tasks_in_period > 0 else 0
 
             technician_data = {
                 "technician_id": technician.id,
@@ -332,11 +315,11 @@ class PredefinedReportGenerator:
                 # New metrics
                 "tasks_sent_to_workshop": tasks_sent_to_workshop,
                 "workshop_rate": round(workshop_rate, 2),
+                "percentage_of_tasks_involved": round(percentage_of_tasks_involved, 2),
                 # Task status breakdown
                 "tasks_by_status": tasks_by_status,
                 "status_counts": status_counts,
-                # Detailed completed tasks
-                "completed_tasks_detail": completed_tasks_data,
+
                 # Summary stats
                 "total_tasks_handled": total_tasks_assigned, # Use activity-based count
             }
@@ -363,6 +346,7 @@ class PredefinedReportGenerator:
                 "total_current_tasks": sum(
                     tech["current_assigned_tasks"] for tech in final_report
                 ),
+                "total_tasks_in_period": total_tasks_in_period,
             },
         }
 

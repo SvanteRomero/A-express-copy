@@ -40,13 +40,14 @@ interface TechnicianPerformance {
     current_assigned_tasks: number
     tasks_sent_to_workshop: number
     workshop_rate: number
+    percentage_of_tasks_involved: number
     tasks_by_status: {
         [status: string]: TaskDetail[]
     }
     status_counts: {
         [status: string]: number
     }
-    completed_tasks_detail: CompletedTaskDetail[]
+
     total_tasks_handled: number
 }
 
@@ -57,6 +58,7 @@ interface TechnicianPerformanceReport {
     summary: {
         total_completed_tasks: number
         total_current_tasks: number
+        total_tasks_in_period: number
     }
 }
 
@@ -87,7 +89,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
     return (
         <div className="space-y-6">
             {/* Summary Cards */}
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-4">
                 <Card>
                     <CardContent className="p-4">
                         <p className="text-sm text-gray-600">Total Technicians</p>
@@ -104,6 +106,12 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                     <CardContent className="p-4">
                         <p className="text-sm text-gray-600">Current Tasks</p>
                         <p className="text-2xl font-bold text-orange-600">{summary.total_current_tasks || 0}</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-sm text-gray-600">Total Active Tasks</p>
+                        <p className="text-2xl font-bold text-indigo-600">{summary.total_tasks_in_period || 0}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -124,6 +132,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                     <TableHead>Technician</TableHead>
                                     <TableHead>Completed Tasks</TableHead>
                                     <TableHead>Current Tasks</TableHead>
+                                    <TableHead>% of Tasks Involved</TableHead>
                                     <TableHead>Workshop Rate</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -158,6 +167,11 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                 </div>
                                             </TableCell>
                                             <TableCell>
+                                                <Badge variant="secondary">
+                                                    {tech.percentage_of_tasks_involved.toFixed(1)}%
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
                                                 <Badge variant={tech.workshop_rate >= 50 ? "destructive" : "secondary"}>
                                                     {tech.workshop_rate.toFixed(1)}%
                                                 </Badge>
@@ -167,7 +181,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                         {/* Expanded Details */}
                                         {expandedTechnician === tech.technician_id && (
                                             <TableRow key={`${tech.technician_id}-details`}>
-                                                <TableCell colSpan={4} className="p-4">
+                                                <TableCell colSpan={5} className="p-4">
                                                     <div className="space-y-4">
                                                         {/* Task Status Breakdown */}
                                                         <div>
@@ -187,19 +201,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                             </div>
                                                         </div>
 
-                                                        {/* Completed Tasks Detail */}
-                                                        {tech.completed_tasks_detail.length > 0 && (
-                                                            <div>
-                                                                <h4 className="font-semibold mb-2">Recently Completed Tasks</h4>
-                                                                <div className="space-y-2">
-                                                                    {tech.completed_tasks_detail.slice(0, 5).map((task) => (
-                                                                        <div key={`${tech.technician_id}-completed-${task.task_id}`} className="flex justify-between items-center p-2 bg-white rounded border">
-                                                                            <span className="font-medium">{task.task_title}</span>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        )}
+
 
                                                         {/* Current Tasks by Status */}
                                                         <div>
