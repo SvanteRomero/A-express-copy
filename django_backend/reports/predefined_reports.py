@@ -276,8 +276,7 @@ class PredefinedReportGenerator:
             )
 
             completed_tasks_data = []
-            total_completion_seconds = 0
-
+            
             for ready_activity in ready_activities:
                 task = ready_activity.task
 
@@ -291,18 +290,11 @@ class PredefinedReportGenerator:
                 )
 
                 if intake_activity:
-                    completion_duration = (
-                        ready_activity.timestamp - intake_activity.timestamp
-                    )
-                    completion_hours = completion_duration.total_seconds() / 3600
-                    total_completion_seconds += completion_duration.total_seconds()
-
+                    
                     completed_tasks_data.append(
                         {
                             "task_id": task.id,
                             "task_title": task.title,
-                            "completion_hours": round(completion_hours, 1),
-                            "revenue": float(task.estimated_cost or 0),
                         }
                     )
 
@@ -316,12 +308,7 @@ class PredefinedReportGenerator:
             )
 
             completed_tasks_count = len(completed_tasks_data)
-            total_revenue = sum(task["revenue"] for task in completed_tasks_data)
-            avg_completion_hours = (
-                total_completion_seconds / (completed_tasks_count * 3600)
-                if completed_tasks_count > 0
-                else 0
-            )
+            
             in_progress_tasks = len(tasks_by_status.get("In Progress", []))
 
             # Count tasks by status
@@ -340,8 +327,6 @@ class PredefinedReportGenerator:
                 "technician_name": technician.get_full_name(),
                 "technician_email": technician.email,
                 "completed_tasks_count": completed_tasks_count,
-                "total_revenue_generated": round(total_revenue, 2),
-                "avg_completion_hours": round(avg_completion_hours, 1),
                 "current_in_progress_tasks": in_progress_tasks,
                 "current_assigned_tasks": current_task_count,
                 # New metrics
@@ -354,11 +339,6 @@ class PredefinedReportGenerator:
                 "completed_tasks_detail": completed_tasks_data,
                 # Summary stats
                 "total_tasks_handled": total_tasks_assigned, # Use activity-based count
-                "completion_rate": (
-                    (completed_tasks_count / total_tasks_assigned * 100)
-                    if total_tasks_assigned > 0
-                    else 0
-                ),
             }
 
             final_report.append(technician_data)
@@ -379,15 +359,6 @@ class PredefinedReportGenerator:
             "summary": {
                 "total_completed_tasks": sum(
                     tech["completed_tasks_count"] for tech in final_report
-                ),
-                "total_revenue": sum(
-                    tech["total_revenue_generated"] for tech in final_report
-                ),
-                "avg_completion_hours": (
-                    sum(tech["avg_completion_hours"] for tech in final_report)
-                    / len(final_report)
-                    if final_report
-                    else 0
                 ),
                 "total_current_tasks": sum(
                     tech["current_assigned_tasks"] for tech in final_report

@@ -79,10 +79,6 @@ class Task(models.Model):
     current_location = models.CharField(max_length=100)
     urgency = models.CharField(max_length=20, choices=Urgency.choices, default=Urgency.YUPO)
     date_in = models.DateField(default=get_current_date)
-    # removed persistent event fields in favor of TaskActivity history
-    # Keep payment summary fields; individual events (approvals, pickups,
-    # workshop timestamps, QC rejections, negotiators, etc.) are represented
-    # by TaskActivity entries and exposed via properties below.
     paid_date = models.DateField(null=True, blank=True)
     next_payment_date = models.DateField(null=True, blank=True)
     is_debt = models.BooleanField(default=False)

@@ -29,8 +29,6 @@ interface TaskDetail {
 interface CompletedTaskDetail {
     task_id: number
     task_title: string
-    completion_hours: number
-    revenue: number
 }
 
 interface TechnicianPerformance {
@@ -38,8 +36,6 @@ interface TechnicianPerformance {
     technician_name: string
     technician_email: string
     completed_tasks_count: number
-    total_revenue_generated: number
-    avg_completion_hours: number
     current_in_progress_tasks: number
     current_assigned_tasks: number
     tasks_sent_to_workshop: number
@@ -52,7 +48,6 @@ interface TechnicianPerformance {
     }
     completed_tasks_detail: CompletedTaskDetail[]
     total_tasks_handled: number
-    completion_rate: number
 }
 
 interface TechnicianPerformanceReport {
@@ -61,8 +56,6 @@ interface TechnicianPerformanceReport {
     total_technicians: number
     summary: {
         total_completed_tasks: number
-        total_revenue: number
-        avg_completion_hours: number
         total_current_tasks: number
     }
 }
@@ -94,7 +87,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
     return (
         <div className="space-y-6">
             {/* Summary Cards */}
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardContent className="p-4">
                         <p className="text-sm text-gray-600">Total Technicians</p>
@@ -105,14 +98,6 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                     <CardContent className="p-4">
                         <p className="text-sm text-gray-600">Total Completed Tasks</p>
                         <p className="text-2xl font-bold text-blue-600">{summary.total_completed_tasks || 0}</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="p-4">
-                        <p className="text-sm text-gray-600">Total Revenue</p>
-                        <p className="text-2xl font-bold text-green-600">
-                            TSh {summary.total_revenue?.toLocaleString() || '0'}
-                        </p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -139,9 +124,6 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                     <TableHead>Technician</TableHead>
                                     <TableHead>Completed Tasks</TableHead>
                                     <TableHead>Current Tasks</TableHead>
-                                    <TableHead>Total Revenue</TableHead>
-                                    <TableHead>Avg Completion</TableHead>
-                                    <TableHead>Completion Rate</TableHead>
                                     <TableHead>Workshop Rate</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -175,17 +157,6 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                     </div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-green-600 font-semibold">
-                                                TSh {tech.total_revenue_generated.toLocaleString()}
-                                            </TableCell>
-                                            <TableCell>
-                                                {tech.avg_completion_hours > 0 ? `${tech.avg_completion_hours}h` : 'N/A'}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant={tech.completion_rate >= 70 ? "default" : "secondary"}>
-                                                    {tech.completion_rate.toFixed(1)}%
-                                                </Badge>
-                                            </TableCell>
                                             <TableCell>
                                                 <Badge variant={tech.workshop_rate >= 50 ? "destructive" : "secondary"}>
                                                     {tech.workshop_rate.toFixed(1)}%
@@ -196,7 +167,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                         {/* Expanded Details */}
                                         {expandedTechnician === tech.technician_id && (
                                             <TableRow key={`${tech.technician_id}-details`}>
-                                                <TableCell colSpan={7} className="p-4">
+                                                <TableCell colSpan={4} className="p-4">
                                                     <div className="space-y-4">
                                                         {/* Task Status Breakdown */}
                                                         <div>
@@ -224,10 +195,6 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                                     {tech.completed_tasks_detail.slice(0, 5).map((task) => (
                                                                         <div key={`${tech.technician_id}-completed-${task.task_id}`} className="flex justify-between items-center p-2 bg-white rounded border">
                                                                             <span className="font-medium">{task.task_title}</span>
-                                                                            <div className="flex gap-4 text-sm">
-                                                                                <span>Time: {task.completion_hours}h</span>
-                                                                                <span className="text-green-600">Revenue: TSh {task.revenue.toLocaleString()}</span>
-                                                                            </div>
                                                                         </div>
                                                                     ))}
                                                                 </div>
@@ -264,55 +231,6 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
             {/* Performance Charts */}
             {technicianPerformance.length > 0 && (
                 <div className="mt-6 space-y-6">
-                    {/* Revenue Chart */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Revenue Generated by Technician</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ChartContainer className="h-[300px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={technicianPerformance}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis
-                                            dataKey="technician_name"
-                                            angle={-45}
-                                            textAnchor="end"
-                                            height={80}
-                                            tick={{ fontSize: 12 }}
-                                        />
-                                        <YAxis />
-                                        <ChartTooltip
-                                            content={({ active, payload }: any) => {
-                                                if (active && payload && payload.length) {
-                                                    const data = payload[0].payload
-                                                    return (
-                                                        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
-                                                            <p className="font-medium">{data.technician_name}</p>
-                                                            <p className="text-sm text-green-600 font-semibold">
-                                                                TSh {data.total_revenue_generated?.toLocaleString() || '0'}
-                                                            </p>
-                                                            <p className="text-sm text-gray-600">
-                                                                {data.completed_tasks_count} completed tasks
-                                                            </p>
-                                                        </div>
-                                                    )
-                                                }
-                                                return null
-                                            }}
-                                        />
-                                        <Bar
-                                            dataKey="total_revenue_generated"
-                                            fill="#22c55e"
-                                            radius={[4, 4, 0, 0]}
-                                            name="Revenue (TSh)"
-                                        />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
-
                     {/* Task Summary Chart */}
                     <Card>
                         <CardHeader>
@@ -337,7 +255,6 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                             <p className="font-medium">{data.technician_name}</p>
                                                             <p className="text-sm text-blue-600">Completed: {data.completed_tasks_count}</p>
                                                             <p className="text-sm text-orange-600">Current: {data.current_assigned_tasks}</p>
-                                                            <p className="text-sm text-gray-600">Completion Rate: {data.completion_rate.toFixed(1)}%</p>
                                                         </div>
                                                     )
                                                 }
