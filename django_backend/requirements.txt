@@ -30,3 +30,5 @@ python-dotenv
 # Django Channels for WebSocket support
 channels
 channels-redis
+
+pytz
