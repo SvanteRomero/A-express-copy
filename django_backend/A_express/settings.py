@@ -41,6 +41,17 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
 ]
 
+CORS_ALLOWED_ORIGIN_REGEXES = [
+     r"^https://.*\.app\.github\.dev$",
+     r"^https://.*\.gitpod\.io$",
+ ]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://localhost:8000",
+    "https://127.0.0.1:8000",
+    "https://*.app.github.dev", # This covers the GitHub Codespaces preview URLs
+]
+
 
 # Application definition
 
@@ -103,7 +114,7 @@ DATABASES = {
         "NAME": "my_django_api",
         "USER": "root",
         "PASSWORD": "",
-        "HOST": "localhost",
+        "HOST": "127.0.0.1",
         "PORT": "3306",
     }
 }

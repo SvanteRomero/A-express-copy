@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.core.validators import MinValueValidator
 from decimal import Decimal
-from common.serializers import BrandSerializer, LocationSerializer
+from common.serializers import BrandSerializer, LocationSerializer, ModelSerializer
 from customers.serializers import CustomerSerializer, ReferrerSerializer, CustomerListSerializer
 from .models import Task, TaskActivity
 from users.serializers import UserSerializer, UserListSerializer
@@ -18,7 +18,8 @@ class TaskActivitySerializer(serializers.ModelSerializer):
 class TaskListSerializer(serializers.ModelSerializer):
     customer_details = CustomerListSerializer(source='customer', read_only=True)
     assigned_to_details = UserListSerializer(source='assigned_to', read_only=True)
-    outstanding_balance = serializers.SerializerMethodField()
+    outstanding_balance = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    laptop_model_details = ModelSerializer(source='laptop_model', read_only=True)
 
     class Meta:
         model = Task
@@ -31,15 +32,13 @@ class TaskListSerializer(serializers.ModelSerializer):
             'workshop_status',
             'current_location',
             'laptop_model',
+            'laptop_model_details',
             'description',
             'updated_at',
             'customer_details',
             'assigned_to_details',
             'outstanding_balance',
         )
-
-    def get_outstanding_balance(self, obj):
-        return obj.total_cost - obj.paid_amount
 
 class TaskDetailSerializer(serializers.ModelSerializer):
     assigned_to_details = UserSerializer(source="assigned_to", read_only=True)
@@ -54,7 +53,9 @@ class TaskDetailSerializer(serializers.ModelSerializer):
     customer_details = CustomerSerializer(source="customer", read_only=True)
     activities = TaskActivitySerializer(many=True, read_only=True)
     payments = PaymentSerializer(many=True, read_only=True)
-    outstanding_balance = serializers.SerializerMethodField()
+    outstanding_balance = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    total_cost = serializers.DecimalField(source='calculated_total_cost', max_digits=10, decimal_places=2, read_only=True)
+    paid_amount = serializers.DecimalField(source='calculated_paid_amount', max_digits=10, decimal_places=2, read_only=True)
     workshop_location_details = LocationSerializer(
         source="workshop_location", read_only=True
     )
@@ -74,6 +75,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
         queryset=User.objects.filter(is_active=True), allow_null=True, required=False
     )
     negotiated_by_details = UserSerializer(source="negotiated_by", read_only=True)
+    laptop_model_details = ModelSerializer(source='laptop_model', read_only=True)
 
     class Meta:
         model = Task
@@ -82,7 +84,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             'assigned_to', 'assigned_to_details', 'created_by_details',
             'created_at', 'updated_at', 'due_date',
             'customer', 'customer_details',
-            'brand', 'brand_details', 'laptop_model',
+            'brand', 'brand_details', 'laptop_model', 'laptop_model_details',
             'device_type', 'device_notes',
             'estimated_cost', 'total_cost', 'paid_amount', 'payment_status',
             'current_location', 'date_in', 'approved_at', 'approved_by',
@@ -96,26 +98,10 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             'cost_breakdowns'
         )
         read_only_fields = ('created_at', 'updated_at', 'assigned_to_details', 'created_by_details', 'activities', 'payments',
-                    'workshop_location_details', 'workshop_technician_details', 'original_technician_snapshot_details', 'approved_by_details', 'sent_out_by_details',
-                            'total_cost', 'paid_amount')
+                    'workshop_location_details', 'workshop_technician_details', 'original_technician_snapshot_details', 'approved_by_details', 'sent_out_by_details')
         extra_kwargs = {
             "estimated_cost": {"validators": [MinValueValidator(Decimal("0.00"))]},
         }
-
-    def get_total_cost(self, obj):
-        estimated_cost = obj.estimated_cost or Decimal("0.00")
-        additive_costs = sum(
-            item.amount for item in obj.cost_breakdowns.filter(cost_type="Additive")
-        )
-        subtractive_costs = sum(
-            item.amount for item in obj.cost_breakdowns.filter(cost_type="Subtractive")
-        )
-        return estimated_cost + additive_costs - subtractive_costs
-
-    def get_outstanding_balance(self, obj):
-        total_cost = self.get_total_cost(obj)
-        paid_sum = sum(p.amount for p in obj.payments.all()) or Decimal("0.00")
-        return total_cost - paid_sum
 
     def validate(self, data):
         device_type = data.get("device_type")

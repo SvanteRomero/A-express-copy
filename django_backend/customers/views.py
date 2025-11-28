@@ -1,22 +1,29 @@
-from django.db.models import Count
+from django.db.models import Count, Exists, OuterRef
 from rest_framework import viewsets, permissions, filters
 from .models import Customer, Referrer
 from .serializers import CustomerSerializer, ReferrerSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from Eapp.pagination import StandardResultsSetPagination
+from Eapp.models import Task
 
 class CustomerViewSet(viewsets.ModelViewSet):
-    queryset = Customer.objects.annotate(tasks_count=Count('tasks')).order_by('name')
     serializer_class = CustomerSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'phone_numbers__phone_number']
 
+    def get_queryset(self):
+        debt_subquery = Task.objects.filter(customer=OuterRef('pk'), is_debt=True)
+        return Customer.objects.annotate(
+            tasks_count=Count('tasks'),
+            has_debt=Exists(debt_subquery)
+        ).prefetch_related('phone_numbers').order_by('name')
+
     @action(detail=False, methods=['get'])
     def stats(self, request):
-        credit_customers_count = Customer.objects.filter(tasks__is_debt=True).distinct().count()
+        credit_customers_count = self.get_queryset().filter(has_debt=True).count()
         data = {
             'credit_customers_count': credit_customers_count
         }

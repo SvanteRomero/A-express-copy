@@ -56,17 +56,35 @@ export function useInProgressTasks(isWorkshopView: boolean, userId: string | und
         queryKey: ['inProgressTasks', isWorkshopView, userId],
         queryFn: async () => {
             if (!userId) return [];
-            const params = isWorkshopView
-                ? { workshop_technician: userId, workshop_status: "In Workshop", status: "In Progress" }
-                : { assigned_to: userId, status: "In Progress" };
-            const response = await getTasks(params);
-            const tasks = response.data.results || [];
+
             if (isWorkshopView) {
-                return tasks;
+                // For workshop techs, fetch both sets of tasks and merge them
+                const normalTasksPromise = getTasks({ assigned_to: userId, status: "In Progress" });
+                const workshopTasksPromise = getTasks({ workshop_technician: userId, status: "In Progress" });
+
+                const [normalTasksResponse, workshopTasksResponse] = await Promise.all([
+                    normalTasksPromise,
+                    workshopTasksPromise,
+                ]);
+
+                const normalTasks = normalTasksResponse.data.results?.filter(task => task.workshop_status !== "In Workshop") || [];
+                const workshopTasks = workshopTasksResponse.data.results || [];
+                
+                // Merge and de-duplicate
+                const allTasks = new Map<number, Task>();
+                normalTasks.forEach(task => allTasks.set(task.id, task));
+                workshopTasks.forEach(task => allTasks.set(task.id, task));
+
+                return Array.from(allTasks.values());
+
+            } else {
+                // For normal techs, fetch their assigned tasks and filter out workshop ones
+                const response = await getTasks({ assigned_to: userId, status: "In Progress" });
+                const tasks = response.data.results || [];
+                return tasks.filter((task: any) => task.workshop_status !== "In Workshop");
             }
-            return tasks.filter((task: any) => task.workshop_status !== "In Workshop");
         },
-        enabled: !!userId, // only run the query if the user ID is available
+        enabled: !!userId,
     });
 }
 

@@ -692,272 +692,661 @@ const generateTechnicianPerformancePDF = (pdf: jsPDF, data: any, startY: number)
 }
 
 // Technician Workload PDF
+
 const generateTechnicianWorkloadPDF = (pdf: jsPDF, data: any, startY: number) => {
+
     let yPosition = startY
 
+
+
     pdf.setFontSize(14)
+
     pdf.setTextColor(0, 0, 0)
+
     pdf.text("Technician Workload Report", 20, yPosition)
+
     yPosition += 15
 
+
+
     const summary = data.summary || {}
+
     const technicians = data.technicians || data.technician_workload || []
+
     const totalTasks = summary.total_tasks ?? data.total_tasks ?? 0
+
     const avgPerTech = summary.avg_tasks_per_technician ?? (technicians.length ? Math.round(totalTasks / technicians.length) : 0)
+
     const dateRange = data.date_range || 'Last 30 Days'
 
+
+
     const summaryData = [
+
         ["Total Tasks", totalTasks.toString()],
+
         ["Technicians", technicians.length.toString()],
+
         ["Avg Tasks / Technician", avgPerTech.toString()],
+
         ["Date Range", dateRange.replace(/_/g, ' ')]
+
     ]
 
+
+
     autoTable(pdf, {
+
         head: [["Metric", "Value"]],
+
         body: summaryData,
+
         startY: yPosition,
+
         theme: "grid",
+
         headStyles: { fillColor: [14, 165, 233] },
+
         margin: { left: 20, right: 20 },
+
     })
+
+
 
     yPosition = (pdf as any).lastAutoTable.finalY + 15
 
+
+
     if (technicians && technicians.length > 0) {
+
         pdf.setFontSize(12)
+
         pdf.setTextColor(0, 0, 0)
+
         pdf.text("Workload by Technician", 20, yPosition)
+
         yPosition += 10
 
+
+
         const workloadData = technicians.map((tech: any) => [
+
             tech.technician_name || tech.name || "N/A",
+
             tech.assigned_tasks?.toString() || "0",
+
             tech.open_tasks?.toString() || "0",
+
             tech.overdue_tasks?.toString() || "0",
+
             tech.workload_level || "N/A",
+
         ])
 
+
+
         autoTable(pdf, {
+
             head: [["Technician", "Assigned", "Open", "Overdue", "Workload"]],
+
             body: workloadData,
+
             startY: yPosition,
+
             theme: "grid",
+
             headStyles: { fillColor: [168, 85, 247] },
+
             margin: { left: 20, right: 20 },
+
             styles: { fontSize: 8, cellPadding: 3 },
+
             columnStyles: {
+
                 0: { cellWidth: 'auto' },
+
                 1: { cellWidth: 'auto' },
+
                 2: { cellWidth: 'auto' },
+
                 3: { cellWidth: 'auto' },
+
                 4: { cellWidth: 'auto' },
+
             }
+
         })
+
+
 
         yPosition = (pdf as any).lastAutoTable.finalY + 10
 
+
+
         // Quick insights
+
         const high = technicians.filter((t: any) => t.workload_level === 'High').length
+
         const medium = technicians.filter((t: any) => t.workload_level === 'Medium').length
+
         const low = technicians.filter((t: any) => t.workload_level === 'Low').length
 
+
+
         pdf.setFontSize(11)
+
         pdf.setTextColor(34, 197, 94)
+
         pdf.text("Workload Insights:", 20, yPosition)
+
         yPosition += 8
 
+
+
         pdf.setFontSize(9)
+
         pdf.setTextColor(80, 80, 80)
+
         pdf.text(`• High: ${high}  • Medium: ${medium}  • Low: ${low}`, 20, yPosition)
+
         yPosition += 6
+
         pdf.text(`• Technicians analyzed: ${technicians.length}`, 20, yPosition)
+
     }
+
 }
 
+
+
+const generateFrontDeskPerformancePDF = (pdf: jsPDF, data: any, startY: number) => {
+
+    let yPosition = startY;
+
+
+
+    pdf.setFontSize(14);
+
+    pdf.setTextColor(0, 0, 0);
+
+    pdf.text("Front Desk Performance Report", 20, yPosition);
+
+    yPosition += 15;
+
+
+
+    // Summary
+
+    if (data.summary) {
+
+        const summaryData = [
+
+            ["Total Tasks Approved", data.summary.total_approved?.toString() || "0"],
+
+            ["Total Tasks Sent Out", data.summary.total_sent_out?.toString() || "0"],
+
+            ["Start Date", data.summary.start_date],
+
+            ["End Date", data.summary.end_date],
+
+        ];
+
+
+
+        autoTable(pdf, {
+
+            head: [["Metric", "Value"]],
+
+            body: summaryData,
+
+            startY: yPosition,
+
+            theme: "grid",
+
+            headStyles: { fillColor: [220, 38, 38] },
+
+            margin: { left: 20, right: 20 },
+
+        });
+
+
+
+        yPosition = (pdf as any).lastAutoTable.finalY + 15;
+
+    }
+
+
+
+    // Performance Data
+
+    if (data.performance && data.performance.length > 0) {
+
+        pdf.setFontSize(12);
+
+        pdf.text("Detailed Performance Data", 20, yPosition);
+
+        yPosition += 10;
+
+
+
+        const performanceData = data.performance.map((user: any) => [
+
+            user.user_name,
+
+            user.approved_count.toString(),
+
+            `${user.approved_percentage.toFixed(2)}%`,
+
+            user.sent_out_count.toString(),
+
+            `${user.sent_out_percentage.toFixed(2)}%`,
+
+        ]);
+
+
+
+        autoTable(pdf, {
+
+            head: [["User", "Tasks Approved", "% of Total Approved", "Tasks Sent Out", "% of Total Sent Out"]],
+
+            body: performanceData,
+
+            startY: yPosition,
+
+            theme: "grid",
+
+            headStyles: { fillColor: [239, 68, 68] },
+
+            margin: { left: 20, right: 20 },
+
+            styles: { fontSize: 7 },
+
+            pageBreak: 'auto'
+
+        });
+
+    }
+
+};
+
+
+
 // Generic PDF for unknown report types
+
 const generateGenericPDF = (pdf: jsPDF, data: any, reportId: string, startY: number) => {
+
     let yPosition = startY
 
+
+
     pdf.setFontSize(14)
+
     pdf.setTextColor(0, 0, 0)
+
     pdf.text(`${reportId.replace(/-/g, ' ')} Report`, 20, yPosition)
+
     yPosition += 15
 
+
+
     // Convert data to table format for generic reports
+
     const flattenObject = (obj: any, prefix = ''): string[][] => {
+
         return Object.keys(obj).reduce((acc: string[][], key) => {
+
             const pre = prefix.length ? prefix + '.' : ''
+
             if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+
                 return [...acc, ...flattenObject(obj[key], pre + key)]
+
             } else {
+
                 return [...acc, [pre + key, obj[key]?.toString() || '']]
+
             }
+
         }, [])
+
     }
+
+
 
     const tableData = flattenObject(data)
 
+
+
     if (tableData.length > 0) {
+
         pdf.autoTable({
+
             head: [["Field", "Value"]],
+
             body: tableData,
+
             startY: yPosition,
+
             theme: "grid",
+
             headStyles: { fillColor: [100, 100, 100] },
+
             margin: { left: 20, right: 20 },
+
         })
+
     } else {
+
         pdf.setFontSize(10)
+
         pdf.setTextColor(100, 100, 100)
+
         pdf.text("No data available for this report", 20, yPosition)
+
     }
+
 }
 
+
+
 // Main PDF generation function
+
 export const generatePDF = async (
+
     reportId: string,
+
     selectedReport: SelectedReport | null,
+
     setIsGeneratingPDF: (id: string | null) => void
+
 ) => {
+
     setIsGeneratingPDF(reportId)
 
+
+
     try {
+
         // Get the actual report data from the selected report or fetch it
+
         let reportData = null
+
         let reportType = ''
 
+
+
         // If we have the report data already from viewing, use it
+
         if (selectedReport && selectedReport.id === reportId) {
+
             reportData = selectedReport.data.report
+
             reportType = selectedReport.data.type
+
         } else {
+
             // Otherwise fetch the report data
+
             const apiEndpoints: { [key: string]: string } = {
+
                 'outstanding-payments': '/api/reports/outstanding-payments/',
+
                 'payment-methods': '/api/reports/payment-methods/',
+
                 'task-status': '/api/reports/task-status/',
+
                 'turnaround-time': '/api/reports/turnaround-time/',
+
                 'workload': '/api/reports/technician-workload/',
+
                 'performance': '/api/reports/technician-performance/',
-                'inventory-location': '/api/reports/laptops-in-shop/'
+
+                'inventory-location': '/api/reports/laptops-in-shop/',
+
+                'front-desk-performance': '/api/reports/front-desk-performance/',
+
             }
+
+
 
             const endpoint = apiEndpoints[reportId]
+
             if (!endpoint) {
+
                 console.warn(`No endpoint mapped for report: ${reportId}`)
+
                 return
+
             }
+
+
 
             let url = `http://localhost:8000${endpoint}`
+
             const dateRangeReports = ['technician-performance', 'payment-methods']
+
             if (dateRangeReports.includes(reportId)) {
+
                 const params = new URLSearchParams({ date_range: 'last_30_days' })
+
                 url += `?${params.toString()}`
+
             }
+
+
 
             let token: string | null = null
+
             const authTokens = localStorage.getItem('auth_tokens')
+
             if (authTokens) {
+
                 try {
+
                     const parsedTokens = JSON.parse(authTokens)
+
                     token = parsedTokens?.access ?? null
+
                 } catch (e) {
+
                     console.warn('Failed to parse auth_tokens from localStorage', e)
+
                 }
+
             }
+
+
 
             const headers: Record<string, string> = {
+
                 'Content-Type': 'application/json',
+
             }
+
             if (token) {
+
                 headers['Authorization'] = `Bearer ${token}`
+
             }
+
+
 
             const response = await fetch(url, { method: 'GET', headers })
+
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
 
+
+
             const data = await response.json()
+
             reportData = data.report
+
             reportType = data.type
+
         }
+
+
 
         if (!reportData) {
+
             throw new Error('No report data available')
+
         }
 
+
+
         // Create new PDF document
+
         const pdf = initializePDF()
 
+
+
         const pageWidth = pdf.internal.pageSize.getWidth()
+
         const pageHeight = pdf.internal.pageSize.getHeight()
 
+
+
         // Add header
+
         pdf.setFontSize(20)
+
         pdf.setTextColor(220, 38, 38)
+
         pdf.text("A+ Express", 20, 20)
 
+
+
         // Find the report details for title and category
+
         const allReports = [...financialReports, ...operationalReports, ...technicianReports]
+
         const report = allReports.find((r) => r.id === reportId)
 
+
+
         pdf.setFontSize(16)
+
         pdf.setTextColor(0, 0, 0)
+
         pdf.text(report?.title || reportId.replace(/-/g, ' '), 20, 35)
 
+
+
         pdf.setFontSize(10)
+
         pdf.setTextColor(100, 100, 100)
+
         pdf.text(`Generated on: ${new Date().toLocaleString()}`, 20, 45)
+
         pdf.text(`Report Category: ${report?.category || 'General'}`, 20, 52)
+
         pdf.text(`Date Range: Last 30 Days`, 20, 59)
+
+
 
         let yPosition = 75
 
+
+
         // Generate PDF content based on report type and actual data
+
         switch (reportType) {
+
             case 'task_status':
+
                 generateTaskStatusPDF(pdf, reportData, yPosition)
+
                 break
+
             case 'technician_performance':
+
                 generateTechnicianPerformancePDF(pdf, reportData, yPosition)
+
                 break
+
             case 'payment_methods':
+
                 generatePaymentMethodsPDF(pdf, reportData, yPosition)
+
                 break
+
             case 'technician_workload':
+
                 generateTechnicianWorkloadPDF(pdf, reportData, yPosition)
+
                 break
+
             case 'outstanding_payments':
+
                 generateOutstandingPaymentsPDF(pdf, reportData, yPosition)
+
                 break
+
             case 'turnaround_time':
+
                 generateTurnaroundTimePDF(pdf, reportData, yPosition)
+
                 break
+
             case 'inventory_location':
+
                 generateInventoryLocationPDF(pdf, reportData, yPosition)
+
                 break
+
+            case 'front_desk_performance':
+
+                generateFrontDeskPerformancePDF(pdf, reportData, yPosition)
+
+                break
+
             default:
+
                 generateGenericPDF(pdf, reportData, reportId, yPosition)
+
         }
+
+
 
         // Add footer to all pages
+
         const pageCount = pdf.getNumberOfPages()
+
         for (let i = 1; i <= pageCount; i++) {
+
             pdf.setPage(i)
+
             pdf.setFontSize(8)
+
             pdf.setTextColor(100, 100, 100)
+
             pdf.text(`Page ${i} of ${pageCount}`, pageWidth - 30, pageHeight - 10)
+
             pdf.text("A+ Express - Confidential Report", 20, pageHeight - 10)
+
         }
 
+
+
         // Save the PDF
+
         const fileName = `${(report?.title || reportId).replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`
+
         pdf.save(fileName)
 
+
+
     } catch (error) {
+
         console.error("Error generating PDF:", error)
+
         alert('Failed to generate PDF. Please try again.')
+
     } finally {
+
         setIsGeneratingPDF(null)
+
     }
+
 }

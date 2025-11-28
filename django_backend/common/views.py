@@ -1,6 +1,6 @@
-from rest_framework import permissions, viewsets
-from .models import Brand, Location
-from .serializers import BrandSerializer, LocationSerializer
+from rest_framework import permissions, viewsets, filters
+from .models import Brand, Location, Model
+from .serializers import BrandSerializer, LocationSerializer, ModelSerializer
 from users.permissions import IsManager
 from rest_framework.response import Response
 
@@ -37,3 +37,13 @@ class BrandViewSet(viewsets.ModelViewSet):
         else:
             self.permission_classes = [IsManager]
         return super().get_permissions()
+
+class ModelViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows models to be viewed or edited.
+    """
+    queryset = Model.objects.all()
+    serializer_class = ModelSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name', 'brand__name']

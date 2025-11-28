@@ -20,3 +20,14 @@ class Location(models.Model):
 
     class Meta:
         ordering = ['name']
+
+class Model(models.Model):
+    name = models.CharField(max_length=100)
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='models')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+        unique_together = ['name', 'brand']

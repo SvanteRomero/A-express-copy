@@ -36,6 +36,12 @@ export interface Brand {
   name: string;
 }
 
+export interface Model {
+  id: number;
+  name: string;
+  brand: number;
+}
+
 export interface CostBreakdown {
   id: number;
   description: string;
@@ -67,6 +73,7 @@ export interface Customer {
 }
 
 export interface Task {
+  laptop_model_details: any;
   id: number;
   title: string;
   description: string;

@@ -6,6 +6,7 @@ import {
   ClipboardList,
   Clock,
   TrendingUp,
+  Users,
 } from "lucide-react"
 
 // Types
@@ -65,7 +66,7 @@ export const financialReports: ReportCard[] = [
 export const operationalReports: ReportCard[] = [
   {
     id: "task-status",
-    title: "Tasks by Status Overview",
+    title: "Task Report",
     description: "Current number of tasks in each status category",
     icon: ClipboardList,
     href: "/dashboard/reports/task-status",
@@ -96,6 +97,16 @@ export const technicianReports: ReportCard[] = [
     badge: "Trending",
     category: "Performance",
     lastGenerated: "4 hours ago",
+    canGeneratePDF: true,
+  },
+  {
+    id: "front-desk-performance",
+    title: "Front Desk Performance",
+    description: "Percentage of tasks approved and sent out by each front desk staff.",
+    icon: Users,
+    href: "/dashboard/reports/front-desk-performance",
+    category: "Performance",
+    lastGenerated: "Never",
     canGeneratePDF: true,
   },
 ]
@@ -130,7 +141,7 @@ export const recentReports: RecentReport[] = [
   },
   {
     id: "RPT-004",
-    name: "Tasks by Status Overview",
+    name: "Task Report",
     type: "Operational",
     generatedBy: "Shop Manager",
     generatedAt: "2024-01-12 4:20 PM",

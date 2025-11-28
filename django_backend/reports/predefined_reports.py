@@ -114,80 +114,69 @@ class PredefinedReportGenerator:
         return Q(**filter_kwargs), actual_range, duration_days, duration_description
     
     @staticmethod
-    def generate_outstanding_payments_report(date_range='last_7_days', start_date=None, end_date=None):
-        """Generate outstanding payments report with date range support"""
+    def generate_outstanding_payments_report(date_range='last_7_days', start_date=None, end_date=None, page=1, page_size=10):
+        """Generate outstanding payments report with date range and pagination support"""
+        from django.core.paginator import Paginator
         # Apply date filter to tasks based on date_in field
         date_filter, actual_date_range, duration_days, duration_description = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date, field='date_in')
         
         # Get tasks with unpaid or partially paid status within date range
-        outstanding_tasks = (
+        outstanding_tasks_qs = (
             Task.objects.filter(
                 (Q(payment_status="Unpaid") | Q(payment_status="Partially Paid")) &
                 date_filter
             )
             .select_related("customer")
-            .prefetch_related("payments", "customer__phone_numbers")
+            .prefetch_related("payments", "customer__phone_numbers", "cost_breakdowns")
+            .annotate(
+                paid_amount_sum=Sum('payments__amount'),
+                additive_costs_sum=Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Additive')),
+                subtractive_costs_sum=Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Subtractive'))
+            ).annotate(
+                total_cost_calculated=F('estimated_cost') + Coalesce(F('additive_costs_sum'), 0) - Coalesce(F('subtractive_costs_sum'), 0),
+                outstanding_balance_calculated=F('total_cost_calculated') - Coalesce(F('paid_amount_sum'), 0)
+            ).filter(outstanding_balance_calculated__gt=0).order_by('-outstanding_balance_calculated')
         )
 
+        paginator = Paginator(outstanding_tasks_qs, page_size)
+        paginated_tasks = paginator.get_page(page)
+
         tasks_data = []
-        for task in outstanding_tasks:
-            # Calculate paid amount from related payments
-            paid_amount = task.payments.aggregate(total=Sum("amount"))[
-                "total"
-            ] or Decimal("0.00")
+        for task in paginated_tasks:
+            days_overdue = (
+                (timezone.now().date() - task.date_in).days if task.date_in else 0
+            )
 
-            # Calculate total cost (estimated_cost + additive costs - subtractive costs)
-            estimated_cost = task.estimated_cost or Decimal("0.00")
-            additive_costs = task.cost_breakdowns.filter(
-                cost_type="Additive"
-            ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
-            subtractive_costs = task.cost_breakdowns.filter(
-                cost_type="Subtractive"
-            ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+            customer_phone = "Not provided"
+            if (
+                hasattr(task.customer, "phone_numbers")
+                and task.customer.phone_numbers.exists()
+            ):
+                customer_phone = task.customer.phone_numbers.first().phone_number
 
-            total_cost = estimated_cost + additive_costs - subtractive_costs
-            outstanding_balance = total_cost - paid_amount
+            tasks_data.append(
+                {
+                    "task_id": task.title,
+                    "customer_name": task.customer.name,
+                    "customer_phone": customer_phone,
+                    "total_cost": float(task.total_cost_calculated),
+                    "paid_amount": float(task.paid_amount_sum or 0),
+                    "outstanding_balance": float(task.outstanding_balance_calculated),
+                    "days_overdue": days_overdue,
+                    "status": task.status,
+                    "date_in": task.date_in.isoformat() if task.date_in else None,
+                }
+            )
 
-            # Only include tasks with positive outstanding balance
-            if outstanding_balance > 0:
-                days_overdue = (
-                    (timezone.now().date() - task.date_in).days if task.date_in else 0
-                )
-
-                # Get the first phone number or use 'Not provided'
-                customer_phone = "Not provided"
-                if (
-                    hasattr(task.customer, "phone_numbers")
-                    and task.customer.phone_numbers.exists()
-                ):
-                    customer_phone = task.customer.phone_numbers.first().phone_number
-
-                tasks_data.append(
-                    {
-                        "task_id": task.title,
-                        "customer_name": task.customer.name,
-                        "customer_phone": customer_phone,
-                        "total_cost": float(total_cost),
-                        "paid_amount": float(paid_amount),
-                        "outstanding_balance": float(outstanding_balance),
-                        "days_overdue": days_overdue,
-                        "status": task.status,
-                        "date_in": task.date_in.isoformat() if task.date_in else None,
-                    }
-                )
-
-        # Sort by outstanding balance (highest first)
-        tasks_data.sort(key=lambda x: x["outstanding_balance"], reverse=True)
-
-        total_outstanding = sum(task["outstanding_balance"] for task in tasks_data)
+        total_outstanding = outstanding_tasks_qs.aggregate(total=Sum('outstanding_balance_calculated'))['total'] or 0
 
         return {
             "outstanding_tasks": tasks_data,
             "summary": {
-                "total_outstanding": total_outstanding,
-                "task_count": len(tasks_data),
+                "total_outstanding": float(total_outstanding),
+                "task_count": paginator.count,
                 "average_balance": (
-                    total_outstanding / len(tasks_data) if tasks_data else 0
+                    float(total_outstanding) / paginator.count if paginator.count > 0 else 0
                 ),
             },
             "date_range": actual_date_range,
@@ -197,7 +186,15 @@ class PredefinedReportGenerator:
             },
             "start_date": start_date,
             "end_date": end_date,
-        }   
+            "pagination": {
+                "current_page": paginated_tasks.number,
+                "page_size": page_size,
+                "total_tasks": paginator.count,
+                "total_pages": paginator.num_pages,
+                "has_next": paginated_tasks.has_next(),
+                "has_previous": paginated_tasks.has_previous(),
+            }
+        }
 
     @staticmethod
     def generate_technician_performance_report(date_range='last_7_days', start_date=None, end_date=None):
@@ -234,6 +231,8 @@ class PredefinedReportGenerator:
             user__in=technicians
         ).values('user').annotate(count=Count('id'))
         workshop_counts = {item['user']: item['count'] for item in workshop_activities}
+        
+        total_tasks_in_period = TaskActivity.objects.filter(date_filter_q).values('task').distinct().count()
         # --- End New ---
 
         final_report = []
@@ -266,45 +265,12 @@ class PredefinedReportGenerator:
                     }
                 )
 
-            # Calculate completed tasks metrics (using READY activities for accuracy)
-            ready_activities = (
-                TaskActivity.objects.filter(
-                    task__assigned_to=technician, type=TaskActivity.ActivityType.READY
-                )
-                .filter(date_filter_q)
-                .select_related("task")
-            )
-
-            completed_tasks_data = []
-            total_completion_seconds = 0
-
-            for ready_activity in ready_activities:
-                task = ready_activity.task
-
-                # Find intake time for this task
-                intake_activity = (
-                    TaskActivity.objects.filter(
-                        task=task, type=TaskActivity.ActivityType.INTAKE
-                    )
-                    .order_by("timestamp")
-                    .first()
-                )
-
-                if intake_activity:
-                    completion_duration = (
-                        ready_activity.timestamp - intake_activity.timestamp
-                    )
-                    completion_hours = completion_duration.total_seconds() / 3600
-                    total_completion_seconds += completion_duration.total_seconds()
-
-                    completed_tasks_data.append(
-                        {
-                            "task_id": task.id,
-                            "task_title": task.title,
-                            "completion_hours": round(completion_hours, 1),
-                            "revenue": float(task.estimated_cost or 0),
-                        }
-                    )
+            # Calculate completed tasks metrics (using STATUS_UPDATE activities)
+            completed_tasks_count = TaskActivity.objects.filter(
+                date_filter_q, 
+                user=technician, 
+                type=TaskActivity.ActivityType.STATUS_UPDATE
+            ).values('task').distinct().count()
 
             # --- New: Calculate performance metrics using activity counts ---
             total_tasks_assigned = assignment_counts.get(technician.id, 0)
@@ -315,13 +281,7 @@ class PredefinedReportGenerator:
                 else 0
             )
 
-            completed_tasks_count = len(completed_tasks_data)
-            total_revenue = sum(task["revenue"] for task in completed_tasks_data)
-            avg_completion_hours = (
-                total_completion_seconds / (completed_tasks_count * 3600)
-                if completed_tasks_count > 0
-                else 0
-            )
+            
             in_progress_tasks = len(tasks_by_status.get("In Progress", []))
 
             # Count tasks by status
@@ -334,31 +294,31 @@ class PredefinedReportGenerator:
                 status__in=["Completed", "Picked Up", "Terminated"]
             )
             current_task_count = current_tasks.count()
+            
+            tasks_involved_count = TaskActivity.objects.filter(
+                date_filter_q, 
+                user=technician,
+                type__in=[TaskActivity.ActivityType.WORKSHOP, TaskActivity.ActivityType.NOTE, TaskActivity.ActivityType.STATUS_UPDATE, TaskActivity.ActivityType.DIAGNOSIS]
+            ).values('task').distinct().count()
+            percentage_of_tasks_involved = (tasks_involved_count / total_tasks_in_period * 100) if total_tasks_in_period > 0 else 0
 
             technician_data = {
                 "technician_id": technician.id,
                 "technician_name": technician.get_full_name(),
                 "technician_email": technician.email,
                 "completed_tasks_count": completed_tasks_count,
-                "total_revenue_generated": round(total_revenue, 2),
-                "avg_completion_hours": round(avg_completion_hours, 1),
                 "current_in_progress_tasks": in_progress_tasks,
                 "current_assigned_tasks": current_task_count,
                 # New metrics
                 "tasks_sent_to_workshop": tasks_sent_to_workshop,
                 "workshop_rate": round(workshop_rate, 2),
+                "percentage_of_tasks_involved": round(percentage_of_tasks_involved, 2),
                 # Task status breakdown
                 "tasks_by_status": tasks_by_status,
                 "status_counts": status_counts,
-                # Detailed completed tasks
-                "completed_tasks_detail": completed_tasks_data,
+
                 # Summary stats
                 "total_tasks_handled": total_tasks_assigned, # Use activity-based count
-                "completion_rate": (
-                    (completed_tasks_count / total_tasks_assigned * 100)
-                    if total_tasks_assigned > 0
-                    else 0
-                ),
             }
 
             final_report.append(technician_data)
@@ -380,18 +340,10 @@ class PredefinedReportGenerator:
                 "total_completed_tasks": sum(
                     tech["completed_tasks_count"] for tech in final_report
                 ),
-                "total_revenue": sum(
-                    tech["total_revenue_generated"] for tech in final_report
-                ),
-                "avg_completion_hours": (
-                    sum(tech["avg_completion_hours"] for tech in final_report)
-                    / len(final_report)
-                    if final_report
-                    else 0
-                ),
                 "total_current_tasks": sum(
                     tech["current_assigned_tasks"] for tech in final_report
                 ),
+                "total_tasks_in_period": total_tasks_in_period,
             },
         }
 
@@ -524,10 +476,22 @@ class PredefinedReportGenerator:
         # Urgency distribution
         urgency_counts = filtered_tasks.values("urgency").annotate(count=Count("id"))
 
+        # Most popular brand and model
+        popular_brand = filtered_tasks.values('brand__name').annotate(brand_count=Count('brand')).order_by('-brand_count').first()
+        popular_model = filtered_tasks.values('laptop_model').annotate(model_count=Count('laptop_model')).order_by('-model_count').first()
+
+        # Top 5 brands and models
+        top_brands = list(filtered_tasks.values('brand__name').annotate(count=Count('brand')).order_by('-count').filter(brand__name__isnull=False)[:5])
+        top_models = list(filtered_tasks.values('laptop_model').annotate(count=Count('laptop_model')).order_by('-count').filter(laptop_model__isnull=False)[:5])
+
         return {
             "status_distribution": status_data,
             "urgency_distribution": list(urgency_counts),
             "total_tasks": total_tasks,
+            "popular_brand": popular_brand['brand__name'] if popular_brand and popular_brand['brand__name'] else "N/A",
+            "popular_model": popular_model['laptop_model'] if popular_model and popular_model['laptop_model'] else "N/A",
+            "top_brands": top_brands,
+            "top_models": top_models,
             "generated_at": timezone.now(),
             "date_range": actual_date_range,
             "duration_info": {
@@ -539,7 +503,7 @@ class PredefinedReportGenerator:
         }
 
     @staticmethod
-    def generate_turnaround_time_report(period_type="weekly", date_range='last_7_days', start_date=None, end_date=None):
+    def generate_turnaround_time_report(period_type="weekly", date_range='last_7_days', start_date=None, end_date=None, page=1, page_size=10):
         """Generate turnaround time report with individual task details and date range support."""
         
         # Apply date filter based on intake activity timestamps
@@ -547,17 +511,19 @@ class PredefinedReportGenerator:
         
         # Get tasks that were picked up within the date range by filtering through activities
         timestamp_gte = date_filter.children[0][1]
-        timestamp_lte = date_filter.children[1][1]
         
         tasks = (
             Task.objects.filter(
                 activities__type="picked_up",
-                activities__timestamp__gte=timestamp_gte,
-                activities__timestamp__lte=timestamp_lte
+                activities__timestamp__gte=timestamp_gte
             )
             .distinct()
-            .prefetch_related("activities")
+            .prefetch_related("activities", "customer", "assigned_to")
         )
+
+        if end_date:
+            tasks = tasks.filter(activities__timestamp__lte=end_date)
+
 
         if not tasks.exists():
             return {
@@ -590,10 +556,14 @@ class PredefinedReportGenerator:
                 # Find ALL picked_up activities within our date range and get the MOST RECENT one
                 pickup_activities_in_range = activities.filter(
                     type=TaskActivity.ActivityType.PICKED_UP,
-                    timestamp__gte=timestamp_gte,
-                    timestamp__lte=timestamp_lte
-                ).order_by('-timestamp')  # Order by most recent first
+                    timestamp__gte=timestamp_gte
+                )
                 
+                if end_date:
+                    pickup_activities_in_range = pickup_activities_in_range.filter(timestamp__lte=end_date)
+                
+                pickup_activities_in_range = pickup_activities_in_range.order_by('-timestamp')
+
                 # Get the most recent pickup activity (the first one in the sorted list)
                 most_recent_pickup = pickup_activities_in_range.first()
 
@@ -705,6 +675,9 @@ class PredefinedReportGenerator:
         # Sort task details by turnaround time (slowest first)
         task_details.sort(key=lambda x: x["turnaround_days"], reverse=True)
 
+        paginator = Paginator(task_details, page_size)
+        paginated_task_details = paginator.get_page(page)
+
         overall_average = (
             sum(all_turnaround_days) / len(all_turnaround_days)
             if all_turnaround_days
@@ -736,7 +709,7 @@ class PredefinedReportGenerator:
 
         result = {
             "periods": periods_data,
-            "task_details": task_details,
+            "task_details": list(paginated_task_details),
             "summary": {
                 "overall_average": int(round(overall_average)),
                 "best_period": best_period,
@@ -753,6 +726,14 @@ class PredefinedReportGenerator:
             },
             "start_date": start_date,
             "end_date": end_date,
+            "pagination": {
+                "current_page": paginated_task_details.number,
+                "page_size": page_size,
+                "total_tasks": paginator.count,
+                "total_pages": paginator.num_pages,
+                "has_next": paginated_task_details.has_next(),
+                "has_previous": paginated_task_details.has_previous(),
+            }
         }
         
         return result

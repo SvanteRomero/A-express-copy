@@ -50,7 +50,8 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response.status === 401 && !originalRequest._retry) {
+    // Fix: Check if error.response exists before accessing status
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
         await refreshAuthLogic(error);
@@ -66,6 +67,7 @@ apiClient.interceptors.response.use(
 export const getProfile = () => apiClient.get('/users/profile/');
 export const getTasks = (params: any = {}) => apiClient.get('/tasks/', { params });
 export const getDebts = (params: any = {}) => apiClient.get('/tasks/debts/', { params });
+export const getFrontDeskPerformance = (params: any = {}) => apiClient.get('/reports/front-desk-performance/', { params });
 export const getTask = (id: string) => apiClient.get(`/tasks/${id}/`);
 export const createTask = (data: any) => apiClient.post('/tasks/', data);
 export const updateTask = (id: string, data: any) => apiClient.patch(`/tasks/${id}/`, data);
@@ -83,9 +85,6 @@ export const deleteReferrer = (referrerId: number) => apiClient.delete(`/referre
 
 export const getTaskActivities = (taskId: string) => apiClient.get(`/tasks/${taskId}/activities/`);
 export const addTaskActivity = (taskId: string, data: any) => apiClient.post(`/tasks/${taskId}/add-activity/`, data);
-
-
-
 
 export const getTaskPayments = (taskId: string) => apiClient.get(`/tasks/${taskId}/payments/`);
 export const addTaskPayment = (taskId: string, data: any) => apiClient.post(`/tasks/${taskId}/add-payment/`, data);
@@ -147,7 +146,6 @@ export const getPaymentCategories = () => apiClient.get('/payment-categories/');
 export const createPaymentCategory = (data: any) => apiClient.post('/payment-categories/', data);
 export const updatePaymentCategory = (categoryId: number, data: any) => apiClient.patch(`/payment-categories/${categoryId}/`, data);
 export const deletePaymentCategory = (categoryId: number) => apiClient.delete(`/payment-categories/${categoryId}/`);
-
 
 // Expenditure Requests
 export const getExpenditureRequests = async (params: { page?: number; page_size?: number; [key: string]: any } = {}): Promise<PaginatedResponse<ExpenditureRequest>> => {

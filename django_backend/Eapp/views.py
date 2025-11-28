@@ -1,4 +1,6 @@
-from common.models import Location
+from django.db.models import Sum, F, DecimalField, Value, Q
+from django.db.models.functions import Coalesce
+from common.models import Location, Model
 from customers.serializers import CustomerSerializer
 from rest_framework import status, permissions, viewsets
 from rest_framework.decorators import action
@@ -50,11 +52,30 @@ def generate_task_id():
 class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Task.objects.all()
+
+        # Annotate total_cost and paid_amount
+        queryset = queryset.annotate(
+            calculated_total_cost=Coalesce(
+                F('estimated_cost'), Value(0, output_field=DecimalField())
+            ) + Coalesce(
+                Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Additive')),
+                Value(0, output_field=DecimalField())
+            ) - Coalesce(
+                Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Subtractive')),
+                Value(0, output_field=DecimalField())
+            ),
+            calculated_paid_amount=Coalesce(Sum('payments__amount'), Value(0, output_field=DecimalField()))
+        )
+
+        # Annotate outstanding_balance
+        queryset = queryset.annotate(
+            outstanding_balance=F('calculated_total_cost') - F('calculated_paid_amount')
+        )
         
         # Prefetch related objects to avoid N+1 queries
         if self.action == 'list':
             return queryset.select_related(
-                'customer', 'assigned_to'
+                'customer', 'assigned_to', 'laptop_model'
             ).prefetch_related(
                 'payments', 'cost_breakdowns'
             )
@@ -62,7 +83,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         # For detail view, prefetch all related data
         return queryset.select_related(
             'assigned_to', 'created_by', 'negotiated_by', 'brand', 'referred_by', 'customer', 
-            'workshop_location', 'workshop_technician'
+            'workshop_location', 'workshop_technician', 'laptop_model'
         ).prefetch_related(
             'activities', 'payments', 'cost_breakdowns'
         )
@@ -127,6 +148,13 @@ class TaskViewSet(viewsets.ModelViewSet):
                 customer = customer_serializer.save()
                 data['customer'] = customer.id
                 customer_created = True
+        
+        # Laptop Model creation/retrieval logic
+        laptop_model_name = data.pop('laptop_model', None)
+        brand_id = data.get('brand', None)
+        if laptop_model_name and brand_id:
+            model, _ = Model.objects.get_or_create(name=laptop_model_name, brand_id=brand_id)
+            data['laptop_model'] = model.id
 
         # --- Business logic moved from serializer ---
         referred_by_name = data.pop("referred_by", None)
@@ -450,3 +478,13 @@ class TaskViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class ModelViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Task.objects.values_list('laptop_model', flat=True).distinct()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        # Ensure no None or empty strings are returned
+        return Response([model for model in queryset if model])

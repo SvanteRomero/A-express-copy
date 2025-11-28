@@ -92,7 +92,7 @@ export function TasksDisplay({ tasks, technicians, onRowClick, showActions, onDe
         task.title.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
         (task.customer_details?.name && task.customer_details.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (task.customer_details?.phone_numbers && task.customer_details.phone_numbers.some((p: any) => p.phone_number.toLowerCase().includes(searchQuery.toLowerCase()))) ||
-        task.laptop_model.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (task.laptop_model_details?.name && task.laptop_model_details.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
         task.description.toLowerCase().includes(searchQuery.toLowerCase())
 
       const matchesStatus = statusFilter === "all" || task.status === statusFilter
@@ -276,7 +276,7 @@ export function TasksDisplay({ tasks, technicians, onRowClick, showActions, onDe
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Laptop className="h-4 w-4 text-gray-400" />
-                    <span className="text-gray-900">{task.laptop_model}</span>
+                    <span className="text-gray-900">{task.laptop_model_details?.name}</span>
                   </div>
                 </TableCell>
                 {isManagerView ? (

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Customer, PhoneNumber, Referrer
+from django.db import transaction
 
 class PhoneNumberSerializer(serializers.ModelSerializer):
     class Meta:
@@ -9,15 +10,12 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
 
 class CustomerSerializer(serializers.ModelSerializer):
     phone_numbers = PhoneNumberSerializer(many=True)
-    has_debt = serializers.SerializerMethodField()
+    has_debt = serializers.ReadOnlyField()
     tasks_count = serializers.ReadOnlyField()
 
     class Meta:
         model = Customer
         fields = ['id', 'name', 'customer_type', 'phone_numbers', 'has_debt', 'tasks_count']
-
-    def get_has_debt(self, obj):
-        return obj.tasks.filter(is_debt=True).exists()
 
     def create(self, validated_data):
         phone_numbers_data = validated_data.pop('phone_numbers')
@@ -27,31 +25,37 @@ class CustomerSerializer(serializers.ModelSerializer):
         return customer
 
     def update(self, instance, validated_data):
-        phone_numbers_data = validated_data.pop('phone_numbers')
+        phone_numbers_data = validated_data.pop('phone_numbers', [])
         instance.name = validated_data.get('name', instance.name)
         instance.customer_type = validated_data.get('customer_type', instance.customer_type)
         instance.save()
 
-        # Get existing phone numbers
-        existing_phone_numbers = {str(pn.id): pn for pn in instance.phone_numbers.all()}
+        with transaction.atomic():
+            # Separate new and existing phone numbers
+            new_phone_numbers = []
+            existing_phone_numbers_data = []
+            for pn_data in phone_numbers_data:
+                if 'id' in pn_data:
+                    existing_phone_numbers_data.append(pn_data)
+                else:
+                    new_phone_numbers.append(PhoneNumber(customer=instance, **pn_data))
 
-        # Update or create phone numbers
-        for phone_number_data in phone_numbers_data:
-            phone_number_id = phone_number_data.get('id')
-            if phone_number_id:
-                # If phone number has an ID, it's an existing one
-                phone_number = existing_phone_numbers.pop(str(phone_number_id), None)
-                if phone_number:
-                    # Update existing phone number
-                    phone_number.phone_number = phone_number_data.get('phone_number', phone_number.phone_number)
-                    phone_number.save()
-            else:
-                # If phone number has no ID, it's a new one
-                PhoneNumber.objects.get_or_create(customer=instance, **phone_number_data)
+            # Bulk create new phone numbers
+            if new_phone_numbers:
+                PhoneNumber.objects.bulk_create(new_phone_numbers)
 
-        # Remove phone numbers that are no longer in the list
-        for phone_number in existing_phone_numbers.values():
-            phone_number.delete()
+            # Bulk update existing phone numbers
+            if existing_phone_numbers_data:
+                pns_to_update = []
+                for pn_data in existing_phone_numbers_data:
+                    pn = PhoneNumber.objects.get(id=pn_data['id'], customer=instance)
+                    pn.phone_number = pn_data.get('phone_number', pn.phone_number)
+                    pns_to_update.append(pn)
+                PhoneNumber.objects.bulk_update(pns_to_update, ['phone_number'])
+            
+            # Delete phone numbers that are not in the payload
+            phone_ids_to_keep = [pn['id'] for pn in existing_phone_numbers_data if 'id' in pn]
+            instance.phone_numbers.exclude(id__in=phone_ids_to_keep).delete()
 
         return instance
 

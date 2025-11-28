@@ -1,6 +1,8 @@
 "use client"
+
 import { useMemo, useCallback } from "react"
 import type * as React from "react"
+import { usePathname } from "next/navigation"
 import {
   Building2,
   Calendar,
@@ -100,7 +102,7 @@ const navigationItems = {
       icon: User,
     },
   ],
-    Manager: [
+  Manager: [
     {
       title: "Dashboard",
       url: "/dashboard/manager",
@@ -191,9 +193,9 @@ const navigationItems = {
       icon: Wrench,
     },
     {
-        title: "History",
-        url: "/dashboard/front-desk/history",
-        icon: FileText,
+      title: "History",
+      url: "/dashboard/front-desk/history",
+      icon: FileText,
     },
     {
       title: "Profile",
@@ -242,6 +244,7 @@ const navigationItems = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, logout } = useAuth()
+  const pathname = usePathname()
 
   const items = useMemo(() => (user ? navigationItems[user.role as keyof typeof navigationItems] : []) || [], [user]);
 
@@ -263,7 +266,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   }, [user])
 
-    // Create a full name from first_name and last_name
+  // Create a full name from first_name and last_name
   const fullName = useMemo(() => {
     if (!user) return "";
     return `${user.first_name} ${user.last_name}`.trim();
@@ -282,6 +285,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return "U"
   }, [user])
 
+  const checkIsActive = useCallback((itemUrl: string) => {
+    // Exact match for the dashboard root to avoid highlighting everything
+    if (itemUrl.endsWith("/dashboard") || itemUrl.endsWith("/manager") || itemUrl.endsWith("/technician") || itemUrl.endsWith("/accountant") || itemUrl.endsWith("/front-desk")) {
+        // If the URL is just one of the dashboard roots, we want an exact match or strict subdirectory match logic 
+        // But simply: if the item URL is exactly equal to the pathname, it is active.
+        return pathname === itemUrl;
+    }
+    // For other routes (like /tasks), if pathname starts with the item URL, it's active
+    return pathname.startsWith(itemUrl);
+  }, [pathname]);
+
   if (!user) return null
 
   return (
@@ -290,7 +304,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href={getDashboardUrl()}>
+              <Link href={getDashboardUrl()} prefetch={false}>
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <Shield className="size-4" />
                 </div>
@@ -310,8 +324,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={checkIsActive(item.url)}
+                  >
+                    <Link href={item.url} prefetch={false}>
                       <item.icon />
                       <span>{item.title}</span>
                     </Link>
@@ -367,13 +384,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/profile">
+                    <Link href="/dashboard/profile" prefetch={false}>
                       <User />
                       Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/settings">
+                    <Link href="/dashboard/settings" prefetch={false}>
                       <Settings />
                       Settings
                     </Link>

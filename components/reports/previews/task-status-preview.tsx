@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table"
-import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip } from "recharts"
+import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts"
 
 const ChartContainer = ({ children, className }: any) => {
     return <div className={className}>{children}</div>
@@ -22,7 +22,11 @@ interface TaskStatusReport {
         total_tasks: number
         completed_tasks: number
         in_progress_tasks: number
-    }
+    },
+    popular_brand: string;
+    popular_model: string;
+    top_brands: { brand__name: string; count: number }[];
+    top_models: { laptop_model: string; count: number }[];
 }
 
 export const TaskStatusPreview = ({ report }: { report: any }) => {
@@ -30,6 +34,10 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
     const statusDistribution = report.status_distribution || []
     const urgencyDistribution = report.urgency_distribution || []
     const totalTasks = report.total_tasks || 0
+    const popularBrand = report.popular_brand || "N/A"
+    const popularModel = report.popular_model || "N/A"
+    const topBrands = report.top_brands || []
+    const topModels = report.top_models || []
 
     // Calculate summary from the actual data
     const completedTasks = statusDistribution.find((s: any) => s.status === 'Completed')?.count || 0
@@ -54,6 +62,62 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
                     <CardContent className="p-4">
                         <p className="text-sm text-gray-600">In Progress</p>
                         <p className="text-2xl font-bold text-orange-600">{inProgressTasks}</p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-sm text-gray-600">Most Popular Brand</p>
+                        <p className="text-2xl font-bold text-gray-900">{popularBrand}</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-sm text-gray-600">Most Popular Model</p>
+                        <p className="text-2xl font-bold text-gray-900">{popularModel}</p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Top 5 Brands</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ChartContainer className="h-[300px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={topBrands}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="brand__name" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar dataKey="count" fill="#8884d8" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </ChartContainer>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Top 5 Models</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ChartContainer className="h-[300px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={topModels}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="laptop_model" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar dataKey="count" fill="#82ca9d" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </ChartContainer>
                     </CardContent>
                 </Card>
             </div>
@@ -185,3 +249,4 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
         </div>
     )
 }
+

@@ -8,6 +8,7 @@ import { PaymentMethodsPreview } from "./payment-methods-preview"
 import { TurnaroundTimePreview } from "./turnaround-time-preview"
 import { InventoryLocationPreview } from "./inventory-location-preview"
 import { GenericReportPreview } from "./generic-report-preview"
+import FrontDeskPerformanceReport from "../front-desk-performance-report"
 
 // Extended interfaces for all report types
 interface OutstandingTask {
@@ -128,7 +129,11 @@ interface TaskStatusReport {
         total_tasks: number
         completed_tasks: number
         in_progress_tasks: number
-    }
+    },
+    popular_brand: string;
+    popular_model: string;
+    top_brands: { brand__name: string; count: number }[];
+    top_models: { laptop_model: string; count: number }[];
 }
 
 interface TechnicianWorkloadReport {
@@ -235,6 +240,24 @@ interface InventoryLocationReport {
     }
 }
 
+interface FrontDeskPerformanceData {
+  user_name: string;
+  approved_count: number;
+  sent_out_count: number;
+  approved_percentage: number;
+  sent_out_percentage: number;
+}
+
+interface FrontDeskPerformanceReportData {
+  performance: FrontDeskPerformanceData[];
+  summary: {
+    total_approved: number;
+    total_sent_out: number;
+    start_date: string;
+    end_date: string;
+  };
+}
+
 export const ReportPreview = ({
     type,
     data,
@@ -281,6 +304,8 @@ export const ReportPreview = ({
             return <TurnaroundTimePreview report={data} searchTerm={""} />
         case "laptops_in_shop_by_location":
             return <InventoryLocationPreview report={data as InventoryLocationReport} />
+        case "front_desk_performance":
+            return <FrontDeskPerformanceReport data={data as FrontDeskPerformanceReportData} />
         default:
             return <GenericReportPreview report={data} />
     }

@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.shortcuts import render
 from django.http import HttpResponse
 import csv
@@ -7,22 +8,19 @@ from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.utils import timezone
-from django.db.models import Sum
-from financials.models import Payment
-from datetime import timedelta
-from .services import ReportGenerator
+from django.db.models import Sum, Count
 from Eapp.serializers import ReportConfigSerializer
-from users.permissions import (
-    IsAdminOrManagerOrAccountant,
-    IsAdminOrManagerOrFrontDeskOrAccountant,
-)
-from .predefined_reports import PredefinedReportGenerator
-from Eapp.models import Task
+from reports.predefined_reports import PredefinedReportGenerator
+from reports.services import ReportGenerator
+from users.permissions import IsAdminOrManagerOrFrontDeskOrAccountant
+from financials.models import Payment
+from Eapp.models import Task, TaskActivity
+from users.models import User
 
 
 @api_view(["POST"])
 @permission_classes(
-    [permissions.IsAuthenticated, IsAdminOrManagerOrFrontDeskOrAccountant]
+    [permissions.IsAuthenticated]
 )
 def generate_custom_report(request):
 
@@ -461,6 +459,86 @@ def get_laptops_in_shop_by_location(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
         
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated, IsAdminOrManagerOrFrontDeskOrAccountant])
+def get_front_desk_performance(request):
+    """Get front desk performance report with custom date range support"""
+    date_range = request.GET.get("date_range", "last_30_days")
+    start_date_str = request.GET.get("start_date")
+    end_date_str = request.GET.get("end_date")
+
+    end_date = timezone.now()
+    if date_range == "last_7_days":
+        start_date = end_date - timedelta(days=7)
+    elif date_range == "last_30_days":
+        start_date = end_date - timedelta(days=30)
+    elif date_range == "last_3_months":
+        start_date = end_date - timedelta(days=90)
+    elif date_range == "last_6_months":
+        start_date = end_date - timedelta(days=180)
+    elif date_range == "last_year":
+        start_date = end_date - timedelta(days=365)
+    elif date_range == "custom" and start_date_str and end_date_str:
+        start_date = timezone.datetime.fromisoformat(start_date_str)
+        end_date = timezone.datetime.fromisoformat(end_date_str)
+    else: # Default
+        start_date = end_date - timedelta(days=30)
+
+    front_desk_users = User.objects.filter(role="Front Desk")
+    
+    approved_activities = TaskActivity.objects.filter(
+        type=TaskActivity.ActivityType.READY,
+        timestamp__range=(start_date, end_date),
+        user__in=front_desk_users
+    ).values('user__id', 'user__first_name', 'user__last_name').annotate(count=Count('id'))
+
+    sent_out_activities = TaskActivity.objects.filter(
+        type=TaskActivity.ActivityType.PICKED_UP,
+        timestamp__range=(start_date, end_date),
+        user__in=front_desk_users
+    ).values('user__id', 'user__first_name', 'user__last_name').annotate(count=Count('id'))
+
+    total_approved = sum(item['count'] for item in approved_activities)
+    total_sent_out = sum(item['count'] for item in sent_out_activities)
+
+    performance_data = {}
+
+    for activity in approved_activities:
+        user_id = activity['user__id']
+        if user_id not in performance_data:
+            performance_data[user_id] = {
+                "user_name": f"{activity['user__first_name']} {activity['user__last_name']}",
+                "approved_count": 0,
+                "sent_out_count": 0
+            }
+        performance_data[user_id]['approved_count'] = activity['count']
+
+    for activity in sent_out_activities:
+        user_id = activity['user__id']
+        if user_id not in performance_data:
+            performance_data[user_id] = {
+                "user_name": f"{activity['user__first_name']} {activity['user__last_name']}",
+                "approved_count": 0,
+                "sent_out_count": 0
+            }
+        performance_data[user_id]['sent_out_count'] = activity['count']
+        
+    for user_id, data in performance_data.items():
+        data['approved_percentage'] = (data['approved_count'] / total_approved * 100) if total_approved > 0 else 0
+        data['sent_out_percentage'] = (data['sent_out_count'] / total_sent_out * 100) if total_sent_out > 0 else 0
+
+    report_data = {
+        "performance": list(performance_data.values()),
+        "summary": {
+            "total_approved": total_approved,
+            "total_sent_out": total_sent_out,
+            "start_date": start_date.strftime('%Y-%m-%d'),
+            "end_date": end_date.strftime('%Y-%m-%d'),
+        }
+    }
+
+    return Response({"success": True, "report": report_data, "type": "front_desk_performance"})
+
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated, IsAdminOrManagerOrFrontDeskOrAccountant])
 def get_outstanding_payments(request):

@@ -64,6 +64,8 @@ export function InWorkshopTasksList() {
   const { user } = useAuth()
   const { data: tasks, isLoading, isError, error } = useInWorkshopTasks();
 
+  const filteredTasks = tasks?.filter(task => task.workshop_status === 'In Workshop' && task.status === 'In Progress');
+
   if (isLoading) {
     return (
         <Card>
@@ -102,7 +104,7 @@ export function InWorkshopTasksList() {
       </CardHeader>
       <CardContent>
         <div className="grid gap-6">
-          {tasks?.map((task) => (
+          {filteredTasks?.map((task) => (
             <div key={task.id} className="rounded-lg border bg-card text-card-foreground shadow-sm">
               <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2 space-y-4">

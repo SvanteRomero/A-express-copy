@@ -17,6 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescript
 import { CurrencyInput } from "@/components/ui/core/currency-input";
 import { useTechnicians, useManagers, useBrands, useLocations, useWorkshopTechnicians } from '@/hooks/use-data'
 import { useCustomers } from '@/hooks/use-customers'
+import { useModels } from '@/hooks/use-models'
 import { useReferrers } from '@/hooks/use-referrers'
 import { SimpleCombobox } from '@/components/ui/core/combobox'
 import { toast } from '@/hooks/use-toast'
@@ -83,6 +84,7 @@ export function NewTaskForm({}: NewTaskFormProps) {
   const { data: locations, isLoading: isLoadingLocations } = useLocations()
   const { data: customers, isLoading: isLoadingCustomers } = useCustomers({ query: customerSearch, page: customerPage })
   const { data: referrers, isLoading: isLoadingReferrers } = useReferrers(referrerSearch)
+  const { data: models, isLoading: isLoadingModels } = useModels()
 
 
   const [formData, setFormData] = useState<FormData>({
@@ -248,6 +250,7 @@ export function NewTaskForm({}: NewTaskFormProps) {
 
   const customerOptions = customers ? customers.results.map((c: any) => ({ label: c.name, value: c.id.toString() })) : [];
   const referrerOptions = referrers ? referrers.map((r: any) => ({ label: r.name, value: r.id.toString() })) : [];
+  const modelOptions = models ? models.map((m: any) => ({ label: m, value: m })) : [];
 
   return (
     <>
@@ -337,12 +340,17 @@ export function NewTaskForm({}: NewTaskFormProps) {
                 </Select>
               </FormField>
               <FormField id='laptop_model' label='Model' error={errors.laptop_model}>
-                <Input
-                  id='laptop_model'
+                <SimpleCombobox
+                  options={modelOptions}
                   value={formData.laptop_model}
-                  onChange={(e) => handleInputChange('laptop_model', e.target.value)}
-                  readOnly={formData.device_type === 'Motherboard Only'}
-                  placeholder="e.g. MacBook Pro 14-inch"
+                  onChange={(value) => {
+                    handleInputChange('laptop_model', value)
+                  }}
+                  onInputChange={(value) => {
+                    handleInputChange('laptop_model', value)
+                  }}
+                  placeholder="Search or create model..."
+                  disabled={isLoadingModels || formData.device_type === 'Motherboard Only'}
                 />
               </FormField>
             </div>
