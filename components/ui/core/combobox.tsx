@@ -11,6 +11,7 @@ interface ComboboxProps {
   onInputChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 export function SimpleCombobox({ 
@@ -19,7 +20,8 @@ export function SimpleCombobox({
     onChange, 
     onInputChange, 
     placeholder, 
-    className 
+    className,
+    disabled 
 }: ComboboxProps) {
   const [inputValue, setInputValue] = useState(value || '');
   const [showOptions, setShowOptions] = useState(false);
@@ -63,6 +65,7 @@ export function SimpleCombobox({
         value={inputValue}
         onChange={handleInputChange}
         onFocus={() => setShowOptions(true)}
+        disabled={disabled}
       />
       {showOptions && options.length > 0 && (
         <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-md mt-1">

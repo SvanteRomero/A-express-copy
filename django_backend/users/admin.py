@@ -1,10 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User
+from .forms import CustomUserCreationForm, CustomUserChangeForm
 from django.utils.html import format_html
 
 class UserAdmin(BaseUserAdmin):
     
+    form = CustomUserChangeForm
+    add_form = CustomUserCreationForm
+
     list_display = ('id', 'username', 'email', 'first_name', 'last_name', 
                     'role', 'is_active', 'is_staff', 'last_login', 'created_at', 
                     'profile_picture_thumbnail')
@@ -30,8 +34,7 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'email', 'first_name', 'last_name', 'phone', 
-                        'role', 'password', 'is_active', 'is_staff', 'profile_picture'),
+            'fields': ('username', 'email', 'first_name', 'last_name', 'role', 'password', 'password2'),
         }),
     )
     

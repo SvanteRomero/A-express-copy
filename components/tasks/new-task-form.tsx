@@ -17,7 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescript
 import { CurrencyInput } from "@/components/ui/core/currency-input";
 import { useTechnicians, useManagers, useBrands, useLocations, useWorkshopTechnicians } from '@/hooks/use-data'
 import { useCustomers } from '@/hooks/use-customers'
-import { import { useModels } from '@/hooks/use-models'
+import { useModels } from '@/hooks/use-models'
 import { useReferrers } from '@/hooks/use-referrers'
 import { SimpleCombobox } from '@/components/ui/core/combobox'
 import { toast } from '@/hooks/use-toast'

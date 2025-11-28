@@ -73,6 +73,7 @@ export interface Customer {
 }
 
 export interface Task {
+  laptop_model_details: any;
   id: number;
   title: string;
   description: string;

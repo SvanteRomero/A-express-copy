@@ -1,13 +1,12 @@
 'use client'
 
 import { TaskNotes } from "./task-notes";
-import { useState } from "react"
+import { SetStateAction, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { Button } from "@/components/ui/core/button"
 import { Input } from "@/components/ui/core/input"
 import { Label } from "@/components/ui/core/label"
-import { Textarea } from "@/components/ui/core/textarea"
 import { Badge } from "@/components/ui/core/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select"
@@ -39,18 +38,15 @@ import { TaskActivityLog } from "./task-activity-log"
 import { DayPicker } from "react-day-picker"
 import "react-day-picker/dist/style.css"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/layout/popover"
-import { useTask, useTechnicians, useLocations, useTaskStatusOptions, useTaskUrgencyOptions, useBrands } from "@/hooks/use-data";
+import { useTask, useTechnicians, useLocations, useTaskStatusOptions, useTaskUrgencyOptions, useBrands} from "@/hooks/use-data";
+import { useModels } from "@/hooks/use-models";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { CostBreakdown } from "./cost-breakdown";
-import { SimpleCombobox as Combobox } from "@/components/ui/core/combobox";
+import { SimpleCombobox } from "@/components/ui/core/combobox";
 import { CurrencyInput } from "@/components/ui/core/currency-input";
 import { AddExpenditureDialog } from "@/components/financials/add-expenditure-dialog";
-
-
-
-
 
 interface TaskDetailsPageProps {
   taskId: string
@@ -67,6 +63,8 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
   const { data: statusOptions } = useTaskStatusOptions();
   const { data: urgencyOptions } = useTaskUrgencyOptions();
   const { data: brands } = useBrands();
+  const [modelSearch, setModelSearch] = useState("")
+  const { data: models, isLoading: isLoadingModels } = useModels(modelSearch)
   const { data: paymentMethods } = usePaymentMethods();
   const { toast } = useToast();
 
@@ -76,23 +74,88 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
   const [isAddExpenditureOpen, setIsAddExpenditureOpen] = useState(false);
 
   const [isEditingLaptop, setIsEditingLaptop] = useState(false)
-
-
+  const modelOptions = models ? models.map((m: any) => ({ label: m.name, value: m.id.toString() })) : [];
 
   const updateTaskMutation = useMutation({
-    mutationFn: ({ field, value }: { field: string; value: any }) =>
-      updateTask(taskId, { [field]: value }),
+    mutationFn: (updates: { [key: string]: any }) =>
+      updateTask(taskId, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
     },
   });
 
+  const [repairManagementData, setRepairManagementData] = useState({
+    assigned_to: '',
+    status: '',
+    current_location: '',
+    urgency: '',
+  });
+
+  useEffect(() => {
+    if (taskData) {
+      setRepairManagementData({
+        assigned_to: taskData.assigned_to?.toString() || '',
+        status: taskData.status || '',
+        current_location: taskData.current_location || '',
+        urgency: taskData.urgency || '',
+      });
+    }
+  }, [taskData]);
+
+  const handleRepairManagementSave = () => {
+    if (!taskData) return;
+    const changes: { [key: string]: any } = {};
+    const activityMessages: string[] = [];
+
+    if (repairManagementData.assigned_to !== (taskData.assigned_to?.toString() || '')) {
+      changes.assigned_to = repairManagementData.assigned_to;
+      const oldTech = technicians?.find(t => t.id.toString() === (taskData.assigned_to?.toString() || ''))?.full_name || 'Unassigned';
+      const newTech = technicians?.find(t => t.id.toString() === repairManagementData.assigned_to)?.full_name || 'Unassigned';
+      activityMessages.push(`Assigned Technician changed from ${oldTech} to ${newTech}`);
+    }
+    if (repairManagementData.status !== taskData.status) {
+      changes.status = repairManagementData.status;
+      activityMessages.push(`Status changed from ${taskData.status} to ${repairManagementData.status}`);
+    }
+    if (repairManagementData.current_location !== taskData.current_location) {
+      changes.current_location = repairManagementData.current_location;
+      activityMessages.push(`Location changed from ${taskData.current_location} to ${repairManagementData.current_location}`);
+    }
+    if (repairManagementData.urgency !== taskData.urgency) {
+      changes.urgency = repairManagementData.urgency;
+      activityMessages.push(`Urgency changed from ${taskData.urgency} to ${repairManagementData.urgency}`);
+    }
+
+    if (Object.keys(changes).length > 0) {
+      updateTaskMutation.mutate(changes, {
+        onSuccess: () => {
+          toast({ title: "Changes Saved", description: "Repair management details have been updated." });
+          if (activityMessages.length > 0) {
+            const message = activityMessages.join(', ');
+            addTaskActivity(taskId, { message: `Repair management updated: ${message}` });
+          }
+        }
+      });
+    }
+  };
+
+  const hasRepairManagementChanges = useMemo(() => {
+    if (!taskData) return false;
+    return (
+      repairManagementData.assigned_to !== (taskData.assigned_to?.toString() || '') ||
+      repairManagementData.status !== taskData.status ||
+      repairManagementData.current_location !== taskData.current_location ||
+      repairManagementData.urgency !== taskData.urgency
+    );
+  }, [repairManagementData, taskData]);
+  
   const addTaskPaymentMutation = useMutation({
     mutationFn: (data: any) => addTaskPayment(taskId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
     },
   });
+
 
   // Role-based permissions
   const isAdmin = user?.role === "Administrator"
@@ -115,9 +178,9 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
 
   const handleFieldUpdate = async (field: string, value: any) => {
     if (["name", "phone_numbers"].includes(field)) {
-      updateTaskMutation.mutate({ field: "customer", value: { [field]: value } });
+      updateTaskMutation.mutate({ customer: { [field]: value } });
     } else {
-      updateTaskMutation.mutate({ field, value });
+      updateTaskMutation.mutate({ [field]: value });
     }
   }
 
@@ -442,11 +505,22 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
                             ))}
                           </SelectContent>
                         </Select>
-                        <Input
-                          value={taskData.laptop_model || ''}
-                          onChange={(e) => handleFieldUpdate("laptop_model", e.target.value)}
-                          className="mt-1"
+                        <SimpleCombobox
+                          options={modelOptions}
+                          value={taskData.laptop_model_details?.name || ''}
+                          onChange={(value: any) => {
+                            const selectedModel = models?.find((m: any) => m.id.toString() === value)
+                            if(selectedModel){
+                              handleFieldUpdate("laptop_model", selectedModel.id)
+                            } else {
+                              handleFieldUpdate("laptop_model", value)
+                            }
+                          }}
+                          onInputChange={(value: SetStateAction<string>) => {
+                            setModelSearch(value)
+                          }}
                           placeholder="Model"
+                          disabled={isLoadingModels || !taskData.brand}
                         />
                       </div>
                     ) : (
@@ -455,7 +529,7 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
                           {taskData.brand_details?.name || "N/A"}
                         </p>
                         <p className="text-gray-900 font-medium">
-                          {taskData.laptop_model || "N/A"}
+                          {taskData.laptop_model_details?.name || "N/A"}
                         </p>
                       </div>
                     )}
@@ -537,8 +611,8 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
                     <Label className="text-sm font-medium text-gray-600">Assigned Technician</Label>
                     {canEditTechnician ? (
                       <Select
-                        value={taskData.assigned_to?.toString() || ''}
-                        onValueChange={(value) => handleFieldUpdate("assigned_to", value)}
+                        value={repairManagementData.assigned_to}
+                        onValueChange={(value) => setRepairManagementData(prev => ({...prev, assigned_to: value}))}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -560,8 +634,8 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
                     <Label className="text-sm font-medium text-gray-600">Current Status</Label>
                     {canEditStatus ? (
                       <Select
-                        value={taskData.status || ''}
-                        onValueChange={(value) => handleFieldUpdate("status", value)}
+                        value={repairManagementData.status}
+                        onValueChange={(value) => setRepairManagementData(prev => ({...prev, status: value}))}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -583,8 +657,8 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
                     <Label className="text-sm font-medium text-gray-600">Current Location</Label>
                     {canEditLocation ? (
                       <Select
-                        value={taskData.current_location || ''}
-                        onValueChange={(value) => handleFieldUpdate("current_location", value)}
+                        value={repairManagementData.current_location}
+                        onValueChange={(value) => setRepairManagementData(prev => ({...prev, current_location: value}))}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -604,7 +678,7 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
 
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-600">Urgency Level</Label>
-                    <Select value={taskData.urgency || ''} onValueChange={(value) => handleFieldUpdate("urgency", value)} disabled={!canEditUrgency}>
+                    <Select value={repairManagementData.urgency} onValueChange={(value) => setRepairManagementData(prev => ({...prev, urgency: value}))} disabled={!canEditUrgency}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -619,6 +693,9 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
                   </div>
                 </div>
               </CardContent>
+              <CardFooter>
+                <Button onClick={handleRepairManagementSave} disabled={!hasRepairManagementChanges}>Save Changes</Button>
+              </CardFooter>
             </Card>
             <TaskNotes taskId={taskId} />
           </div>
