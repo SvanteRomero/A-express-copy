@@ -36,6 +36,12 @@ export interface Brand {
   name: string;
 }
 
+export interface Model {
+  id: number;
+  name: string;
+  brand: number;
+}
+
 export interface CostBreakdown {
   id: number;
   description: string;

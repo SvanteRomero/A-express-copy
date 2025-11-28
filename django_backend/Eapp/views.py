@@ -1,6 +1,6 @@
 from django.db.models import Sum, F, DecimalField, Value, Q
 from django.db.models.functions import Coalesce
-from common.models import Location
+from common.models import Location, Model
 from customers.serializers import CustomerSerializer
 from rest_framework import status, permissions, viewsets
 from rest_framework.decorators import action
@@ -75,7 +75,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         # Prefetch related objects to avoid N+1 queries
         if self.action == 'list':
             return queryset.select_related(
-                'customer', 'assigned_to'
+                'customer', 'assigned_to', 'laptop_model'
             ).prefetch_related(
                 'payments', 'cost_breakdowns'
             )
@@ -83,7 +83,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         # For detail view, prefetch all related data
         return queryset.select_related(
             'assigned_to', 'created_by', 'negotiated_by', 'brand', 'referred_by', 'customer', 
-            'workshop_location', 'workshop_technician'
+            'workshop_location', 'workshop_technician', 'laptop_model'
         ).prefetch_related(
             'activities', 'payments', 'cost_breakdowns'
         )
@@ -148,6 +148,13 @@ class TaskViewSet(viewsets.ModelViewSet):
                 customer = customer_serializer.save()
                 data['customer'] = customer.id
                 customer_created = True
+        
+        # Laptop Model creation/retrieval logic
+        laptop_model_name = data.pop('laptop_model', None)
+        brand_id = data.get('brand', None)
+        if laptop_model_name and brand_id:
+            model, _ = Model.objects.get_or_create(name=laptop_model_name, brand_id=brand_id)
+            data['laptop_model'] = model.id
 
         # --- Business logic moved from serializer ---
         referred_by_name = data.pop("referred_by", None)

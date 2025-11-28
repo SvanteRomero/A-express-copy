@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.core.validators import MinValueValidator
 from decimal import Decimal
-from common.serializers import BrandSerializer, LocationSerializer
+from common.serializers import BrandSerializer, LocationSerializer, ModelSerializer
 from customers.serializers import CustomerSerializer, ReferrerSerializer, CustomerListSerializer
 from .models import Task, TaskActivity
 from users.serializers import UserSerializer, UserListSerializer
@@ -19,6 +19,7 @@ class TaskListSerializer(serializers.ModelSerializer):
     customer_details = CustomerListSerializer(source='customer', read_only=True)
     assigned_to_details = UserListSerializer(source='assigned_to', read_only=True)
     outstanding_balance = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    laptop_model_details = ModelSerializer(source='laptop_model', read_only=True)
 
     class Meta:
         model = Task
@@ -31,6 +32,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             'workshop_status',
             'current_location',
             'laptop_model',
+            'laptop_model_details',
             'description',
             'updated_at',
             'customer_details',
@@ -73,6 +75,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
         queryset=User.objects.filter(is_active=True), allow_null=True, required=False
     )
     negotiated_by_details = UserSerializer(source="negotiated_by", read_only=True)
+    laptop_model_details = ModelSerializer(source='laptop_model', read_only=True)
 
     class Meta:
         model = Task
@@ -81,7 +84,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             'assigned_to', 'assigned_to_details', 'created_by_details',
             'created_at', 'updated_at', 'due_date',
             'customer', 'customer_details',
-            'brand', 'brand_details', 'laptop_model',
+            'brand', 'brand_details', 'laptop_model', 'laptop_model_details',
             'device_type', 'device_notes',
             'estimated_cost', 'total_cost', 'paid_amount', 'payment_status',
             'current_location', 'date_in', 'approved_at', 'approved_by',

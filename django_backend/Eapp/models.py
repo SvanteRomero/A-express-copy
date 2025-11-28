@@ -66,7 +66,7 @@ class Task(models.Model):
     brand = models.ForeignKey('common.Brand', on_delete=models.SET_NULL, null=True, blank=True)
     device_type = models.CharField(max_length=20, choices=DeviceType.choices, default=DeviceType.FULL)
     device_notes = models.TextField(blank=True)
-    laptop_model = models.CharField(max_length=100)
+    laptop_model = models.ForeignKey('common.Model', on_delete=models.SET_NULL, null=True, blank=True)
     estimated_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     total_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
