@@ -129,7 +129,11 @@ interface TaskStatusReport {
         total_tasks: number
         completed_tasks: number
         in_progress_tasks: number
-    }
+    },
+    popular_brand: string;
+    popular_model: string;
+    top_brands: { brand__name: string; count: number }[];
+    top_models: { laptop_model: string; count: number }[];
 }
 
 interface TechnicianWorkloadReport {

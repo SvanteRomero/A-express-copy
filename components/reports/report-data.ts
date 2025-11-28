@@ -66,7 +66,7 @@ export const financialReports: ReportCard[] = [
 export const operationalReports: ReportCard[] = [
   {
     id: "task-status",
-    title: "Tasks by Status Overview",
+    title: "Task Report",
     description: "Current number of tasks in each status category",
     icon: ClipboardList,
     href: "/dashboard/reports/task-status",
@@ -141,7 +141,7 @@ export const recentReports: RecentReport[] = [
   },
   {
     id: "RPT-004",
-    name: "Tasks by Status Overview",
+    name: "Task Report",
     type: "Operational",
     generatedBy: "Shop Manager",
     generatedAt: "2024-01-12 4:20 PM",

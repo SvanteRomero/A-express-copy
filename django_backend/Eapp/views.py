@@ -1,3 +1,5 @@
+from django.db.models import Sum, F, DecimalField, Value, Q
+from django.db.models.functions import Coalesce
 from common.models import Location
 from customers.serializers import CustomerSerializer
 from rest_framework import status, permissions, viewsets
@@ -50,6 +52,25 @@ def generate_task_id():
 class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Task.objects.all()
+
+        # Annotate total_cost and paid_amount
+        queryset = queryset.annotate(
+            calculated_total_cost=Coalesce(
+                F('estimated_cost'), Value(0, output_field=DecimalField())
+            ) + Coalesce(
+                Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Additive')),
+                Value(0, output_field=DecimalField())
+            ) - Coalesce(
+                Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Subtractive')),
+                Value(0, output_field=DecimalField())
+            ),
+            calculated_paid_amount=Coalesce(Sum('payments__amount'), Value(0, output_field=DecimalField()))
+        )
+
+        # Annotate outstanding_balance
+        queryset = queryset.annotate(
+            outstanding_balance=F('calculated_total_cost') - F('calculated_paid_amount')
+        )
         
         # Prefetch related objects to avoid N+1 queries
         if self.action == 'list':
@@ -450,3 +471,13 @@ class TaskViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class ModelViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Task.objects.values_list('laptop_model', flat=True).distinct()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        # Ensure no None or empty strings are returned
+        return Response([model for model in queryset if model])
