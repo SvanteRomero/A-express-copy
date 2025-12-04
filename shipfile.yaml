@@ -1,0 +1,11 @@
+script: |
+  cd /django_backend
+  pip install -r requirements.txt
+  py manage.py makemigrations
+  py manage.py migrate
+  py manage.py runserver
+  cd ..
+  pnpm install
+  pnpm run build
+
+run: pnpm start
