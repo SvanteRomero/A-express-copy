@@ -1,9 +1,7 @@
-from django.db.models import Q, Sum, Count, Avg, F, Value, DecimalField
+from django.db.models import Q, Sum, F, Value, DecimalField
 from django.db.models.functions import Coalesce
-from Eapp.models import Task, User
-from financials.models import  Payment
-from datetime import datetime, timedelta
-from decimal import Decimal
+from Eapp.models import Task
+from datetime import timedelta
 from django.utils import timezone
 
 
