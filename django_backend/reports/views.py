@@ -1,7 +1,4 @@
 from datetime import timedelta
-from django.shortcuts import render
-from django.http import HttpResponse
-import csv
 
 # Create your views here.
 from rest_framework import permissions, status
