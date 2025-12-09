@@ -67,13 +67,13 @@ export function useInProgressTasks(isWorkshopView: boolean, userId: string | und
                     workshopTasksPromise,
                 ]);
 
-                const normalTasks = normalTasksResponse.data.results?.filter(task => task.workshop_status !== "In Workshop") || [];
+                const normalTasks = normalTasksResponse.data.results?.filter((task: { workshop_status: string }) => task.workshop_status !== "In Workshop") || [];
                 const workshopTasks = workshopTasksResponse.data.results || [];
                 
                 // Merge and de-duplicate
                 const allTasks = new Map<number, Task>();
-                normalTasks.forEach(task => allTasks.set(task.id, task));
-                workshopTasks.forEach(task => allTasks.set(task.id, task));
+                normalTasks.forEach((task: Task) => allTasks.set(task.id, task));
+                workshopTasks.forEach((task: Task) => allTasks.set(task.id, task));
 
                 return Array.from(allTasks.values());
 
