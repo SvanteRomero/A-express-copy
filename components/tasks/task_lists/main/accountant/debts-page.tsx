@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useTasks } from "@/hooks/use-tasks";
-import { TasksDisplay } from "./tasks-display";
+import { TasksDisplay } from "../../../tasks-display";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addTaskPayment } from "@/lib/api-client";

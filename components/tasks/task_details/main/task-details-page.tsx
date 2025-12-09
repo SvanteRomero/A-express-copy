@@ -1,6 +1,6 @@
 'use client'
 
-import { TaskNotes } from "./task-notes";
+import { TaskNotes } from "@/components/tasks/task_details/main/task-notes";
 import { SetStateAction, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/layout/card"
@@ -34,7 +34,7 @@ import {
 import { useAuth } from "@/lib/auth-context"
 import { updateTask, addTaskPayment, addTaskActivity } from "@/lib/api-client"
 
-import { TaskActivityLog } from "./task-activity-log"
+import { TaskActivityLog } from "@/components/tasks/task_details/main/task-activity-log"
 import { DayPicker } from "react-day-picker"
 import "react-day-picker/dist/style.css"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/layout/popover"
@@ -43,7 +43,7 @@ import { useModels } from "@/hooks/use-models";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { CostBreakdown } from "./cost-breakdown";
+import { CostBreakdown } from "@/components/tasks/task_details/main/cost-breakdown";
 import { SimpleCombobox } from "@/components/ui/core/combobox";
 import { CurrencyInput } from "@/components/ui/core/currency-input";
 import { AddExpenditureDialog } from "@/components/financials/add-expenditure-dialog";

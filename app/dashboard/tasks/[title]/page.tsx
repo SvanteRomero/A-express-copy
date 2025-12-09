@@ -1,7 +1,7 @@
 'use client'
 import React from "react"
 import { useAuth } from "@/lib/auth-context"
-import { TechnicianTaskDetails } from "@/components/tasks/technician-task-details"
+import { TechnicianTaskDetails } from "@/components/tasks/task_details/technician/technician-task-details"
 import { TaskDetailsPage } from "@/components/tasks/task-details-page"
 
 interface TaskDetailsProps {

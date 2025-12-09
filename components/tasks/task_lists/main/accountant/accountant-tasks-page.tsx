@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { deleteTask, addTaskPayment } from "@/lib/api-client";
-import { TasksDisplay } from "./tasks-display";
+import { TasksDisplay } from "@/components/tasks/tasks-display";
 import { useTasks } from "@/hooks/use-tasks";
 import { useTechnicians } from "@/hooks/use-data";
 import { useMutation, useQueryClient } from "@tanstack/react-query";

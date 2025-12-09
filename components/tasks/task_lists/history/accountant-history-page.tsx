@@ -1,7 +1,7 @@
 'use client';
 
 import { useTasks } from '@/hooks/use-tasks';
-import { TasksDisplay } from './tasks-display';
+import { TasksDisplay } from '../../tasks-display';
 import { useRouter } from 'next/navigation';
 
 export default function AccountantHistoryPage() {
