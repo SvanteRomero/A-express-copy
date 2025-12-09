@@ -46,6 +46,9 @@ export default function CustomerInformation({ taskId }: CustomerInformationProps
   if (isError) {
     return <div>Error loading customer information.</div>
   }
+  if (!taskData) {
+    return <div>No task data found.</div>
+  }
 
   return (
     <Card className="border-gray-200">
