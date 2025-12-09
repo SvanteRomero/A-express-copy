@@ -19,7 +19,7 @@ class PredefinedReportGenerator:
         
     @staticmethod
     def _get_date_filter(date_range=None, start_date=None, end_date=None, field='date'):
-        """Helper method to create date filters - returns filter, actual range, and duration info"""
+        """Helper method to create date filters - returns filter, actual range, duration info, and start/end dates"""
         today = timezone.now().date()
         actual_range = date_range or 'last_30_days'
         duration_days = 0
@@ -71,13 +71,14 @@ class PredefinedReportGenerator:
                     f'{field}__lte': end_datetime
                 }
                 actual_range = "custom"
-                return Q(**filter_kwargs), actual_range, duration_days, duration_description
+                return Q(**filter_kwargs), actual_range, duration_days, duration_description, start_date, end_date
                 
             except (ValueError, TypeError) as e:
                 print(f"Error parsing custom dates: {e}")
                 # Fall back to default if custom dates are invalid
         
         # Handle predefined date ranges
+        end_date = today # Default end date for predefined ranges
         if date_range == 'last_7_days':
             start_date = today - timedelta(days=7)
             duration_days = 7
@@ -110,15 +111,15 @@ class PredefinedReportGenerator:
         if timezone.is_naive(start_datetime):
             start_datetime = timezone.make_aware(start_datetime)
         
-        filter_kwargs = {f'{field}__gte': start_datetime}
-        return Q(**filter_kwargs), actual_range, duration_days, duration_description
+        filter_kwargs = {f'{field}__gte': start_datetime, f'{field}__lte': datetime.combine(end_date, time.max)}
+        return Q(**filter_kwargs), actual_range, duration_days, duration_description, start_date, end_date
     
     @staticmethod
     def generate_outstanding_payments_report(date_range='last_7_days', start_date=None, end_date=None, page=1, page_size=10):
         """Generate outstanding payments report with date range and pagination support"""
         from django.core.paginator import Paginator
         # Apply date filter to tasks based on date_in field
-        date_filter, actual_date_range, duration_days, duration_description = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date, field='date_in')
+        date_filter, actual_date_range, duration_days, duration_description, start_date, end_date = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date, field='date_in')
         
         # Get tasks with unpaid or partially paid status within date range
         outstanding_tasks_qs = (
@@ -184,8 +185,8 @@ class PredefinedReportGenerator:
                 "days": duration_days,
                 "description": duration_description
             },
-            "start_date": start_date,
-            "end_date": end_date,
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": end_date.isoformat() if end_date else None,
             "pagination": {
                 "current_page": paginated_tasks.number,
                 "page_size": page_size,
@@ -199,151 +200,84 @@ class PredefinedReportGenerator:
     @staticmethod
     def generate_technician_performance_report(date_range='last_7_days', start_date=None, end_date=None):
         """Generate comprehensive technician performance report with task status grouping."""
-        date_filter_q, actual_date_range, duration_days, duration_description = PredefinedReportGenerator._get_date_filter(
+        date_filter_q, actual_date_range, duration_days, duration_description, start_date, end_date = PredefinedReportGenerator._get_date_filter(
             date_range, field="timestamp", start_date=start_date, end_date=end_date
         )
 
-        # Get all active technicians
-        technicians = User.objects.filter(
-            role="Technician", is_active=True
-        ).prefetch_related("tasks")
-
+        technicians = User.objects.filter(role="Technician", is_active=True)
         if not technicians.exists():
-            return {
-                "technician_performance": [],
-                "date_range": actual_date_range,
-                "duration_info": {
-                    "days": duration_days,
-                    "description": duration_description
-                },
-                "total_technicians": 0,
-            }
+            return { "technician_performance": [], "date_range": actual_date_range, "duration_info": { "days": duration_days, "description": duration_description }, "total_technicians": 0 }
 
-        # --- New: Get activity counts for all technicians in one go ---
-        assignment_activities = TaskActivity.objects.filter(
-            type=TaskActivity.ActivityType.ASSIGNMENT,
-            user__in=technicians
-        ).values('user').annotate(count=Count('id'))
-        assignment_counts = {item['user']: item['count'] for item in assignment_activities}
-
-        workshop_activities = TaskActivity.objects.filter(
-            type=TaskActivity.ActivityType.WORKSHOP,
-            user__in=technicians
-        ).values('user').annotate(count=Count('id'))
-        workshop_counts = {item['user']: item['count'] for item in workshop_activities}
+        technician_ids = [t.id for t in technicians]
         
+        # Bulk fetch tasks and activities
+        tasks = Task.objects.filter(assigned_to_id__in=technician_ids).select_related('customer', 'laptop_model')
+        activities = TaskActivity.objects.filter(user_id__in=technician_ids, timestamp__gte=date_filter_q.children[0][1], timestamp__lte=date_filter_q.children[1][1] if len(date_filter_q.children) > 1 else timezone.now())
+
+        # Group data in memory
+        tasks_by_tech = {tech_id: [] for tech_id in technician_ids}
+        for task in tasks:
+            tasks_by_tech[task.assigned_to_id].append(task)
+
+        activities_by_tech = {tech_id: [] for tech_id in technician_ids}
+        for activity in activities:
+            activities_by_tech[activity.user_id].append(activity)
+
         total_tasks_in_period = TaskActivity.objects.filter(date_filter_q).values('task').distinct().count()
-        # --- End New ---
 
         final_report = []
+        for tech in technicians:
+            tech_tasks = tasks_by_tech[tech.id]
+            tech_activities = activities_by_tech[tech.id]
 
-        for technician in technicians:
-            # Get all tasks assigned to this technician
-            all_tasks = technician.tasks.all()
-
-            # Group tasks by status
             tasks_by_status = {}
-            for task in all_tasks:
+            for task in tech_tasks:
                 status = task.status
                 if status not in tasks_by_status:
                     tasks_by_status[status] = []
-
-                tasks_by_status[status].append(
-                    {
-                        "task_id": task.id,
-                        "task_title": task.title,
-                        "customer_name": task.customer.name if task.customer else "N/A",
-                        # Fixed: Serialize the model instance to a string (name) instead of passing the object
-                        "laptop_model": task.laptop_model.name if task.laptop_model else "N/A",
-                        "date_in": task.date_in.isoformat() if task.date_in else "N/A",
-                        "estimated_cost": (
-                            float(task.estimated_cost) if task.estimated_cost else 0
-                        ),
-                        "total_cost": float(task.total_cost) if task.total_cost else 0,
-                        "paid_amount": (
-                            float(task.paid_amount) if task.paid_amount else 0
-                        ),
-                    }
-                )
-
-            # Calculate completed tasks metrics (using STATUS_UPDATE activities)
-            completed_tasks_count = TaskActivity.objects.filter(
-                date_filter_q, 
-                user=technician, 
-                type=TaskActivity.ActivityType.STATUS_UPDATE
-            ).values('task').distinct().count()
-
-            # --- New: Calculate performance metrics using activity counts ---
-            total_tasks_assigned = assignment_counts.get(technician.id, 0)
-            tasks_sent_to_workshop = workshop_counts.get(technician.id, 0)
-            workshop_rate = (
-                (tasks_sent_to_workshop / total_tasks_assigned * 100)
-                if total_tasks_assigned > 0
-                else 0
-            )
-
+                tasks_by_status[status].append({
+                    "task_id": task.id, "task_title": task.title, "customer_name": task.customer.name if task.customer else "N/A",
+                    "laptop_model": task.laptop_model.name if task.laptop_model else "N/A", "date_in": task.date_in.isoformat() if task.date_in else "N/A",
+                    "estimated_cost": float(task.estimated_cost) if task.estimated_cost else 0,
+                    "total_cost": float(task.total_cost) if task.total_cost else 0, "paid_amount": float(task.paid_amount) if task.paid_amount else 0,
+                })
             
-            in_progress_tasks = len(tasks_by_status.get("In Progress", []))
+            completed_tasks_count = len({a.task_id for a in tech_activities if a.type == TaskActivity.ActivityType.STATUS_UPDATE})
+            tasks_sent_to_workshop = len({a.task_id for a in tech_activities if a.type == TaskActivity.ActivityType.WORKSHOP})
+            total_tasks_assigned = len({a.task_id for a in tech_activities if a.type == TaskActivity.ActivityType.ASSIGNMENT})
 
-            # Count tasks by status
-            status_counts = {
-                status: len(tasks) for status, tasks in tasks_by_status.items()
-            }
-
-            # Get current assigned tasks (all statuses except completed/picked up)
-            current_tasks = all_tasks.exclude(
-                status__in=["Completed", "Picked Up", "Terminated"]
-            )
-            current_task_count = current_tasks.count()
+            workshop_rate = (tasks_sent_to_workshop / total_tasks_assigned * 100) if total_tasks_assigned > 0 else 0
             
-            tasks_involved_count = TaskActivity.objects.filter(
-                date_filter_q, 
-                user=technician,
-                type__in=[TaskActivity.ActivityType.WORKSHOP, TaskActivity.ActivityType.NOTE, TaskActivity.ActivityType.STATUS_UPDATE, TaskActivity.ActivityType.DIAGNOSIS]
-            ).values('task').distinct().count()
+            current_task_count = len([t for t in tech_tasks if t.status not in ["Completed", "Picked Up", "Terminated"]])
+            
+            tasks_involved_count = len({a.task_id for a in tech_activities if a.type in [TaskActivity.ActivityType.WORKSHOP, TaskActivity.ActivityType.NOTE, TaskActivity.ActivityType.STATUS_UPDATE, TaskActivity.ActivityType.DIAGNOSIS]})
             percentage_of_tasks_involved = (tasks_involved_count / total_tasks_in_period * 100) if total_tasks_in_period > 0 else 0
 
-            technician_data = {
-                "technician_id": technician.id,
-                "technician_name": technician.get_full_name(),
-                "technician_email": technician.email,
+            final_report.append({
+                "technician_id": tech.id, "technician_name": tech.get_full_name(), "technician_email": tech.email,
                 "completed_tasks_count": completed_tasks_count,
-                "current_in_progress_tasks": in_progress_tasks,
+                "current_in_progress_tasks": len(tasks_by_status.get("In Progress", [])),
                 "current_assigned_tasks": current_task_count,
-                # New metrics
                 "tasks_sent_to_workshop": tasks_sent_to_workshop,
                 "workshop_rate": round(workshop_rate, 2),
                 "percentage_of_tasks_involved": round(percentage_of_tasks_involved, 2),
-                # Task status breakdown
                 "tasks_by_status": tasks_by_status,
-                "status_counts": status_counts,
+                "status_counts": {status: len(task_list) for status, task_list in tasks_by_status.items()},
+                "total_tasks_handled": total_tasks_assigned,
+            })
 
-                # Summary stats
-                "total_tasks_handled": total_tasks_assigned, # Use activity-based count
-            }
-
-            final_report.append(technician_data)
-
-        # Sort by completed tasks (most productive first)
         final_report.sort(key=lambda x: x["completed_tasks_count"], reverse=True)
 
         return {
             "technician_performance": final_report,
             "date_range": actual_date_range,
-            "duration_info": {
-                "days": duration_days,
-                "description": duration_description
-            },
-            'start_date': start_date,
-            'end_date': end_date,
+            "duration_info": { "days": duration_days, "description": duration_description },
+            'start_date': start_date.isoformat() if start_date else None,
+            'end_date': end_date.isoformat() if end_date else None,
             "total_technicians": len(final_report),
             "summary": {
-                "total_completed_tasks": sum(
-                    tech["completed_tasks_count"] for tech in final_report
-                ),
-                "total_current_tasks": sum(
-                    tech["current_assigned_tasks"] for tech in final_report
-                ),
+                "total_completed_tasks": sum(tech["completed_tasks_count"] for tech in final_report),
+                "total_current_tasks": sum(tech["current_assigned_tasks"] for tech in final_report),
                 "total_tasks_in_period": total_tasks_in_period,
             },
         }
@@ -351,7 +285,7 @@ class PredefinedReportGenerator:
     @staticmethod
     def generate_payment_methods_report(date_range='last_7_days', start_date=None, end_date=None):
         """Generate payment methods breakdown report"""
-        date_filter, actual_date_range, duration_days, duration_description = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date)
+        date_filter, actual_date_range, duration_days, duration_description, start_date, end_date = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date)
 
         # Revenue payments (positive amounts)
         revenue_methods = (
@@ -443,15 +377,15 @@ class PredefinedReportGenerator:
                 "days": duration_days,
                 "description": duration_description
             },
-            "start_date": start_date,
-            "end_date": end_date,
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": end_date.isoformat() if end_date else None,
         }
 
     @staticmethod
     def generate_task_status_report(date_range='last_7_days', start_date=None, end_date=None):
         """Generate task status overview report with date range support"""
         # Apply date filter to tasks based on date_in field
-        date_filter, actual_date_range, duration_days, duration_description = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date, field='date_in')
+        date_filter, actual_date_range, duration_days, duration_description, start_date, end_date = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date, field='date_in')
         
         # Filter tasks by date range
         filtered_tasks = Task.objects.filter(date_filter)
@@ -500,8 +434,8 @@ class PredefinedReportGenerator:
                 "days": duration_days,
                 "description": duration_description
             },
-            "start_date": start_date,
-            "end_date": end_date,
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": end_date.isoformat() if end_date else None,
         }
 
     @staticmethod
@@ -509,22 +443,18 @@ class PredefinedReportGenerator:
         """Generate turnaround time report with individual task details and date range support."""
         
         # Apply date filter based on intake activity timestamps
-        date_filter, actual_date_range, duration_days, duration_description = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date, field='timestamp')
+        date_filter, actual_date_range, duration_days, duration_description, start_date, end_date = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date, field='timestamp')
         
         # Get tasks that were picked up within the date range by filtering through activities
-        timestamp_gte = date_filter.children[0][1]
         
         tasks = (
             Task.objects.filter(
-                activities__type="picked_up",
-                activities__timestamp__gte=timestamp_gte
+                date_filter,
+                activities__type="picked_up"
             )
             .distinct()
             .prefetch_related("activities", "customer", "assigned_to")
         )
-
-        if end_date:
-            tasks = tasks.filter(activities__timestamp__lte=end_date)
 
 
         if not tasks.exists():
@@ -542,13 +472,17 @@ class PredefinedReportGenerator:
                     "days": duration_days,
                     "description": duration_description
                 },
-                "start_date": start_date,
-                "end_date": end_date,
+                "start_date": start_date.isoformat() if start_date else None,
+                "end_date": end_date.isoformat() if end_date else None,
             }
 
         grouped_tasks = {}
         task_details = []
         tasks_with_issues = 0
+
+        start_datetime = datetime.combine(start_date, time.min)
+        if timezone.is_naive(start_datetime):
+            start_datetime = timezone.make_aware(start_datetime)
 
         for task in tasks:
             # Get all activities for this task
@@ -558,11 +492,14 @@ class PredefinedReportGenerator:
                 # Find ALL picked_up activities within our date range and get the MOST RECENT one
                 pickup_activities_in_range = activities.filter(
                     type=TaskActivity.ActivityType.PICKED_UP,
-                    timestamp__gte=timestamp_gte
+                    timestamp__gte=start_datetime
                 )
                 
                 if end_date:
-                    pickup_activities_in_range = pickup_activities_in_range.filter(timestamp__lte=end_date)
+                    end_datetime = datetime.combine(end_date, time.max)
+                    if timezone.is_naive(end_datetime):
+                        end_datetime = timezone.make_aware(end_datetime)
+                    pickup_activities_in_range = pickup_activities_in_range.filter(timestamp__lte=end_datetime)
                 
                 pickup_activities_in_range = pickup_activities_in_range.order_by('-timestamp')
 
@@ -726,8 +663,8 @@ class PredefinedReportGenerator:
                 "days": duration_days,
                 "description": duration_description
             },
-            "start_date": start_date,
-            "end_date": end_date,
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": end_date.isoformat() if end_date else None,
             "pagination": {
                 "current_page": paginated_task_details.number,
                 "page_size": page_size,
@@ -741,10 +678,77 @@ class PredefinedReportGenerator:
         return result
 
     @staticmethod
+    def generate_revenue_overview_report():
+        """
+        Calculate revenue for this month and today, with comparisons to the previous period.
+        """
+        now = timezone.now()
+        today = now.date()
+
+        # Opening balance
+        opening_balance = (
+            Payment.objects.filter(date__lt=today).aggregate(total=Sum("amount"))["total"]
+            or 0
+        )
+
+        # Today's revenue
+        today_revenue = (
+            Payment.objects.filter(date=today, amount__gt=0).aggregate(total=Sum("amount"))[
+                "total"
+            ]
+            or 0
+        )
+
+        # Yesterday's revenue
+        yesterday = today - timedelta(days=1)
+        yesterday_revenue = (
+            Payment.objects.filter(date=yesterday, amount__gt=0).aggregate(
+                total=Sum("amount")
+            )["total"]
+            or 0
+        )
+
+        # Today's expenditure
+        today_expenditure = (
+            Payment.objects.filter(date=today, amount__lt=0).aggregate(total=Sum("amount"))[
+                "total"
+            ]
+            or 0
+        )
+
+        # Yesterday's expenditure
+        yesterday_expenditure = (
+            Payment.objects.filter(date=yesterday, amount__lt=0).aggregate(
+                total=Sum("amount")
+            )["total"]
+            or 0
+        )
+
+        # Percentage changes
+        day_over_day_change = (
+            ((today_revenue - yesterday_revenue) / yesterday_revenue * 100)
+            if yesterday_revenue
+            else 100
+        )
+        expenditure_day_over_day_change = (
+            ((today_expenditure - yesterday_expenditure) / yesterday_expenditure * 100)
+            if yesterday_expenditure
+            else 100
+        )
+
+        return {
+                "opening_balance": opening_balance,
+                "today_revenue": today_revenue,
+                "day_over_day_change": day_over_day_change,
+                "today_expenditure": abs(today_expenditure),
+                "expenditure_day_over_day_change": expenditure_day_over_day_change,
+            }
+
+    @staticmethod
     def generate_technician_workload_report(date_range='last_7_days', start_date=None, end_date=None):
         """Generate technician workload report with date range support"""
         # Apply date filter to tasks based on date_in field
-        date_filter, actual_date_range, duration_days, duration_description = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date, field='date_in')
+        date_filter, actual_date_range, duration_days, duration_description, start_date, end_date = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date, field='date_in')
         
         workload_data = (
             User.objects.filter(role="Technician", is_active=True)
@@ -799,6 +803,67 @@ class PredefinedReportGenerator:
                 "days": duration_days,
                 "description": duration_description
             },
-            "start_date": start_date,
-            "end_date": end_date,
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": end_date.isoformat() if end_date else None,
         }
+
+    @staticmethod
+    def generate_front_desk_performance_report(date_range='last_30_days', start_date=None, end_date=None):
+        """Generate front desk performance report with custom date range support"""
+        date_filter, actual_date_range, duration_days, duration_description, start_date, end_date = PredefinedReportGenerator._get_date_filter(
+            date_range, start_date, end_date, field='timestamp'
+        )
+
+        front_desk_users = User.objects.filter(role="Front Desk")
+        
+        approved_activities = TaskActivity.objects.filter(
+            date_filter,
+            type=TaskActivity.ActivityType.READY,
+            user__in=front_desk_users
+        ).values('user__id', 'user__first_name', 'user__last_name').annotate(count=Count('id'))
+
+        sent_out_activities = TaskActivity.objects.filter(
+            date_filter,
+            type=TaskActivity.ActivityType.PICKED_UP,
+            user__in=front_desk_users
+        ).values('user__id', 'user__first_name', 'user__last_name').annotate(count=Count('id'))
+
+        total_approved = sum(item['count'] for item in approved_activities)
+        total_sent_out = sum(item['count'] for item in sent_out_activities)
+
+        performance_data = {}
+
+        for activity in approved_activities:
+            user_id = activity['user__id']
+            if user_id not in performance_data:
+                performance_data[user_id] = {
+                    "user_name": f"{activity['user__first_name']} {activity['user__last_name']}",
+                    "approved_count": 0,
+                    "sent_out_count": 0
+                }
+            performance_data[user_id]['approved_count'] = activity['count']
+
+        for activity in sent_out_activities:
+            user_id = activity['user__id']
+            if user_id not in performance_data:
+                performance_data[user_id] = {
+                    "user_name": f"{activity['user__first_name']} {activity['user__last_name']}",
+                    "approved_count": 0,
+                    "sent_out_count": 0
+                }
+            performance_data[user_id]['sent_out_count'] = activity['count']
+            
+        for user_id, data in performance_data.items():
+            data['approved_percentage'] = (data['approved_count'] / total_approved * 100) if total_approved > 0 else 0
+            data['sent_out_percentage'] = (data['sent_out_count'] / total_sent_out * 100) if total_sent_out > 0 else 0
+        
+        report_data = {
+            "performance": list(performance_data.values()),
+            "summary": {
+                "total_approved": total_approved,
+                "total_sent_out": total_sent_out,
+                "start_date": start_date.isoformat() if start_date else None,
+                "end_date": end_date.isoformat() if end_date else None,
+            }
+        }
+        return report_data

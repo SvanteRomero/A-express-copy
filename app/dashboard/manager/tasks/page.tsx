@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/lib/auth-context"
 import { DashboardLayout } from "@/components/dashboard/layouts/dashboard-layout"
-import { ManagerTasksPage } from "@/components/tasks/manager-tasks-page"
+import { ManagerTasksPage } from "@/components/tasks/task_lists/main/manager/manager-tasks-page"
 
 export default function ManagerTasksPageRoute() {
   const { isAuthenticated, user } = useAuth()
