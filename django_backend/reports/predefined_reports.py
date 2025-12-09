@@ -253,7 +253,8 @@ class PredefinedReportGenerator:
                         "task_id": task.id,
                         "task_title": task.title,
                         "customer_name": task.customer.name if task.customer else "N/A",
-                        "laptop_model": task.laptop_model,
+                        # Fixed: Serialize the model instance to a string (name) instead of passing the object
+                        "laptop_model": task.laptop_model.name if task.laptop_model else "N/A",
                         "date_in": task.date_in.isoformat() if task.date_in else "N/A",
                         "estimated_cost": (
                             float(task.estimated_cost) if task.estimated_cost else 0
