@@ -1,5 +1,5 @@
 # Eapp/reports/predefined_reports.py
-from django.db.models import Count, Sum, Avg, Q, F
+from django.db.models import Count, Sum, Avg, Q, F, DecimalField, Value
 from django.utils import timezone
 from datetime import timedelta, datetime, time
 from django.db.models.functions import Coalesce
@@ -9,14 +9,9 @@ from django.core.paginator import Paginator
 
 
 class PredefinedReportGenerator:
-
-
-    @staticmethod
     # NOTE: The revenue summary generator has been removed.
     # If you need to restore revenue reporting, reintroduce a generator here.
 
- 
-        
     @staticmethod
     def _get_date_filter(date_range=None, start_date=None, end_date=None, field='date'):
         """Helper method to create date filters - returns filter, actual range, duration info, and start/end dates"""
@@ -122,6 +117,7 @@ class PredefinedReportGenerator:
         date_filter, actual_date_range, duration_days, duration_description, start_date, end_date = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date, field='date_in')
         
         # Get tasks with unpaid or partially paid status within date range
+        # Use existing total_cost and paid_amount fields from the model
         outstanding_tasks_qs = (
             Task.objects.filter(
                 (Q(payment_status="Unpaid") | Q(payment_status="Partially Paid")) &
@@ -130,12 +126,7 @@ class PredefinedReportGenerator:
             .select_related("customer")
             .prefetch_related("payments", "customer__phone_numbers", "cost_breakdowns")
             .annotate(
-                paid_amount_sum=Sum('payments__amount'),
-                additive_costs_sum=Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Additive')),
-                subtractive_costs_sum=Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Subtractive'))
-            ).annotate(
-                total_cost_calculated=F('estimated_cost') + Coalesce(F('additive_costs_sum'), 0) - Coalesce(F('subtractive_costs_sum'), 0),
-                outstanding_balance_calculated=F('total_cost_calculated') - Coalesce(F('paid_amount_sum'), 0)
+                outstanding_balance_calculated=F('total_cost') - F('paid_amount')
             ).filter(outstanding_balance_calculated__gt=0).order_by('-outstanding_balance_calculated')
         )
 
@@ -160,8 +151,8 @@ class PredefinedReportGenerator:
                     "task_id": task.title,
                     "customer_name": task.customer.name,
                     "customer_phone": customer_phone,
-                    "total_cost": float(task.total_cost_calculated),
-                    "paid_amount": float(task.paid_amount_sum or 0),
+                    "total_cost": float(task.total_cost or 0),
+                    "paid_amount": float(task.paid_amount or 0),
                     "outstanding_balance": float(task.outstanding_balance_calculated),
                     "days_overdue": days_overdue,
                     "status": task.status,
