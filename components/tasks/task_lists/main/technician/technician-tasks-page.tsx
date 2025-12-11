@@ -3,9 +3,9 @@
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs"
 import { useAuth } from "@/lib/auth-context"
-import { InProgressTasksList } from "./task_lists/in-progress-tasks-list"
-import { InWorkshopTasksList } from "./in-workshop-tasks-list"
-import { CompletedTasksList } from "./task_lists/completed-tasks-list"
+import { InProgressTasksList } from "@/components/tasks/task_lists/main/shared/in-progress-tasks-list"
+import { InWorkshopTasksList } from "@/components/tasks/task_lists/main/technician/in-workshop-tasks-list"
+import { CompletedTasksList } from "@/components/tasks/task_lists/main/shared/completed-tasks-list"
 
 
 export function TechnicianTasksPage() {
