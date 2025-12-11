@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs"
 import { useAuth } from "@/lib/auth-context"
 import { InProgressTasksList } from "@/components/tasks/task_lists/main/shared/in-progress-tasks-list"
