@@ -433,8 +433,8 @@ class PredefinedReportGenerator:
     def generate_turnaround_time_report(period_type="weekly", date_range='last_7_days', start_date=None, end_date=None, page=1, page_size=10):
         """Generate turnaround time report with individual task details and date range support."""
         
-        # Apply date filter based on intake activity timestamps
-        date_filter, actual_date_range, duration_days, duration_description, start_date, end_date = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date, field='timestamp')
+        # Apply date filter based on activity timestamps (using activities__timestamp for Task filtering)
+        date_filter, actual_date_range, duration_days, duration_description, start_date, end_date = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date, field='activities__timestamp')
         
         # Get tasks that were picked up within the date range by filtering through activities
         
