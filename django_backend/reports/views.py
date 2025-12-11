@@ -116,14 +116,6 @@ def get_report_field_options(request):
 
 
 @api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated, IsAdminOrManagerOrFrontDeskOrAccountant])
-def get_revenue_summary(request):
-    """Get revenue summary report with custom date range and pagination support"""
-    # NOTE: This report has been removed. The endpoint and generator were deleted.
-    return Response({"success": False, "error": "Revenue summary report has been removed."}, status=status.HTTP_410_GONE)
-
-
-@api_view(["GET"])
 @permission_classes(
     [permissions.IsAuthenticated, IsAdminOrManagerOrFrontDeskOrAccountant]
 )
@@ -219,13 +211,11 @@ def get_payment_methods_report(request):
         {"success": True, "report": report_data, "type": "payment_methods"}
     )
 
-
-
-
 @api_view(["GET"])
 @permission_classes(
     [permissions.IsAuthenticated, IsAdminOrManagerOrFrontDeskOrAccountant]
 )
+
 @api_view_try_except
 def get_dashboard_data(request):
     """Get data for dashboard widgets (KPI cards, charts)"""
@@ -269,7 +259,6 @@ def get_dashboard_data(request):
             "taskStatuses": status_data.get("status_distribution", []),
         }
     )
-
 
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
