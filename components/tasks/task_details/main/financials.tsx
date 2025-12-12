@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { addTaskPayment } from "@/lib/api-client"
-import { useTask} from "@/hooks/use-data"
+import { useTask } from "@/hooks/use-data"
 import { usePaymentMethods } from "@/hooks/use-payment-methods"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
@@ -35,6 +35,7 @@ export default function Financials({ taskId }: FinancialsProps) {
     mutationFn: (data: any) => addTaskPayment(taskId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["task", taskId] })
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
     },
   })
 
@@ -78,7 +79,7 @@ export default function Financials({ taskId }: FinancialsProps) {
   if (!taskData) {
     return <div>No task data found.</div>
   }
-  
+
 
   return (
     <div className="space-y-6">
