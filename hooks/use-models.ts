@@ -10,7 +10,7 @@ export function useModels({ query }: { query: string }) {
       if (query) {
         params.set('search', query);
       }
-      const response = await apiClient.get(`common/models/?${params.toString()}`);
+      const response = await apiClient.get(`models/?${params.toString()}`);
       return response.data;
     },
   });
