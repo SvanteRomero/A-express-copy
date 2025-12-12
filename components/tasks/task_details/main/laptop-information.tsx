@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Laptop, Edit, User, MapPin } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { updateTask } from "@/lib/api-client"
-import { useTask, useBrands} from "@/hooks/use-data"
+import { useTask, useBrands } from "@/hooks/use-data"
 import { useModels } from "@/hooks/use-models"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { SetStateAction, useState } from "react"
@@ -24,9 +24,9 @@ export default function LaptopInformation({ taskId }: LaptopInformationProps) {
   const { data: taskData, isLoading, isError, error } = useTask(taskId)
   const { data: brands } = useBrands()
   const [modelSearch, setModelSearch] = useState("")
-  const { data: models, isLoading: isLoadingModels } = useModels(modelSearch)
+  const { data: models, isLoading: isLoadingModels } = useModels({ query: modelSearch })
   const [isEditingLaptop, setIsEditingLaptop] = useState(false)
-  const modelOptions = models ? models.map((m: any) => ({ label: m.name, value: m.id.toString() })) : []
+  const modelOptions = models ? models.filter((m: any) => m?.name).map((m: any) => ({ label: m.name, value: m.name })) : []
 
   const updateTaskMutation = useMutation({
     mutationFn: (updates: { [key: string]: any }) => updateTask(taskId, updates),
@@ -100,12 +100,7 @@ export default function LaptopInformation({ taskId }: LaptopInformationProps) {
                   options={modelOptions}
                   value={taskData.laptop_model_details?.name || ""}
                   onChange={(value: any) => {
-                    const selectedModel = models?.find((m: any) => m.id.toString() === value)
-                    if (selectedModel) {
-                      handleFieldUpdate("laptop_model", selectedModel.id)
-                    } else {
-                      handleFieldUpdate("laptop_model", value)
-                    }
+                    handleFieldUpdate("laptop_model", value)
                   }}
                   onInputChange={(value: SetStateAction<string>) => {
                     setModelSearch(value)

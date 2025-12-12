@@ -259,9 +259,9 @@ export function NewTaskForm({ }: NewTaskFormProps) {
 
   const canAssignTechnician = user && (user.role === 'Manager' || user.role === 'Administrator' || user.role === 'Front Desk')
 
-  const customerOptions = customers ? customers.results.map((c: any) => ({ label: c.name, value: c.id.toString() })) : [];
+  const customerOptions = customers ? customers.results.map((c: any) => ({ label: c.name, value: c.id.toString() })).slice(0, 3) : [];
   const referrerOptions = referrers ? referrers.map((r: any) => ({ label: r.name, value: r.id.toString() })) : [];
-  const modelOptions = models ? models.filter((m: any) => m?.name).map((m: any) => ({ label: m.name, value: m.name })) : [];
+  const modelOptions = models ? models.filter((m: any) => m?.name).map((m: any) => ({ label: m.name, value: m.name })).slice(0, 3) : [];
 
   return (
     <>
