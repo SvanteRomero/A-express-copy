@@ -11,9 +11,11 @@ export function useModels({ query }: { query: string }) {
         params.set('search', query);
       }
       const response = await apiClient.get(`models/?${params.toString()}`);
-      return response.data;
+      // Handle both paginated (with .results) and non-paginated (direct array) responses
+      return response.data.results || response.data;
     },
   });
 
   return { data, isLoading, isError };
 }
+

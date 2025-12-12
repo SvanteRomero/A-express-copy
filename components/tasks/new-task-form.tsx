@@ -261,7 +261,7 @@ export function NewTaskForm({ }: NewTaskFormProps) {
 
   const customerOptions = customers ? customers.results.map((c: any) => ({ label: c.name, value: c.id.toString() })) : [];
   const referrerOptions = referrers ? referrers.map((r: any) => ({ label: r.name, value: r.id.toString() })) : [];
-  const modelOptions = models ? models.map((m: any) => ({ label: m.name, value: m.name })) : [];
+  const modelOptions = models ? models.filter((m: any) => m?.name).map((m: any) => ({ label: m.name, value: m.name })) : [];
 
   return (
     <>
