@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { Model } from '@/lib/api';
 
-export function useModels(search: string) {
+export function useModels(search: string = '') {
   const { data, isLoading, isError } = useQuery<Model[]>({
     queryKey: ['models', search],
     queryFn: async () => {
