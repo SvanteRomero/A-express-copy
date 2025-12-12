@@ -77,6 +77,7 @@ export function NewTaskForm({ }: NewTaskFormProps) {
   const [isReferred, setIsReferred] = useState(false)
   const [customerSearch, setCustomerSearch] = useState('')
   const [referrerSearch, setReferrerSearch] = useState('')
+  const [modelSearch, setModelSearch] = useState('')
   const [customerPage, setCustomerPage] = useState(1)
 
   const { data: technicians, isLoading: isLoadingTechnicians } = useTechnicians()
@@ -86,7 +87,7 @@ export function NewTaskForm({ }: NewTaskFormProps) {
   const { data: locations, isLoading: isLoadingLocations } = useLocations()
   const { data: customers, isLoading: isLoadingCustomers } = useCustomers({ query: customerSearch, page: customerPage })
   const { data: referrers, isLoading: isLoadingReferrers } = useReferrers(referrerSearch)
-  const { data: models, isLoading: isLoadingModels } = useModels()
+  const { data: models, isLoading: isLoadingModels } = useModels(modelSearch)
 
 
   const [formData, setFormData] = useState<FormData>({
@@ -358,6 +359,7 @@ export function NewTaskForm({ }: NewTaskFormProps) {
                   }}
                   onInputChange={(value) => {
                     handleInputChange('laptop_model', value)
+                    setModelSearch(value)
                   }}
                   placeholder="Search or create model..."
                   disabled={isLoadingModels || formData.device_type === 'Motherboard Only'}
