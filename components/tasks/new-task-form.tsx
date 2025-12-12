@@ -87,7 +87,7 @@ export function NewTaskForm({ }: NewTaskFormProps) {
   const { data: locations, isLoading: isLoadingLocations } = useLocations()
   const { data: customers, isLoading: isLoadingCustomers } = useCustomers({ query: customerSearch, page: customerPage })
   const { data: referrers, isLoading: isLoadingReferrers } = useReferrers(referrerSearch)
-  const { data: models, isLoading: isLoadingModels } = useModels(modelSearch)
+  const { data: models, isLoading: isLoadingModels } = useModels({ query: modelSearch })
 
 
   const [formData, setFormData] = useState<FormData>({

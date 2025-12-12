@@ -1,15 +1,18 @@
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { Model } from '@/lib/api';
 
-export function useModels(search: string = '') {
+export function useModels({ query }: { query: string }) {
   const { data, isLoading, isError } = useQuery<Model[]>({
-    queryKey: ['models', search],
+    queryKey: ['models', { query }],
     queryFn: async () => {
-      const response = await apiClient.get(`common/models/?search=${search}`);
+      const params = new URLSearchParams();
+      if (query) {
+        params.set('search', query);
+      }
+      const response = await apiClient.get(`common/models/?${params.toString()}`);
       return response.data;
     },
-    placeholderData: keepPreviousData,
   });
 
   return { data, isLoading, isError };
