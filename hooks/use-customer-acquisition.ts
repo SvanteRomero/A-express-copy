@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { getCustomerMonthlyAcquisition } from '@/lib/api-client';
 
 interface MonthlyAcquisitionData {
   month: string;
@@ -10,7 +10,7 @@ export function useCustomerAcquisition() {
   const { data, isError, isLoading } = useQuery<MonthlyAcquisitionData[]>({
     queryKey: ['customer-acquisition'],
     queryFn: async () => {
-      const response = await apiClient.get('customers/monthly_acquisition/');
+      const response = await getCustomerMonthlyAcquisition();
       return response.data;
     },
   });

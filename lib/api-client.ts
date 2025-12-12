@@ -148,7 +148,7 @@ export const updatePaymentCategory = (categoryId: number, data: any) => apiClien
 export const deletePaymentCategory = (categoryId: number) => apiClient.delete(`/payment-categories/${categoryId}/`);
 
 // Expenditure Requests
-export const getExpenditureRequests = async (params: { page?: number; page_size?: number; [key: string]: any } = {}): Promise<PaginatedResponse<ExpenditureRequest>> => {
+export const getExpenditureRequests = async (params: { page?: number; page_size?: number;[key: string]: any } = {}): Promise<PaginatedResponse<ExpenditureRequest>> => {
   const response = await apiClient.get('/expenditure-requests/', { params });
   return response.data;
 };
@@ -156,3 +156,35 @@ export const createExpenditureRequest = (data: any) => apiClient.post('/expendit
 export const createAndApproveExpenditureRequest = (data: any) => apiClient.post('/expenditure-requests/create_and_approve/', data);
 export const approveExpenditureRequest = (id: number) => apiClient.post(`/expenditure-requests/${id}/approve/`);
 export const rejectExpenditureRequest = (id: number) => apiClient.post(`/expenditure-requests/${id}/reject/`);
+
+// Customer Stats & Acquisition
+export const getCustomerStats = () => apiClient.get('/customers/stats/');
+export const getCustomerMonthlyAcquisition = () => apiClient.get('/customers/monthly_acquisition/');
+
+// Customers Search (with pagination)
+export const searchCustomers = (params: { search?: string; page?: number }) => {
+  const urlParams = new URLSearchParams();
+  if (params.search) urlParams.set('search', params.search);
+  if (params.page) urlParams.set('page', params.page.toString());
+  return apiClient.get(`/customers/?${urlParams.toString()}`);
+};
+
+// Models Search
+export const searchModels = (params: { search?: string }) => {
+  const urlParams = new URLSearchParams();
+  if (params.search) urlParams.set('search', params.search);
+  return apiClient.get(`/models/?${urlParams.toString()}`);
+};
+
+// Payment Methods (with pagination handling)
+export const fetchPaymentMethods = async () => {
+  const response = await apiClient.get('/payment-methods/');
+  const data = response.data;
+  if (data && Array.isArray(data.results)) {
+    return data.results;
+  }
+  return data;
+};
+
+// Referrers Search
+export const searchReferrers = (query: string) => apiClient.get(`/referrers/search/?query=${query}`);
