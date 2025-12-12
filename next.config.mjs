@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Required for Next.js 16+ when using webpack config for dev
+  turbopack: {},
   experimental: {
     optimizeCss: false,
   },
