@@ -13,7 +13,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from datetime import timedelta
 from pathlib import Path
 import os
-import sys  # Add this import
+import sys
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,29 +29,45 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-_%476ua0$d)=+=h=2dj$97a(dm2%mbmqnx@!ldi!1z%50h-+c_"
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY",
+    "django-insecure-_%476ua0$d)=+=h=2dj$97a(dm2%mbmqnx@!ldi!1z%50h-+c_"
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = []
+# Railway provides RAILWAY_PUBLIC_DOMAIN
+RAILWAY_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+if RAILWAY_DOMAIN:
+    ALLOWED_HOSTS.append(RAILWAY_DOMAIN)
 
 # CORS settings for allowing frontend to access backend
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
+if FRONTEND_URL and FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
-     r"^https://.*\.app\.github\.dev$",
-     r"^https://.*\.gitpod\.io$",
- ]
+    r"^https://.*\.app\.github\.dev$",
+    r"^https://.*\.gitpod\.io$",
+    r"^https://.*\.railway\.app$",
+    r"^https://.*\.vercel\.app$",
+]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://localhost:8000",
     "https://127.0.0.1:8000",
-    "https://*.app.github.dev", # This covers the GitHub Codespaces preview URLs
+    "https://*.app.github.dev",
+    "https://*.railway.app",
 ]
+if FRONTEND_URL.startswith("https://"):
+    CSRF_TRUSTED_ORIGINS.append(FRONTEND_URL)
 
 
 # Application definition
@@ -76,6 +93,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Serve static files in production
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -108,16 +126,28 @@ WSGI_APPLICATION = "A_express.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "my_django_api",
-        "USER": "root",
-        "PASSWORD": "",
-        "HOST": "127.0.0.1",
-        "PORT": "3306",
+# Use DATABASE_URL from Railway if available, otherwise use local MySQL
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": "my_django_api",
+            "USER": "root",
+            "PASSWORD": "",
+            "HOST": "127.0.0.1",
+            "PORT": "3306",
+        }
+    }
 
 
 AUTH_USER_MODEL = "users.User"

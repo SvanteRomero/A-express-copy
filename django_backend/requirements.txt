@@ -32,3 +32,8 @@ channels
 channels-redis
 
 pytz
+
+# Production deployment
+dj-database-url
+psycopg2-binary
+whitenoise
