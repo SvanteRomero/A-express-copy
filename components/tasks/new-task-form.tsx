@@ -362,7 +362,7 @@ export function NewTaskForm({ }: NewTaskFormProps) {
                     setModelSearch(value)
                   }}
                   placeholder="Search or create model..."
-                  disabled={isLoadingModels || formData.device_type === 'Motherboard Only'}
+                  disabled={formData.device_type === 'Motherboard Only'}
                 />
               </FormField>
             </div>

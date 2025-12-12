@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { Model } from '@/lib/api';
 
@@ -9,6 +9,7 @@ export function useModels(search: string = '') {
       const response = await apiClient.get(`common/models/?search=${search}`);
       return response.data;
     },
+    placeholderData: keepPreviousData,
   });
 
   return { data, isLoading, isError };
