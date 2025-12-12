@@ -21,6 +21,7 @@ import { useModels } from '@/hooks/use-models'
 import { useReferrers } from '@/hooks/use-referrers'
 import { SimpleCombobox } from '@/components/ui/core/combobox'
 import { toast } from '@/hooks/use-toast'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface NewTaskFormProps { }
 
@@ -70,6 +71,7 @@ const DEVICE_TYPE_OPTIONS = [
 export function NewTaskForm({ }: NewTaskFormProps) {
   const { user } = useAuth()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [isReferred, setIsReferred] = useState(false)
@@ -228,6 +230,8 @@ export function NewTaskForm({ }: NewTaskFormProps) {
           description: `Customer ${formData.customer_name} has been added to the database.`,
         });
       }
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
       setSubmitSuccess(true)
     } catch (error: any) {
       if (error.response) {

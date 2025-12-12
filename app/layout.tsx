@@ -23,7 +23,7 @@ export default function RootLayout({
     defaultOptions: {
       queries: {
         // Reduce unnecessary refetches during navigation
-        staleTime: 1000 * 60, // 1 minute
+        staleTime: 1000 * 1, // 1 second
         refetchOnWindowFocus: false,
       },
     },
