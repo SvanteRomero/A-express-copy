@@ -3,7 +3,5 @@ builder = "railpack"
 
 [deploy]
 startCommand = "python manage.py migrate && gunicorn A_express.wsgi:application --bind 0.0.0.0:$PORT"
-healthcheckPath = "/api/"
-healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
