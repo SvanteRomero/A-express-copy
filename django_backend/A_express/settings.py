@@ -41,7 +41,12 @@ DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
 RAILWAY_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "healthcheck.railway.app",  # Railway healthcheck
+    ".railway.app",  # All Railway subdomains
+]
 if RAILWAY_DOMAIN:
     ALLOWED_HOSTS.append(RAILWAY_DOMAIN)
 
@@ -126,10 +131,11 @@ WSGI_APPLICATION = "A_express.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Use DATABASE_URL from Railway if available, otherwise use local MySQL
+# Use DATABASE_URL from Railway if available
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if DATABASE_URL:
+    # Production: Use PostgreSQL from Railway
     DATABASES = {
         "default": dj_database_url.config(
             default=DATABASE_URL,
@@ -138,16 +144,27 @@ if DATABASE_URL:
         )
     }
 else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "NAME": "my_django_api",
-            "USER": "root",
-            "PASSWORD": "",
-            "HOST": "127.0.0.1",
-            "PORT": "3306",
+    # Local development: Try MySQL, fallback to SQLite
+    try:
+        import MySQLdb  # noqa: F401
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.mysql",
+                "NAME": "my_django_api",
+                "USER": "root",
+                "PASSWORD": "",
+                "HOST": "127.0.0.1",
+                "PORT": "3306",
+            }
         }
-    }
+    except ImportError:
+        # SQLite fallback if MySQL not available
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": BASE_DIR / "db.sqlite3",
+            }
+        }
 
 
 AUTH_USER_MODEL = "users.User"
