@@ -1,6 +1,7 @@
 import jsPDF from "jspdf"
 import autoTable from 'jspdf-autotable'
 import { financialReports, operationalReports, SelectedReport, technicianReports } from "./report-data";
+import { API_CONFIG } from "@/lib/config";
 
 // Extend jsPDF types
 declare module "jspdf" {
@@ -1121,7 +1122,9 @@ export const generatePDF = async (
 
 
 
-            let url = `http://localhost:8000${endpoint}`
+            const baseUrl = API_CONFIG.BASE_URL.replace(/\/api$/, '')
+
+            let url = `${baseUrl}${endpoint}`
 
             const dateRangeReports = ['technician-performance', 'payment-methods']
 

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/core/label"
 import { Checkbox } from "@/components/ui/core/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select"
 import { ArrowLeft, Settings, Calendar, Filter, FileText, Download } from "lucide-react"
+import { getApiUrl } from "@/lib/config"
 
 const reportTypes = [
   { id: "financial", label: "Financial Analysis", description: "Revenue, payments, and cost analysis" },
@@ -327,7 +328,7 @@ export function CustomReportBuilder() {
         }
       }
 
-      const response = await fetch("http://localhost:8000/api/reports/custom/generate/", {
+      const response = await fetch(getApiUrl("/reports/custom/generate/"), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

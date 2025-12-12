@@ -5,8 +5,8 @@ django-extensions
 # Django REST Framework for building APIs
 djangorestframework
 
-# MySQL/MariaDB Database Connector (for XAMPP)
-mysqlclient
+# NOTE: mysqlclient removed for Railway deployment (uses PostgreSQL)
+# For local dev with MySQL, run: pip install mysqlclient
 
 # Pillow for image processing
 Pillow

@@ -6,6 +6,7 @@ import { ReportSection } from "./report-section"
 import { financialReports, operationalReports, technicianReports, SelectedReport } from "./report-data"
 import { generatePDF } from "./pdf-generator"
 import { ReportViewerModal } from "./report-viewer-modal"
+import { API_CONFIG } from "@/lib/config"
 
 
 export function ReportsOverview() {
@@ -52,7 +53,9 @@ export function ReportsOverview() {
       }
 
       // Build URL with parameters
-      let url = `http://localhost:8000${endpoint}`
+      // Get base URL without /api suffix for building the full endpoint
+      const baseUrl = API_CONFIG.BASE_URL.replace(/\/api$/, '')
+      let url = `${baseUrl}${endpoint}`
       const params = new URLSearchParams()
 
       // Handle date range
@@ -151,7 +154,7 @@ export function ReportsOverview() {
       // Get the current date range from the selected report data
       const reportData = selectedReport.data.report
       let currentDateRange = undefined
-      
+
       if (reportData?.start_date && reportData?.end_date) {
         currentDateRange = {
           start: new Date(reportData.start_date),
@@ -159,13 +162,13 @@ export function ReportsOverview() {
         }
         console.log('📅 DEBUG - Using date range from report data:', currentDateRange)
       }
-      
-      console.log('🚀 DEBUG - Calling handleViewReport with:', { 
-        reportId: selectedReport.id, 
-        page, 
-        pageSize 
+
+      console.log('🚀 DEBUG - Calling handleViewReport with:', {
+        reportId: selectedReport.id,
+        page,
+        pageSize
       })
-      
+
       await handleViewReport(selectedReport.id, currentDateRange, page, pageSize)
     } else {
       console.error('❌❌❌ DEBUG - No selectedReport found when handlePageChange was called!')

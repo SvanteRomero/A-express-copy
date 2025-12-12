@@ -16,7 +16,7 @@ function getBaseApiUrl() {
     return process.env.NEXT_PUBLIC_API_URL;
   }
 
-  // 2. If running in the browser (client-side), detect the Codespace URL
+  // 2. If running in the browser (client-side), detect the deployment URL
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
     const protocol = window.location.protocol;
@@ -33,6 +33,16 @@ function getBaseApiUrl() {
         const backendHost = host.replace("-3000", "-8000");
         return `${protocol}//${backendHost}/api`;
       }
+    }
+
+    // Detect Railway deployment (*.up.railway.app)
+    if (host.includes("railway.app")) {
+      // For Railway, the backend URL should be set via NEXT_PUBLIC_API_URL
+      // This is a fallback message - you should set the env var in Railway
+      console.warn(
+        "Running on Railway but NEXT_PUBLIC_API_URL is not set. " +
+        "Set this environment variable to your Django backend URL."
+      );
     }
   }
 
