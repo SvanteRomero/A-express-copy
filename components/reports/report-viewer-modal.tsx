@@ -31,7 +31,7 @@ export function ReportViewerModal({
 
     return (
         <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-300"
+            className="fixed inset-0 bg-gray-900/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300"
             onClick={handleBackdropClick}
         >
             <div className="bg-white rounded-lg w-full max-w-7xl h-[90vh] overflow-hidden flex flex-col animate-in slide-in-from-bottom-10 duration-300">
