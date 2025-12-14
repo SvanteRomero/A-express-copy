@@ -127,7 +127,12 @@ JWT_AUTH_COOKIE_PATH = '/'
 # Application definition
 
 # Check if Cloudinary is configured (before INSTALLED_APPS definition)
-_USE_CLOUDINARY = os.environ.get('CLOUDINARY_URL') is not None
+_CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '')
+_USE_CLOUDINARY = bool(_CLOUDINARY_URL)
+
+# DEBUG: Print to Railway logs on startup
+print(f"[SETTINGS] CLOUDINARY_URL set: {_USE_CLOUDINARY}")
+print(f"[SETTINGS] CLOUDINARY_URL value: {'***' + _CLOUDINARY_URL[-20:] if _CLOUDINARY_URL else 'NOT SET'}")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
