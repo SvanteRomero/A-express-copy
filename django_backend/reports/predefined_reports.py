@@ -6,6 +6,7 @@ from django.db.models.functions import Coalesce
 from Eapp.models import Task, User, TaskActivity
 from financials.models import Payment
 from django.core.paginator import Paginator
+from common.encryption import decrypt_value
 
 
 class PredefinedReportGenerator:
@@ -146,7 +147,9 @@ class PredefinedReportGenerator:
                 hasattr(task.customer, "phone_numbers")
                 and task.customer.phone_numbers.exists()
             ):
-                customer_phone = task.customer.phone_numbers.first().phone_number
+                # Decrypt phone number before displaying
+                encrypted_phone = task.customer.phone_numbers.first().phone_number
+                customer_phone = decrypt_value(encrypted_phone) or encrypted_phone
 
             tasks_data.append(
                 {
