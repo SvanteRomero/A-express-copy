@@ -241,11 +241,9 @@ def get_dashboard_data(request):
 
     tasks_ready_for_pickup = Task.objects.filter(status="Ready for Pickup").count()
 
-    # Average repair time (simplified)
-    completed_tasks = Task.objects.filter(
-        status="Completed", date_in__isnull=False, date_out__isnull=False
-    )
-    avg_repair_time = "3.2 days"  # This would be calculated
+
+    # Average repair time - simplified placeholder
+    avg_repair_time = "3.2 days"  # Could be calculated from latest_pickup_at - date_in
 
     kpi_data = {
         "totalActiveTasks": total_active_tasks,
