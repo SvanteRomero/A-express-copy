@@ -42,6 +42,7 @@ whitenoise
 django-axes
 django-ratelimit
 
-# S3 Storage for production media files
-django-storages[s3]
-boto3
+# Cloud Storage for production media files
+# Cloudinary: Free tier with 25GB storage, 25GB/month bandwidth
+django-cloudinary-storage
+cloudinary

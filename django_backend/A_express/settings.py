@@ -240,35 +240,38 @@ SIMPLE_JWT = {
 # =============================================================================
 # Media Storage Configuration
 # =============================================================================
-# Use S3 for production, local filesystem for development
-USE_S3 = os.environ.get('USE_S3', 'False').lower() in ('true', '1', 'yes')
+# Use Cloudinary for production, local filesystem for development
+# Cloudinary offers 25GB free storage, 25GB/month bandwidth
+USE_CLOUDINARY = os.environ.get('CLOUDINARY_URL') is not None
 
-if USE_S3:
-    # AWS S3 Configuration for production
-    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
-    AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
-    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
+# Always define MEDIA_ROOT for safety (used by migrations, admin, etc.)
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+if USE_CLOUDINARY:
+    # Cloudinary Configuration for production
+    # Set CLOUDINARY_URL in environment: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+    INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
     
-    # S3 behavior settings
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
-    AWS_S3_OBJECT_PARAMETERS = {
-        'CacheControl': 'max-age=86400',  # 1 day cache
+    # Use Cloudinary for media files
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    
+    # Cloudinary auto-parses CLOUDINARY_URL, but we can also set individual values
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+        'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
+        'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
     }
-    AWS_DEFAULT_ACL = 'public-read'
-    AWS_S3_FILE_OVERWRITE = False
-    AWS_QUERYSTRING_AUTH = False  # Don't add auth params to URLs
     
-    # Use S3 for media files
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
+    # Media URL will be set by Cloudinary automatically
+    MEDIA_URL = '/media/'  # Cloudinary handles the actual URL
 else:
     # Local development - use filesystem storage
     MEDIA_URL = "/api/media/"
-    MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
