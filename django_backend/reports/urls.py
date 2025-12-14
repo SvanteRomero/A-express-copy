@@ -45,4 +45,9 @@ urlpatterns = [
         views.generate_custom_report,
         name="generate_custom_report",
     ),
+    path(
+        "reports/dashboard-data/",
+        views.get_dashboard_data,
+        name="dashboard_data",
+    ),
 ]

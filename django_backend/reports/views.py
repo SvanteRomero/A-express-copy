@@ -229,7 +229,7 @@ def get_dashboard_data(request):
     """Get data for dashboard widgets (KPI cards, charts)"""
     # KPI Data
     total_active_tasks = Task.objects.exclude(
-        status__in=["Completed", "Picked Up", "Terminated"]
+        status__in=["Ready for Pickup","Picked Up", "Terminated"]
     ).count()
 
     revenue_this_month = (
