@@ -291,7 +291,7 @@ AUTHENTICATION_BACKENDS = [
 # Axes configuration - account lockout after failed attempts
 AXES_FAILURE_LIMIT = 5  # Lock after 5 failed attempts
 AXES_COOLOFF_TIME = 0.5  # Hours (30 minutes)
-AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True  # Lock specific user+IP combo
+AXES_LOCKOUT_PARAMETERS = ["username", "ip_address"]  # Lock by username+IP combo
 AXES_RESET_ON_SUCCESS = True  # Reset counter on successful login
 AXES_LOCKOUT_CALLABLE = None  # Use default lockout response
 AXES_VERBOSE = False  # Don't log to console in production
