@@ -253,7 +253,8 @@ class AuthViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'], url_path='profile/sessions')
     def list_sessions(self, request):
-        sessions = Session.objects.filter(user=request.user).order_by('-created_at')
+        # Only show active (non-revoked) sessions - revoked ones are kept for audit
+        sessions = Session.objects.filter(user=request.user, is_revoked=False).order_by('-created_at')
         # Pass request context so serializer can determine current session
         serializer = SessionSerializer(sessions, many=True, context={'request': request})
         return Response(serializer.data)
