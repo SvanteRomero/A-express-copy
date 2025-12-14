@@ -149,19 +149,13 @@ def upload_profile_picture(request):
     user = request.user
     if 'profile_picture' not in request.FILES:
         return Response({'error': 'No profile_picture file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+    
     file = request.FILES['profile_picture']
-    
-    # DEBUG: Log storage backend info
-    from django.conf import settings
-    print(f"[UPLOAD DEBUG] DEFAULT_FILE_STORAGE: {getattr(settings, 'DEFAULT_FILE_STORAGE', 'NOT SET')}")
-    print(f"[UPLOAD DEBUG] File being saved: {file.name}")
-    
     user.profile_picture = file
     user.save(update_fields=['profile_picture'])
     
-    # DEBUG: Log the URL that was generated
-    print(f"[UPLOAD DEBUG] Saved profile_picture.name: {user.profile_picture.name}")
-    print(f"[UPLOAD DEBUG] Saved profile_picture.url: {user.profile_picture.url}")
+    # Debug: log what URL was generated
+    print(f"[UPLOAD] Profile picture saved. URL: {user.profile_picture.url}")
     
     serializer = UserSerializer(user, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)

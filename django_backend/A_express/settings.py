@@ -140,10 +140,9 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    # Cloudinary MUST come before staticfiles
-    *(['cloudinary_storage'] if _USE_CLOUDINARY else []),
     "django.contrib.staticfiles",
-    *(['cloudinary'] if _USE_CLOUDINARY else []),
+    # For media-only Cloudinary use, cloudinary_storage comes AFTER staticfiles
+    *(['cloudinary_storage', 'cloudinary'] if _USE_CLOUDINARY else []),
     "corsheaders",
     "axes",  # Brute-force protection
     "users",
@@ -289,8 +288,15 @@ if _USE_CLOUDINARY:
         'API_SECRET': _api_secret,
     }
     
-    # Use Cloudinary for media files
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    # Django 5.1+ uses STORAGES dict instead of DEFAULT_FILE_STORAGE
+    STORAGES = {
+        'default': {
+            'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
     MEDIA_URL = '/media/'
 else:
     # Local development - use filesystem storage
