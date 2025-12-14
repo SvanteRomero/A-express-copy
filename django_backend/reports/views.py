@@ -249,20 +249,11 @@ def get_dashboard_data(request):
         "totalActiveTasks": total_active_tasks,
         "revenueThisMonth": float(revenue_this_month),
         "tasksReadyForPickup": tasks_ready_for_pickup,
-        "averageRepairTime": avg_repair_time,
     }
-
-    # Technician workload for chart
-    workload_data = PredefinedReportGenerator.generate_technician_workload_report()
-
-    # Task status for pie chart
-    status_data = PredefinedReportGenerator.generate_task_status_report()
 
     return Response(
         {
             "kpiData": kpi_data,
-            "technicianWorkload": workload_data.get("workload_data", []),
-            "taskStatuses": status_data.get("status_distribution", []),
         }
     )
 
