@@ -126,13 +126,19 @@ JWT_AUTH_COOKIE_PATH = '/'
 
 # Application definition
 
+# Check if Cloudinary is configured (before INSTALLED_APPS definition)
+_USE_CLOUDINARY = os.environ.get('CLOUDINARY_URL') is not None
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    # Cloudinary MUST come before staticfiles
+    *(['cloudinary_storage'] if _USE_CLOUDINARY else []),
     "django.contrib.staticfiles",
+    *(['cloudinary'] if _USE_CLOUDINARY else []),
     "corsheaders",
     "axes",  # Brute-force protection
     "users",
@@ -240,30 +246,17 @@ SIMPLE_JWT = {
 # =============================================================================
 # Media Storage Configuration
 # =============================================================================
-# Use Cloudinary for production, local filesystem for development
-# Cloudinary offers 25GB free storage, 25GB/month bandwidth
-USE_CLOUDINARY = os.environ.get('CLOUDINARY_URL') is not None
+# Cloudinary: Free 25GB storage, auto-configured via CLOUDINARY_URL
+# Local dev: filesystem storage when CLOUDINARY_URL not set
 
 # Always define MEDIA_ROOT for safety (used by migrations, admin, etc.)
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
-if USE_CLOUDINARY:
-    # Cloudinary Configuration for production
-    # Set CLOUDINARY_URL in environment: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
-    INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
-    
-    # Use Cloudinary for media files
+if _USE_CLOUDINARY:
+    # CLOUDINARY_URL format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+    # django-cloudinary-storage auto-parses this, no extra config needed
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    
-    # Cloudinary auto-parses CLOUDINARY_URL, but we can also set individual values
-    CLOUDINARY_STORAGE = {
-        'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
-        'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
-        'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
-    }
-    
-    # Media URL will be set by Cloudinary automatically
-    MEDIA_URL = '/media/'  # Cloudinary handles the actual URL
+    MEDIA_URL = '/media/'  # Cloudinary rewrites URLs automatically
 else:
     # Local development - use filesystem storage
     MEDIA_URL = "/api/media/"
