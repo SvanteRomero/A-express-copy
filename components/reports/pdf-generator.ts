@@ -1086,25 +1086,25 @@ export const generatePDF = async (
 
         } else {
 
-            // Otherwise fetch the report data
+            // Otherwise fetch the report data using apiClient
 
             const apiEndpoints: { [key: string]: string } = {
 
-                'outstanding-payments': '/api/reports/outstanding-payments/',
+                'outstanding-payments': '/reports/outstanding-payments/',
 
-                'payment-methods': '/api/reports/payment-methods/',
+                'payment-methods': '/reports/payment-methods/',
 
-                'task-status': '/api/reports/task-status/',
+                'task-status': '/reports/task-status/',
 
-                'turnaround-time': '/api/reports/turnaround-time/',
+                'turnaround-time': '/reports/turnaround-time/',
 
-                'workload': '/api/reports/technician-workload/',
+                'workload': '/reports/technician-workload/',
 
-                'performance': '/api/reports/technician-performance/',
+                'performance': '/reports/technician-performance/',
 
-                'inventory-location': '/api/reports/laptops-in-shop/',
+                'inventory-location': '/reports/laptops-in-shop/',
 
-                'front-desk-performance': '/api/reports/front-desk-performance/',
+                'front-desk-performance': '/reports/front-desk-performance/',
 
             }
 
@@ -1122,65 +1122,27 @@ export const generatePDF = async (
 
 
 
-            const baseUrl = API_CONFIG.BASE_URL.replace(/\/api$/, '')
-
-            let url = `${baseUrl}${endpoint}`
+            const params: Record<string, string> = {}
 
             const dateRangeReports = ['technician-performance', 'payment-methods']
 
             if (dateRangeReports.includes(reportId)) {
 
-                const params = new URLSearchParams({ date_range: 'last_30_days' })
-
-                url += `?${params.toString()}`
+                params.date_range = 'last_30_days'
 
             }
 
 
 
-            let token: string | null = null
+            // Use apiClient with cookie auth
 
-            const authTokens = localStorage.getItem('auth_tokens')
+            const { apiClient } = await import('@/lib/api-client')
 
-            if (authTokens) {
-
-                try {
-
-                    const parsedTokens = JSON.parse(authTokens)
-
-                    token = parsedTokens?.access ?? null
-
-                } catch (e) {
-
-                    console.warn('Failed to parse auth_tokens from localStorage', e)
-
-                }
-
-            }
+            const response = await apiClient.get(endpoint, { params })
 
 
 
-            const headers: Record<string, string> = {
-
-                'Content-Type': 'application/json',
-
-            }
-
-            if (token) {
-
-                headers['Authorization'] = `Bearer ${token}`
-
-            }
-
-
-
-            const response = await fetch(url, { method: 'GET', headers })
-
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-
-
-
-            const data = await response.json()
+            const data = response.data
 
             reportData = data.report
 

@@ -36,14 +36,14 @@ export function ReportsOverview() {
 
     try {
       const apiEndpoints: { [key: string]: string } = {
-        'outstanding-payments': '/api/reports/outstanding-payments/',
-        'payment-methods': '/api/reports/payment-methods/',
-        'task-status': '/api/reports/task-status/',
-        'turnaround-time': '/api/reports/turnaround-time/',
-        'workload': '/api/reports/technician-workload/',
-        'performance': '/api/reports/technician-performance/',
-        'inventory-location': '/api/reports/laptops-in-shop/',
-        'front-desk-performance': '/api/reports/front-desk-performance/'
+        'outstanding-payments': '/reports/outstanding-payments/',
+        'payment-methods': '/reports/payment-methods/',
+        'task-status': '/reports/task-status/',
+        'turnaround-time': '/reports/turnaround-time/',
+        'workload': '/reports/technician-workload/',
+        'performance': '/reports/technician-performance/',
+        'inventory-location': '/reports/laptops-in-shop/',
+        'front-desk-performance': '/reports/front-desk-performance/'
       }
 
       const endpoint = apiEndpoints[reportId]
@@ -52,74 +52,40 @@ export function ReportsOverview() {
         return
       }
 
-      // Build URL with parameters
-      // Get base URL without /api suffix for building the full endpoint
-      const baseUrl = API_CONFIG.BASE_URL.replace(/\/api$/, '')
-      let url = `${baseUrl}${endpoint}`
-      const params = new URLSearchParams()
+      // Build query parameters
+      const params: Record<string, string> = {}
 
       // Handle date range
       if (dateRange) {
         const formatDate = (date: Date) => date.toISOString().split('T')[0]
-        params.append('start_date', formatDate(dateRange.start))
-        params.append('end_date', formatDate(dateRange.end))
+        params.start_date = formatDate(dateRange.start)
+        params.end_date = formatDate(dateRange.end)
         console.log('📅 DEBUG - Added date range params')
       }
 
       // Add pagination parameters
       const paginatedReports = ['outstanding-payments', 'turnaround-time']
       if (paginatedReports.includes(reportId)) {
-        params.append('page', page.toString())
-        params.append('page_size', pageSize.toString())
+        params.page = page.toString()
+        params.page_size = pageSize.toString()
         console.log('📄 DEBUG - Added pagination params:', { page, pageSize })
       }
 
       // Add period type for turnaround time
       if (reportId === 'turnaround-time') {
-        params.append('period_type', 'weekly')
+        params.period_type = 'weekly'
         console.log('📊 DEBUG - Added period_type param')
       }
 
-      // Add parameters to URL if any exist
-      if (params.toString()) {
-        url += `?${params.toString()}`
-      }
+      console.log('🌐 DEBUG - Making request to:', endpoint, 'with params:', params)
 
-      console.log('🌐 DEBUG - Final URL:', url)
-
-      // Get authentication token
-      let token: string | null = null
-      const authTokens = localStorage.getItem('auth_tokens')
-      if (authTokens) {
-        try {
-          const parsedTokens = JSON.parse(authTokens)
-          token = parsedTokens?.access ?? null
-          console.log('🔐 DEBUG - Token found:', !!token)
-        } catch (e) {
-          console.warn('❌ Failed to parse auth_tokens from localStorage', e)
-        }
-      }
-
-      // Make the request
-      console.log('🚀 DEBUG - Making fetch request...')
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-      })
+      // Use apiClient which has withCredentials: true for cookie auth
+      const { apiClient } = await import('@/lib/api-client')
+      const response = await apiClient.get(endpoint, { params })
 
       console.log('📨 DEBUG - Response status:', response.status)
-      console.log('📨 DEBUG - Response ok:', response.ok)
 
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('❌ DEBUG - HTTP error details:', errorText)
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
+      const data = response.data
       console.log('✅ DEBUG - Response data structure:', {
         success: data.success,
         type: data.type,
