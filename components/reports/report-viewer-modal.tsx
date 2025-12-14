@@ -97,7 +97,7 @@ export function ReportViewerModal({
                 <div className="border-t border-gray-200 p-4 bg-gray-50 sticky bottom-0">
                     <div className="flex items-center justify-between">
                         <p className="text-sm text-gray-500">
-                            Report generated on {new Date().toLocaleString()}
+                           A+ Express 2025
                         </p>
                         <div className="flex items-center gap-3">
                             <Button

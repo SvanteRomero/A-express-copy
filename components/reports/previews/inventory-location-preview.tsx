@@ -3,48 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table"
 import { Badge } from "@/components/ui/core/badge"
+import type { InventoryLocationReport } from "../types"
 
-interface TaskDetail {
-    task_id: number
-    task_title: string
-    customer_name: string
-    laptop_model: string
-    brand: string
-    status: string
-    urgency: string
-    assigned_technician: string
-    date_in: string
-    days_in_shop: number
-    estimated_cost: number
-}
-
-interface LocationData {
-    location: string
-    total_tasks: number
-    avg_days_in_shop: number
-    status_breakdown: {
-        status: string
-        count: number
-        percentage: number
-    }[]
-    urgency_breakdown: {
-        urgency: string
-        count: number
-        percentage: number
-    }[]
-    tasks: TaskDetail[]
-}
-
-interface InventoryLocationReport {
-    locations: LocationData[]
-    summary: {
-        total_laptops_in_shop: number
-        total_locations: number
-        overall_avg_days_in_shop: number
-        most_busy_location: string
-        most_busy_location_count: number
-    }
-}
 
 export const InventoryLocationPreview = ({ report }: { report: InventoryLocationReport }) => {
     const getStatusColor = (status: string) => {
@@ -121,7 +81,7 @@ export const InventoryLocationPreview = ({ report }: { report: InventoryLocation
                         </TableHeader>
                         <TableBody>
                             {report.locations.map(location => {
-                                const status = getLocationStatus(location.total_tasks)
+                                const status = getLocationStatus(location.total_tasks ?? 0)
                                 return (
                                     <TableRow key={location.location}>
                                         <TableCell className="font-medium">{location.location}</TableCell>
@@ -129,8 +89,8 @@ export const InventoryLocationPreview = ({ report }: { report: InventoryLocation
                                         <TableCell>{location.avg_days_in_shop} days</TableCell>
                                         <TableCell>
                                             <div className="flex flex-wrap gap-1 max-w-[200px]">
-                                                {location.status_breakdown.slice(0, 3).map(statusItem => (
-                                                    <Badge 
+                                                {(location.status_breakdown ?? []).slice(0, 3).map(statusItem => (
+                                                    <Badge
                                                         key={statusItem.status}
                                                         variant="secondary"
                                                         className={`text-xs ${getStatusColor(statusItem.status)}`}
@@ -138,17 +98,17 @@ export const InventoryLocationPreview = ({ report }: { report: InventoryLocation
                                                         {statusItem.status}: {statusItem.count}
                                                     </Badge>
                                                 ))}
-                                                {location.status_breakdown.length > 3 && (
+                                                {(location.status_breakdown ?? []).length > 3 && (
                                                     <Badge variant="outline" className="text-xs">
-                                                        +{location.status_breakdown.length - 3}
+                                                        +{(location.status_breakdown ?? []).length - 3}
                                                     </Badge>
                                                 )}
                                             </div>
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-wrap gap-1 max-w-[150px]">
-                                                {location.urgency_breakdown.slice(0, 2).map(urgencyItem => (
-                                                    <Badge 
+                                                {(location.urgency_breakdown ?? []).slice(0, 2).map(urgencyItem => (
+                                                    <Badge
                                                         key={urgencyItem.urgency}
                                                         variant="secondary"
                                                         className={`text-xs ${getUrgencyColor(urgencyItem.urgency)}`}
@@ -179,8 +139,8 @@ export const InventoryLocationPreview = ({ report }: { report: InventoryLocation
                             <span>{location.location} - {location.total_tasks} Laptops</span>
                             <div className="flex gap-2 text-sm font-normal">
                                 <Badge variant="outline">Avg: {location.avg_days_in_shop} days</Badge>
-                                <Badge variant={getLocationStatus(location.total_tasks).color}>
-                                    {getLocationStatus(location.total_tasks).label}
+                                <Badge variant={getLocationStatus(location.total_tasks ?? 0).color}>
+                                    {getLocationStatus(location.total_tasks ?? 0).label}
                                 </Badge>
                             </div>
                         </CardTitle>
@@ -200,25 +160,25 @@ export const InventoryLocationPreview = ({ report }: { report: InventoryLocation
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {location.tasks.map(task => (
+                                {(location.tasks ?? []).map(task => (
                                     <TableRow key={task.task_id}>
                                         <TableCell className="font-medium">{task.task_title}</TableCell>
                                         <TableCell>{task.customer_name}</TableCell>
                                         <TableCell>{task.laptop_model}</TableCell>
                                         <TableCell>{task.brand}</TableCell>
                                         <TableCell>
-                                            <Badge variant="secondary" className={getStatusColor(task.status)}>
+                                            <Badge variant="secondary" className={getStatusColor(task.status ?? '')}>
                                                 {task.status}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className={getUrgencyColor(task.urgency)}>
+                                            <Badge variant="outline" className={getUrgencyColor(task.urgency ?? '')}>
                                                 {task.urgency}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>{task.assigned_technician}</TableCell>
                                         <TableCell>
-                                            <Badge variant={task.days_in_shop > 14 ? "destructive" : "outline"}>
+                                            <Badge variant={(task.days_in_shop ?? 0) > 14 ? "destructive" : "outline"}>
                                                 {task.days_in_shop} days
                                             </Badge>
                                         </TableCell>
