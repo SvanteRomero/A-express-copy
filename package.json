@@ -50,8 +50,6 @@
     "lucide-react": "^0.556.0",
     "next": "16.0.8",
     "next-themes": "latest",
-    "npm-check-updates": "^19.1.2",
-    "pnpm": "^10.25.0",
     "react": "^19",
     "react-day-picker": "latest",
     "react-dom": "^19",
