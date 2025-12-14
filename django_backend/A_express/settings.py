@@ -83,8 +83,14 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
-if FRONTEND_URL and FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
-    CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
+
+# Ensure FRONTEND_URL has a scheme (https://) before adding to CORS
+if FRONTEND_URL:
+    # Add https:// if missing
+    if not FRONTEND_URL.startswith("http://") and not FRONTEND_URL.startswith("https://"):
+        FRONTEND_URL = f"https://{FRONTEND_URL}"
+    if FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.app\.github\.dev$",
