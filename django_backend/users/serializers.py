@@ -91,9 +91,17 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created_at', 'last_login', 'full_name') 
         
     def get_profile_picture_url(self, obj):
-        request = self.context.get('request')
+        """Return absolute URL for profile picture that works in all environments."""
         if obj.profile_picture and hasattr(obj.profile_picture, 'url'):
-            return obj.profile_picture.url
+            url = obj.profile_picture.url
+            # S3 URLs are already absolute, return as-is
+            if url.startswith('http'):
+                return url
+            # For local development, build absolute URI with domain
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(url)
+            return url
         return None
 
 class UserListSerializer(serializers.ModelSerializer):

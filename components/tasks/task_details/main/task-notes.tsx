@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getMediaUrl } from "@/lib/config";
+import { getMediaUrl } from "@/lib/media-utils";
 import { apiClient } from '@/lib/api-client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/layout/card'
 import { Button } from '@/components/ui/core/button'

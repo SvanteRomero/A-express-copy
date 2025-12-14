@@ -54,22 +54,5 @@ export const getApiUrl = (endpoint: string): string => {
   return `${API_CONFIG.BASE_URL}${endpoint}`;
 };
 
-const getBaseUrl = (url: string) => {
-  if (url.includes("/api")) {
-    return url.split("/api")[0];
-  }
-  return url;
-};
-
-export const getMediaUrl = (path: string): string => {
-  if (!path) {
-    return "";
-  }
-  if (path.startsWith("http")) {
-    return path;
-  }
-  const baseUrl = getBaseUrl(API_CONFIG.BASE_URL);
-  // Ensure we don't end up with double slashes if path starts with /
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  return `${baseUrl}${cleanPath}`;
-};
+// NOTE: For media URLs, use getMediaUrl from '@/lib/media-utils' instead.
+// It handles S3 URLs (production) and local development URLs properly.

@@ -41,3 +41,7 @@ whitenoise
 # Security - Rate limiting and brute-force protection
 django-axes
 django-ratelimit
+
+# S3 Storage for production media files
+django-storages[s3]
+boto3
