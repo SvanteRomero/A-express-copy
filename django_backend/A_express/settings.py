@@ -51,8 +51,12 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     
-    # Redirect HTTP to HTTPS
-    SECURE_SSL_REDIRECT = True
+    # Railway uses a reverse proxy - trust X-Forwarded-Proto header
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    
+    # DON'T redirect HTTP→HTTPS - Railway's proxy handles this
+    # Setting this to True causes redirect loops with Railway
+    SECURE_SSL_REDIRECT = False
     
     # Secure cookies - only send over HTTPS
     SESSION_COOKIE_SECURE = True
