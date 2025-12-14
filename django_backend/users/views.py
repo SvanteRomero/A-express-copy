@@ -159,7 +159,8 @@ def upload_profile_picture(request):
 class AuthViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'], url_path='login', permission_classes=[permissions.AllowAny])
     def login(self, request):
-        serializer = LoginSerializer(data=request.data)
+        # Pass request context for django-axes authentication
+        serializer = LoginSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             user = serializer.validated_data['user']
             user.last_login = timezone.now()
