@@ -131,8 +131,7 @@ _CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '')
 _USE_CLOUDINARY = bool(_CLOUDINARY_URL)
 
 # DEBUG: Print to Railway logs on startup
-print(f"[SETTINGS] CLOUDINARY_URL set: {_USE_CLOUDINARY}")
-print(f"[SETTINGS] CLOUDINARY_URL value: {'***' + _CLOUDINARY_URL[-20:] if _CLOUDINARY_URL else 'NOT SET'}")
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -279,7 +278,7 @@ if _USE_CLOUDINARY:
         api_secret=_api_secret,
         secure=True
     )
-    print(f"[CLOUDINARY] Configured for cloud: {_cloud_name}")
+
     
     # CRITICAL: django-cloudinary-storage reads from this settings dict
     CLOUDINARY_STORAGE = {

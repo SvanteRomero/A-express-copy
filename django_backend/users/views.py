@@ -154,8 +154,7 @@ def upload_profile_picture(request):
     user.profile_picture = file
     user.save(update_fields=['profile_picture'])
     
-    # Debug: log what URL was generated
-    print(f"[UPLOAD] Profile picture saved. URL: {user.profile_picture.url}")
+
     
     serializer = UserSerializer(user, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)
