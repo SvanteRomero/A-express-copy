@@ -14,6 +14,7 @@ export interface PaginationInfo {
     total_pages: number;
     has_next: boolean;
     has_previous: boolean;
+    
 }
 
 // ==========================================
