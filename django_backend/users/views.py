@@ -164,6 +164,10 @@ class AuthViewSet(viewsets.ViewSet):
             user = serializer.validated_data['user']
             user.last_login = timezone.now()
             user.save(update_fields=['last_login'])
+            
+            # H-04 FIX: Revoke all previous sessions to prevent session fixation
+            Session.objects.filter(user=user, is_revoked=False).update(is_revoked=True)
+            
             refresh = RefreshToken.for_user(user)
 
             # Create a session record for this login

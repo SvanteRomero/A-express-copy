@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.utils import timezone
 from django.db.models import Sum
+from django_ratelimit.decorators import ratelimit
 from Eapp.serializers import ReportConfigSerializer
 from reports.predefined_reports import PredefinedReportGenerator
 from reports.services import ReportGenerator

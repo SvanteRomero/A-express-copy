@@ -130,6 +130,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",
+    "axes",  # Brute-force protection
     "users",
     "financials",
     "Eapp",
@@ -150,6 +151,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "axes.middleware.AxesMiddleware",  # Account lockout after failed attempts
 ]
 
 ROOT_URLCONF = "A_express.urls"
@@ -223,9 +225,9 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
 }
 
-# JWT Settings
+# JWT Settings - Access token 15 min for security, silent refresh handles UX
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),  # Short for security
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
@@ -279,3 +281,17 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Django-Axes: Brute-force protection settings
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",  # Required for axes
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+# Axes configuration - account lockout after failed attempts
+AXES_FAILURE_LIMIT = 5  # Lock after 5 failed attempts
+AXES_COOLOFF_TIME = 0.5  # Hours (30 minutes)
+AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True  # Lock specific user+IP combo
+AXES_RESET_ON_SUCCESS = True  # Reset counter on successful login
+AXES_LOCKOUT_CALLABLE = None  # Use default lockout response
+AXES_VERBOSE = False  # Don't log to console in production

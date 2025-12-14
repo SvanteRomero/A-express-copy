@@ -37,3 +37,7 @@ pytz
 dj-database-url
 psycopg2-binary
 whitenoise
+
+# Security - Rate limiting and brute-force protection
+django-axes
+django-ratelimit
