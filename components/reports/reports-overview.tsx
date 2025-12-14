@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { ReportSection } from "./report-section"
 
 import { financialReports, operationalReports, technicianReports, SelectedReport } from "./report-data"
-import { generatePDF } from "./pdf-generator"
+import { generatePDF } from "./utils/pdf-generator"
 import { ReportViewerModal } from "./report-viewer-modal"
 import { API_CONFIG } from "@/lib/config"
 
