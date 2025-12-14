@@ -29,13 +29,20 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "SECRET_KEY",
-    "django-insecure-_%476ua0$d)=+=h=2dj$97a(dm2%mbmqnx@!ldi!1z%50h-+c_"
-)
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    # Allow a development-only fallback when DEBUG would be True
+    if os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes"):
+        SECRET_KEY = "dev-only-insecure-key-do-not-use-in-production"
+    else:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured(
+            "The SECRET_KEY environment variable is required. "
+            "Set it in your environment or .env file."
+        )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
+DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
 
 # Railway provides RAILWAY_PUBLIC_DOMAIN
 RAILWAY_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")

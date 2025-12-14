@@ -69,7 +69,9 @@ class PredefinedReportGenerator:
                 return Q(**filter_kwargs), actual_range, duration_days, duration_description, start_date, end_date
                 
             except (ValueError, TypeError) as e:
-                print(f"Error parsing custom dates: {e}")
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Error parsing custom dates: {e}")
                 # Fall back to default if custom dates are invalid
         
         # Handle predefined date ranges

@@ -113,8 +113,8 @@ class Session(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sessions')
     jti = models.CharField(max_length=255, null=True, blank=True)
-    # Storing raw refresh tokens is sensitive; consider hashing/encrypting in production.
-    refresh_token = models.TextField(null=True, blank=True)
+    # Store SHA-256 hash of refresh token (not raw token) for security
+    refresh_token_hash = models.CharField(max_length=64, null=True, blank=True)
     user_agent = models.CharField(max_length=500, null=True, blank=True)
     ip_address = models.CharField(max_length=100, null=True, blank=True)
     device_name = models.CharField(max_length=200, null=True, blank=True)
@@ -128,6 +128,12 @@ class Session(models.Model):
 
     def __str__(self):
         return f"Session {self.id} for {self.user.username}"
+
+    @staticmethod
+    def hash_token(token: str) -> str:
+        """Generate SHA-256 hash of a token."""
+        import hashlib
+        return hashlib.sha256(token.encode()).hexdigest()
 
 
 class AuditLog(models.Model):

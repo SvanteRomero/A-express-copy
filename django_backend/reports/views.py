@@ -11,6 +11,10 @@ from users.permissions import IsAdminOrManagerOrFrontDeskOrAccountant
 from financials.models import Payment
 from Eapp.models import Task
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 def api_view_try_except(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
@@ -18,9 +22,13 @@ def api_view_try_except(view_func):
             return view_func(request, *args, **kwargs)
         except Exception as e:
             import traceback
-            traceback.print_exc()
+            # Log detailed error server-side only
+            logger.error(
+                f"Error in {view_func.__name__}: {str(e)}\n{traceback.format_exc()}"
+            )
+            # Return generic error to client (no internal details)
             return Response(
-                {"success": False, "error": str(e)},
+                {"success": False, "error": "An internal error occurred. Please try again later."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
     return _wrapped_view

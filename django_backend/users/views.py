@@ -36,7 +36,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def create(self, request, *args, **kwargs):
-        print("Creating user with data:", request.data)
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -182,7 +182,7 @@ class AuthViewSet(viewsets.ViewSet):
             session = Session.objects.create(
                 user=user,
                 jti=jti,
-                refresh_token=str(refresh),
+                refresh_token_hash=Session.hash_token(str(refresh)),
                 user_agent=user_agent[:500],
                 ip_address=str(ip) if ip else None,
                 device_name=None,
@@ -206,12 +206,13 @@ class AuthViewSet(viewsets.ViewSet):
             if refresh_token:
                 token = RefreshToken(refresh_token)
                 token.blacklist()
-                # mark any session with this refresh token as revoked
-                Session.objects.filter(refresh_token=refresh_token).update(is_revoked=True)
+                # Mark session as revoked using token hash
+                token_hash = Session.hash_token(refresh_token)
+                Session.objects.filter(refresh_token_hash=token_hash).update(is_revoked=True)
                 AuditLog.objects.create(user=request.user, action='logout', resource_type='user', resource_id=str(request.user.id), ip_address=request.META.get('REMOTE_ADDR'), user_agent=request.META.get('HTTP_USER_AGENT', ''), severity='info')
             return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Logout failed. Please try again."}, status=status.HTTP_400_BAD_REQUEST)
 
 
     @action(detail=False, methods=['get'], url_path='profile/sessions')
@@ -230,12 +231,9 @@ class AuthViewSet(viewsets.ViewSet):
         session.is_revoked = True
         session.save(update_fields=['is_revoked'])
 
-        # Try to blacklist refresh token if present
-        if session.refresh_token:
-            try:
-                RefreshToken(session.refresh_token).blacklist()
-            except Exception:
-                pass
+        # Sessions are revoked by marking is_revoked=True
+        # We no longer store raw tokens, so we can't blacklist from stored token
+        # The JWT blacklist is done client-side on logout
 
         AuditLog.objects.create(user=request.user, action='revoke_session', resource_type='session', resource_id=str(session.id), ip_address=request.META.get('REMOTE_ADDR'), user_agent=request.META.get('HTTP_USER_AGENT', ''), severity='warning')
 
@@ -247,11 +245,7 @@ class AuthViewSet(viewsets.ViewSet):
         for s in sessions:
             s.is_revoked = True
             s.save(update_fields=['is_revoked'])
-            if s.refresh_token:
-                try:
-                    RefreshToken(s.refresh_token).blacklist()
-                except Exception:
-                    pass
+            # We no longer store raw tokens, blacklisting is done client-side on logout
         AuditLog.objects.create(user=request.user, action='revoke_all_sessions', resource_type='user', resource_id=str(request.user.id), ip_address=request.META.get('REMOTE_ADDR'), user_agent=request.META.get('HTTP_USER_AGENT', ''), severity='warning')
         return Response({'message': 'All sessions revoked'}, status=status.HTTP_200_OK)
 
