@@ -47,9 +47,15 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const requestUrl = originalRequest?.url || '';
+
+    // Auth-related endpoints that should NOT trigger logout on failure
+    const authEndpoints = ['/auth/me/', '/auth/refresh/', '/login/', '/logout/', '/csrf/'];
+    const isAuthEndpoint = authEndpoints.some(endpoint => requestUrl.includes(endpoint));
 
     // If 401 and not already retried, try to refresh the token
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // But skip refresh attempt for auth endpoints to avoid loops
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
 
       try {
