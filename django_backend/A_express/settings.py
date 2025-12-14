@@ -258,8 +258,28 @@ SIMPLE_JWT = {
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 if _USE_CLOUDINARY:
-    # CLOUDINARY_URL format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
-    # django-cloudinary-storage auto-parses this, no extra config needed
+    # Explicitly configure cloudinary library from CLOUDINARY_URL
+    import cloudinary
+    
+    # Parse CLOUDINARY_URL: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+    cloudinary_url = _CLOUDINARY_URL
+    if cloudinary_url.startswith('cloudinary://'):
+        # Remove the protocol prefix
+        url_without_protocol = cloudinary_url[13:]  # Remove 'cloudinary://'
+        # Split into credentials and cloud name
+        if '@' in url_without_protocol:
+            credentials, cloud_name = url_without_protocol.rsplit('@', 1)
+            if ':' in credentials:
+                api_key, api_secret = credentials.split(':', 1)
+                cloudinary.config(
+                    cloud_name=cloud_name,
+                    api_key=api_key,
+                    api_secret=api_secret,
+                    secure=True
+                )
+                print(f"[CLOUDINARY] Configured for cloud: {cloud_name}")
+    
+    # Use Cloudinary for media files
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     MEDIA_URL = '/media/'  # Cloudinary rewrites URLs automatically
 else:
