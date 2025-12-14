@@ -258,30 +258,40 @@ SIMPLE_JWT = {
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 if _USE_CLOUDINARY:
-    # Explicitly configure cloudinary library from CLOUDINARY_URL
+    # Parse CLOUDINARY_URL: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
     import cloudinary
     
-    # Parse CLOUDINARY_URL: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
     cloudinary_url = _CLOUDINARY_URL
+    _cloud_name = ''
+    _api_key = ''
+    _api_secret = ''
+    
     if cloudinary_url.startswith('cloudinary://'):
-        # Remove the protocol prefix
-        url_without_protocol = cloudinary_url[13:]  # Remove 'cloudinary://'
-        # Split into credentials and cloud name
+        url_without_protocol = cloudinary_url[13:]
         if '@' in url_without_protocol:
-            credentials, cloud_name = url_without_protocol.rsplit('@', 1)
+            credentials, _cloud_name = url_without_protocol.rsplit('@', 1)
             if ':' in credentials:
-                api_key, api_secret = credentials.split(':', 1)
-                cloudinary.config(
-                    cloud_name=cloud_name,
-                    api_key=api_key,
-                    api_secret=api_secret,
-                    secure=True
-                )
-                print(f"[CLOUDINARY] Configured for cloud: {cloud_name}")
+                _api_key, _api_secret = credentials.split(':', 1)
+    
+    # Configure cloudinary library directly
+    cloudinary.config(
+        cloud_name=_cloud_name,
+        api_key=_api_key,
+        api_secret=_api_secret,
+        secure=True
+    )
+    print(f"[CLOUDINARY] Configured for cloud: {_cloud_name}")
+    
+    # CRITICAL: django-cloudinary-storage reads from this settings dict
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': _cloud_name,
+        'API_KEY': _api_key,
+        'API_SECRET': _api_secret,
+    }
     
     # Use Cloudinary for media files
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    MEDIA_URL = '/media/'  # Cloudinary rewrites URLs automatically
+    MEDIA_URL = '/media/'
 else:
     # Local development - use filesystem storage
     MEDIA_URL = "/api/media/"
