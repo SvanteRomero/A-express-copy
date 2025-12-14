@@ -23,14 +23,14 @@ class Customer(models.Model):
 
 class PhoneNumber(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='phone_numbers')
-    phone_number = models.CharField(max_length=20, unique=True)
+    phone_number = models.CharField(max_length=500, unique=True)  # Longer for encrypted values
 
     def __str__(self):
         return self.phone_number
 
 class Referrer(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    phone = models.CharField(max_length=20, blank=True, null=True)
+    phone = models.CharField(max_length=500, blank=True, null=True)  # Longer for encrypted values
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

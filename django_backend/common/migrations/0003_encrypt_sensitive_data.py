@@ -107,7 +107,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('common', '0002_enable_pgcrypto'),
-        ('customers', '0001_initial'),
+        ('customers', '0002_expand_phone_fields'),  # Must expand fields before encrypting
     ]
 
     operations = [
