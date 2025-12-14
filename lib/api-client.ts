@@ -3,63 +3,70 @@ import { getApiUrl } from './config';
 import { ExpenditureRequest, PaginatedResponse } from './api';
 import { logout } from './auth';
 
+// CSRF token storage (not HttpOnly, can be read by JS)
+let csrfToken: string | null = null;
+
 export const apiClient = axios.create({
   baseURL: getApiUrl(''),
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Send cookies with every request
 });
 
-apiClient.interceptors.request.use((config) => {
-  const authTokens = localStorage.getItem('auth_tokens');
-  if (authTokens) {
-    const parsedTokens = JSON.parse(authTokens);
-    const token = parsedTokens.access;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+// Function to get CSRF token from backend
+export const fetchCsrfToken = async () => {
+  try {
+    const response = await axios.get(getApiUrl('/csrf/'), {
+      withCredentials: true
+    });
+    csrfToken = response.data.csrfToken;
+    return csrfToken;
+  } catch (error) {
+    console.error('Failed to fetch CSRF token:', error);
+    return null;
+  }
+};
+
+// Request interceptor: Add CSRF token to mutating requests
+apiClient.interceptors.request.use(async (config) => {
+  // For POST, PUT, PATCH, DELETE requests, add CSRF token
+  if (['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase() || '')) {
+    if (!csrfToken) {
+      await fetchCsrfToken();
+    }
+    if (csrfToken) {
+      config.headers['X-CSRFToken'] = csrfToken;
     }
   }
   return config;
 });
 
-const refreshAuthLogic = async (failedRequest: any) => {
-  const authTokens = localStorage.getItem('auth_tokens');
-  if (authTokens) {
-    const parsedTokens = JSON.parse(authTokens);
-    const refreshToken = parsedTokens.refresh;
-    if (refreshToken) {
-      try {
-        const response = await axios.post(getApiUrl('/token/refresh/'), {
-          refresh: refreshToken,
-        });
-        const newAuthTokens = response.data;
-        localStorage.setItem('auth_tokens', JSON.stringify(newAuthTokens));
-        failedRequest.response.config.headers.Authorization = `Bearer ${newAuthTokens.access}`;
-        return Promise.resolve();
-      } catch (error) {
-        logout();
-        return Promise.reject(error);
-      }
-    }
-  }
-  logout();
-  return Promise.reject(new Error('No refresh token found'));
-};
-
+// Response interceptor: Handle 401 errors by attempting token refresh
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    // Fix: Check if error.response exists before accessing status
+
+    // If 401 and not already retried, try to refresh the token
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+
       try {
-        await refreshAuthLogic(error);
+        // Call cookie-based refresh endpoint
+        await axios.post(getApiUrl('/auth/refresh/'), {}, {
+          withCredentials: true
+        });
+
+        // Retry the original request (cookies will be updated)
         return apiClient(originalRequest);
       } catch (refreshError) {
+        // Refresh failed, logout user
+        logout();
         return Promise.reject(refreshError);
       }
     }
+
     return Promise.reject(error);
   }
 );
@@ -98,9 +105,24 @@ export const listWorkshopLocations = () => apiClient.get('locations/workshop-loc
 export const listWorkshopTechnicians = () => apiClient.get('list/workshop-technicians/');
 
 export const login = async (username: any, password: any) => {
+  // Tokens are now set as HttpOnly cookies by the server
+  // No need to store them in localStorage
   const response = await apiClient.post('/login/', { username, password });
-  localStorage.setItem('auth_tokens', JSON.stringify(response.data));
+  // Store only user data (not tokens) in localStorage
+  if (response.data.user) {
+    localStorage.setItem('auth_user', JSON.stringify(response.data.user));
+  }
   return response;
+};
+
+// Check if user is authenticated using cookie auth
+export const checkAuth = async () => {
+  try {
+    const response = await apiClient.get('/auth/me/');
+    return response.data;
+  } catch (error) {
+    return null;
+  }
 };
 export const registerUser = (userData: any) => apiClient.post('/users/', userData);
 export const listUsers = () => apiClient.get('/users/');

@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from django.utils import timezone
 from datetime import datetime
 from .models import User
@@ -16,8 +17,10 @@ from .serializers import (
 )
 from .serializers import SessionSerializer, AuditLogSerializer
 from .models import Session, AuditLog
+from .authentication import set_jwt_cookies, clear_jwt_cookies
 from Eapp.models import TaskActivity
 from .permissions import IsAdminOrManager
+from django.conf import settings
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -192,33 +195,67 @@ class AuthViewSet(viewsets.ViewSet):
             # Log the login event
             AuditLog.objects.create(user=user, action='login', resource_type='user', resource_id=str(user.id), ip_address=ip, user_agent=user_agent, severity='info')
 
-            return Response({
+            # Create response with user data (no tokens in body for security)
+            response = Response({
                 'user': UserSerializer(user).data,
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
+                'message': 'Login successful',
             })
+            
+            # Set JWT tokens as HttpOnly cookies
+            response = set_jwt_cookies(
+                response,
+                str(refresh.access_token),
+                str(refresh)
+            )
+            
+            return response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'], url_path='logout')
     def logout(self, request):
         try:
-            refresh_token = request.data.get('refresh_token')
+            # Try to get refresh token from cookie first, then from request body
+            refresh_token = request.COOKIES.get(settings.JWT_AUTH_REFRESH_COOKIE) or request.data.get('refresh_token')
+            
             if refresh_token:
-                token = RefreshToken(refresh_token)
-                token.blacklist()
+                try:
+                    token = RefreshToken(refresh_token)
+                    token.blacklist()
+                except Exception:
+                    pass  # Token may already be blacklisted or invalid
+                
                 # Mark session as revoked using token hash
                 token_hash = Session.hash_token(refresh_token)
                 Session.objects.filter(refresh_token_hash=token_hash).update(is_revoked=True)
-                AuditLog.objects.create(user=request.user, action='logout', resource_type='user', resource_id=str(request.user.id), ip_address=request.META.get('REMOTE_ADDR'), user_agent=request.META.get('HTTP_USER_AGENT', ''), severity='info')
-            return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
+                
+                if request.user.is_authenticated:
+                    AuditLog.objects.create(
+                        user=request.user, 
+                        action='logout', 
+                        resource_type='user', 
+                        resource_id=str(request.user.id), 
+                        ip_address=request.META.get('REMOTE_ADDR'), 
+                        user_agent=request.META.get('HTTP_USER_AGENT', ''), 
+                        severity='info'
+                    )
+            
+            # Clear JWT cookies
+            response = Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
+            response = clear_jwt_cookies(response)
+            return response
+            
         except Exception as e:
-            return Response({"error": "Logout failed. Please try again."}, status=status.HTTP_400_BAD_REQUEST)
+            # Still clear cookies even on error
+            response = Response({"error": "Logout failed. Please try again."}, status=status.HTTP_400_BAD_REQUEST)
+            response = clear_jwt_cookies(response)
+            return response
 
 
     @action(detail=False, methods=['get'], url_path='profile/sessions')
     def list_sessions(self, request):
         sessions = Session.objects.filter(user=request.user).order_by('-created_at')
-        serializer = SessionSerializer(sessions, many=True)
+        # Pass request context so serializer can determine current session
+        serializer = SessionSerializer(sessions, many=True, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=False, methods=['post'], url_path='profile/sessions/(?P<session_id>[^/.]+)/revoke')
@@ -227,6 +264,18 @@ class AuthViewSet(viewsets.ViewSet):
             session = Session.objects.get(id=session_id, user=request.user)
         except Session.DoesNotExist:
             return Response({'error': 'Session not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if this is the current session
+        is_current_session = False
+        try:
+            from rest_framework_simplejwt.tokens import AccessToken
+            token = request.COOKIES.get(settings.JWT_AUTH_COOKIE)
+            if token:
+                access_token = AccessToken(token)
+                current_jti = str(access_token.get('jti', ''))
+                is_current_session = session.jti == current_jti
+        except Exception:
+            pass
 
         session.is_revoked = True
         session.save(update_fields=['is_revoked'])
@@ -237,7 +286,16 @@ class AuthViewSet(viewsets.ViewSet):
 
         AuditLog.objects.create(user=request.user, action='revoke_session', resource_type='session', resource_id=str(session.id), ip_address=request.META.get('REMOTE_ADDR'), user_agent=request.META.get('HTTP_USER_AGENT', ''), severity='warning')
 
-        return Response({'message': 'Session revoked'}, status=status.HTTP_200_OK)
+        # If revoking current session, clear cookies and indicate logout required
+        if is_current_session:
+            response = Response({
+                'message': 'Current session revoked',
+                'logout_required': True
+            }, status=status.HTTP_200_OK)
+            response = clear_jwt_cookies(response)
+            return response
+
+        return Response({'message': 'Session revoked', 'logout_required': False}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='profile/sessions/revoke-all')
     def revoke_all_sessions(self, request):
@@ -381,3 +439,86 @@ class UserListViewSet(viewsets.ViewSet):
         technicians = User.objects.filter(is_workshop=True, is_active=True)
         serializer = UserSerializer(technicians, many=True, context={'request': request})
         return Response(serializer.data)
+
+
+# =============================================================================
+# Cookie Authentication Endpoints
+# =============================================================================
+
+from django.middleware.csrf import get_token
+from django.views.decorators.csrf import ensure_csrf_cookie
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+@ensure_csrf_cookie
+def get_csrf_token(request):
+    """
+    Endpoint to get CSRF token for form submissions.
+    
+    The @ensure_csrf_cookie decorator ensures the CSRF cookie is set.
+    Frontend should call this endpoint before making POST/PUT/DELETE requests.
+    """
+    return Response({
+        'csrfToken': get_token(request),
+        'message': 'CSRF cookie set'
+    })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def refresh_token_cookie(request):
+    """
+    Refresh access token using the refresh token from HttpOnly cookie.
+    
+    This is the cookie-based alternative to /token/refresh/
+    """
+    refresh_token = request.COOKIES.get(settings.JWT_AUTH_REFRESH_COOKIE)
+    
+    if not refresh_token:
+        return Response(
+            {'error': 'No refresh token found. Please log in again.'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    try:
+        refresh = RefreshToken(refresh_token)
+        new_access_token = str(refresh.access_token)
+        
+        # Create response
+        response = Response({'message': 'Token refreshed successfully'})
+        
+        # Set new access token cookie
+        response = set_jwt_cookies(response, new_access_token)
+        
+        # If token rotation is enabled, also set new refresh token
+        if settings.SIMPLE_JWT.get('ROTATE_REFRESH_TOKENS', False):
+            response = set_jwt_cookies(response, new_access_token, str(refresh))
+        
+        return response
+        
+    except (InvalidToken, TokenError) as e:
+        # Clear cookies if refresh fails
+        response = Response(
+            {'error': 'Session expired. Please log in again.'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+        response = clear_jwt_cookies(response)
+        return response
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_current_user(request):
+    """
+    Get the currently authenticated user's information.
+    
+    This endpoint uses cookie-based authentication.
+    Frontend can call this on page load to check if user is authenticated.
+    """
+    serializer = UserSerializer(request.user, context={'request': request})
+    return Response({
+        'user': serializer.data,
+        'authenticated': True
+    })
+

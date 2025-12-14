@@ -44,6 +44,23 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
 
+# Production security settings for data in transit
+if not DEBUG:
+    # HTTP Strict Transport Security - force HTTPS for 1 year
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Redirect HTTP to HTTPS
+    SECURE_SSL_REDIRECT = True
+    
+    # Secure cookies - only send over HTTPS
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Prevent browsers from guessing content types
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+
 # Railway provides RAILWAY_PUBLIC_DOMAIN
 RAILWAY_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
@@ -80,6 +97,17 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 if FRONTEND_URL.startswith("https://"):
     CSRF_TRUSTED_ORIGINS.append(FRONTEND_URL)
+
+# Allow cookies in CORS requests (required for HttpOnly cookie auth)
+CORS_ALLOW_CREDENTIALS = True
+
+# Cookie settings for JWT tokens
+JWT_AUTH_COOKIE = 'access_token'
+JWT_AUTH_REFRESH_COOKIE = 'refresh_token'
+JWT_AUTH_COOKIE_SECURE = not DEBUG  # True in production (HTTPS only)
+JWT_AUTH_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'  # None for cross-origin in production
+JWT_AUTH_COOKIE_HTTPONLY = True  # Prevent JavaScript access
+JWT_AUTH_COOKIE_PATH = '/'
 
 
 # Application definition
@@ -179,7 +207,8 @@ AUTH_USER_MODEL = "users.User"
 # REST Framework settings
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "users.authentication.CookieJWTAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",  # Fallback for testing
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
 }
