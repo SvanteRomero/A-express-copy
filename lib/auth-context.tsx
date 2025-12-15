@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
-import { login as apiLogin, getProfile } from "./api-client"
+import { login as apiLogin, checkAuth } from "./api-client"
 import { apiClient } from "./api-client"
 import { logout as apiLogout } from "./auth"
 
@@ -23,16 +23,10 @@ interface User {
   bio?: string
 }
 
-interface AuthTokens {
-  access: string
-  refresh: string
-}
-
 interface AuthContextType {
   user: User | null
-  tokens: AuthTokens | null
   isAuthenticated: boolean
-  setUser: (user: User | null) => void // Add this
+  setUser: (user: User | null) => void
   isLoading: boolean
   login: (username: string, password: string) => Promise<boolean>
   logout: () => void
@@ -43,36 +37,48 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [tokens, setTokens] = useState<AuthTokens | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check for stored auth data
-    const storedUser = localStorage.getItem("auth_user")
-    const storedTokens = localStorage.getItem("auth_tokens")
+    // Check authentication status using cookie-based auth
+    const initAuth = async () => {
+      try {
+        // First check localStorage for cached user data
+        const storedUser = localStorage.getItem("auth_user")
+        if (storedUser) {
+          setUser(JSON.parse(storedUser))
+        }
 
-    if (storedUser && storedTokens) {
-      const parsedUser = JSON.parse(storedUser)
-      const parsedTokens = JSON.parse(storedTokens)
-
-      setUser(parsedUser)
-      setTokens(parsedTokens)
+        // Then verify with server using cookie auth
+        const authResult = await checkAuth()
+        if (authResult && authResult.user) {
+          setUser(authResult.user)
+          localStorage.setItem("auth_user", JSON.stringify(authResult.user))
+        } else if (storedUser) {
+          // Cookie auth failed but we had stored user - clear it
+          setUser(null)
+          localStorage.removeItem("auth_user")
+        }
+      } catch (error) {
+        // Auth check failed - user is not authenticated
+        setUser(null)
+        localStorage.removeItem("auth_user")
+      } finally {
+        setIsLoading(false)
+      }
     }
-    setIsLoading(false)
+
+    initAuth()
   }, [])
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       const response = await apiLogin(username, password);
 
-      if (response.data) {
-        const { user: userData, access, refresh } = response.data as { user: User; access: string; refresh: string };
-
+      if (response.data && response.data.user) {
+        const { user: userData } = response.data as { user: User };
         setUser(userData);
-        setTokens({ access, refresh });
-
-        localStorage.setItem("auth_user", JSON.stringify(userData));
-
+        // User data is stored in localStorage by apiLogin
         return true;
       }
       return false;
@@ -84,49 +90,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null)
-    setTokens(null)
     localStorage.removeItem("auth_user")
     apiLogout()
   }
 
   const refreshAuth = async (): Promise<boolean> => {
     try {
-      const stored = localStorage.getItem('auth_tokens')
-      if (!stored) return false
-      const parsed = JSON.parse(stored)
-      const refresh = parsed.refresh
-      if (!refresh) return false
+      // Use cookie-based refresh endpoint
+      await apiClient.post('/auth/refresh/')
 
-      // Use apiClient without interceptors to avoid recursive refresh attempts
-      const response = await apiClient.post('/token/refresh/', { refresh })
-      if (response?.data?.access) {
-        const newTokens = response.data
-        localStorage.setItem('auth_tokens', JSON.stringify(newTokens))
-        // Try to reload profile
-        const profileResp = await getProfile()
-        if (profileResp?.data) {
-          setUser(profileResp.data)
-          localStorage.setItem('auth_user', JSON.stringify(profileResp.data))
-        }
+      // Reload user profile after refresh
+      const authResult = await checkAuth()
+      if (authResult && authResult.user) {
+        setUser(authResult.user)
+        localStorage.setItem('auth_user', JSON.stringify(authResult.user))
         return true
       }
       return false
     } catch (err) {
       console.error('refreshAuth error', err)
-      // Clear out tokens on failure
+      // Clear out user on failure
       setUser(null)
-      setTokens(null)
       localStorage.removeItem('auth_user')
-      localStorage.removeItem('auth_tokens')
       return false
     }
   }
 
   const value = {
     user,
-    tokens,
     isAuthenticated: !!user,
-    setUser, // Add setUser to the context value
+    setUser,
     isLoading,
     login,
     logout,

@@ -1,13 +1,13 @@
 'use client'
 import React from "react"
 import { useAuth } from "@/lib/auth-context"
-import { TechnicianTaskDetails } from "@/components/tasks/technician-task-details"
-import { TaskDetailsPage } from "@/components/tasks/task-details-page"
+import { TechnicianTaskDetails } from "@/components/tasks/task_details/technician/technician-task-details"
+import { TaskDetailsPage } from "@/components/tasks/task_details/main/task-details-page"
 
 interface TaskDetailsProps {
-  params: {
+  params: Promise<{
     title: string
-  }
+  }>
 }
 
 export default function TaskDetails({ params: paramsPromise }: TaskDetailsProps) {

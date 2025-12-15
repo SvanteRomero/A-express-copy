@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/core/badge"
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 import { useState } from "react"
 import React from "react"
+import type { TechnicianPerformanceReport } from "../types"
 
 const ChartContainer = ({ children, className }: any) => {
     return <div className={className}>{children}</div>
@@ -15,52 +16,6 @@ const ChartTooltip = (props: any) => {
     return <Tooltip {...props} />
 }
 
-interface TaskDetail {
-    task_id: number
-    task_title: string
-    customer_name: string
-    laptop_model: string
-    date_in: string
-    estimated_cost: number
-    total_cost: number
-    paid_amount: number
-}
-
-interface CompletedTaskDetail {
-    task_id: number
-    task_title: string
-}
-
-interface TechnicianPerformance {
-    technician_id: number
-    technician_name: string
-    technician_email: string
-    completed_tasks_count: number
-    current_in_progress_tasks: number
-    current_assigned_tasks: number
-    tasks_sent_to_workshop: number
-    workshop_rate: number
-    percentage_of_tasks_involved: number
-    tasks_by_status: {
-        [status: string]: TaskDetail[]
-    }
-    status_counts: {
-        [status: string]: number
-    }
-
-    total_tasks_handled: number
-}
-
-interface TechnicianPerformanceReport {
-    technician_performance: TechnicianPerformance[]
-    date_range: string
-    total_technicians: number
-    summary: {
-        total_completed_tasks: number
-        total_current_tasks: number
-        total_tasks_in_period: number
-    }
-}
 
 export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPerformanceReport }) => {
     const [expandedTechnician, setExpandedTechnician] = useState<number | null>(null)
@@ -139,7 +94,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                             <TableBody>
                                 {technicianPerformance.map((tech) => (
                                     <React.Fragment key={tech.technician_id}>
-                                        <TableRow 
+                                        <TableRow
                                             className="hover:bg-gray-50 cursor-pointer"
                                             onClick={() => toggleTechnicianDetails(tech.technician_id)}
                                         >
@@ -155,9 +110,9 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                     <span className="font-medium">{tech.current_assigned_tasks}</span>
                                                     <div className="flex flex-wrap gap-1">
                                                         {Object.entries(tech.status_counts).slice(0, 3).map(([status, count]) => (
-                                                            <Badge 
+                                                            <Badge
                                                                 key={`${tech.technician_id}-${status}`}
-                                                                variant="secondary" 
+                                                                variant="secondary"
                                                                 className={`text-xs ${getStatusColor(status)}`}
                                                             >
                                                                 {status}: {count}
@@ -168,16 +123,16 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant="secondary">
-                                                    {tech.percentage_of_tasks_involved.toFixed(1)}%
+                                                    {(tech.percentage_of_tasks_involved ?? 0).toFixed(1)}%
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant={tech.workshop_rate >= 50 ? "destructive" : "secondary"}>
-                                                    {tech.workshop_rate.toFixed(1)}%
+                                                <Badge variant={(tech.workshop_rate ?? 0) >= 50 ? "destructive" : "secondary"}>
+                                                    {(tech.workshop_rate ?? 0).toFixed(1)}%
                                                 </Badge>
                                             </TableCell>
                                         </TableRow>
-                                        
+
                                         {/* Expanded Details */}
                                         {expandedTechnician === tech.technician_id && (
                                             <TableRow key={`${tech.technician_id}-details`}>
@@ -206,9 +161,9 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                         {/* Current Tasks by Status */}
                                                         <div>
                                                             <h4 className="font-semibold mb-2">Current Tasks</h4>
-                             .
-.
-.
+                                                            .
+                                                            .
+                                                            .
                                                         </div>
                                                     </div>
                                                 </TableCell>

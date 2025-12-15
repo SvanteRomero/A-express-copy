@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { searchModels } from '@/lib/api-client';
 import { Model } from '@/lib/api';
 
-export function useModels(search: string) {
+export function useModels({ query }: { query: string }) {
   const { data, isLoading, isError } = useQuery<Model[]>({
-    queryKey: ['models', search],
+    queryKey: ['models', { query }],
     queryFn: async () => {
-      const response = await apiClient.get(`common/models/?search=${search}`);
-      return response.data;
+      const response = await searchModels({ search: query });
+      // Handle both paginated (with .results) and non-paginated (direct array) responses
+      return response.data.results || response.data;
     },
   });
 

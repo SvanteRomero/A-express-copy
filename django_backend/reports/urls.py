@@ -46,8 +46,8 @@ urlpatterns = [
         name="generate_custom_report",
     ),
     path(
-        "reports/laptops-in-shop/",
-        views.get_laptops_in_shop_by_location,
-        name="laptops_in_shop_by_location",
+        "reports/dashboard-data/",
+        views.get_dashboard_data,
+        name="dashboard_data",
     ),
 ]

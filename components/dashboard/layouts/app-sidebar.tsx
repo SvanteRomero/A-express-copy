@@ -46,6 +46,7 @@ import {
   SidebarRail,
 } from "@/components/ui/layout/sidebar"
 import { useAuth } from "@/lib/auth-context"
+import { getMediaUrl } from "@/lib/media-utils"
 import Link from "next/link"
 
 // Navigation items for different roles
@@ -271,7 +272,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     if (!user) return "";
     return `${user.first_name} ${user.last_name}`.trim();
   }, [user]);
-  
+
   // Generate initials for avatar fallback
   const getInitials = useCallback(() => {
     if (!user) return "U";
@@ -285,12 +286,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return "U"
   }, [user])
 
+  // Compute profile picture URL - handles S3 and local dev
+  const profilePictureUrl = useMemo(() => {
+    if (!user) return "/placeholder-user.jpg"
+    return getMediaUrl(user.profile_picture)
+  }, [user])
+
   const checkIsActive = useCallback((itemUrl: string) => {
     // Exact match for the dashboard root to avoid highlighting everything
     if (itemUrl.endsWith("/dashboard") || itemUrl.endsWith("/manager") || itemUrl.endsWith("/technician") || itemUrl.endsWith("/accountant") || itemUrl.endsWith("/front-desk")) {
-        // If the URL is just one of the dashboard roots, we want an exact match or strict subdirectory match logic 
-        // But simply: if the item URL is exactly equal to the pathname, it is active.
-        return pathname === itemUrl;
+      // If the URL is just one of the dashboard roots, we want an exact match or strict subdirectory match logic 
+      // But simply: if the item URL is exactly equal to the pathname, it is active.
+      return pathname === itemUrl;
     }
     // For other routes (like /tasks), if pathname starts with the item URL, it's active
     return pathname.startsWith(itemUrl);
@@ -324,8 +331,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
+                  <SidebarMenuButton
+                    asChild
                     isActive={checkIsActive(item.url)}
                   >
                     <Link href={item.url} prefetch={false}>
@@ -349,7 +356,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src="/placeholder-user.jpg" alt={fullName} />
+                    <AvatarImage src={profilePictureUrl} alt={fullName} />
                     <AvatarFallback className="rounded-lg">
                       {getInitials()}
                     </AvatarFallback>
@@ -370,13 +377,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage src="/placeholder-user.jpg" alt={fullName} />
+                      <AvatarImage src={profilePictureUrl} alt={fullName} />
                       <AvatarFallback className="rounded-lg">
                         {getInitials()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                       <span className="truncate font-semibold">{fullName}</span>
+                      <span className="truncate font-semibold">{fullName}</span>
                       <span className="truncate text-xs">{user.role}</span>
                     </div>
                   </div>

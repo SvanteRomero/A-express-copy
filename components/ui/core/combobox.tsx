@@ -14,22 +14,17 @@ interface ComboboxProps {
   disabled?: boolean;
 }
 
-export function SimpleCombobox({ 
-    options, 
-    value, 
-    onChange, 
-    onInputChange, 
-    placeholder, 
-    className,
-    disabled 
+export function SimpleCombobox({
+  options,
+  value = '',
+  onChange,
+  onInputChange,
+  placeholder,
+  className,
+  disabled
 }: ComboboxProps) {
-  const [inputValue, setInputValue] = useState(value || '');
   const [showOptions, setShowOptions] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setInputValue(value || '');
-  }, [value]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -46,14 +41,13 @@ export function SimpleCombobox({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    setInputValue(newValue);
     onInputChange(newValue);
     setShowOptions(true);
   };
 
-  const handleOptionClick = (optionValue: string) => {
-    setInputValue(optionValue);
+  const handleOptionClick = (optionValue: string, optionLabel: string) => {
     onChange(optionValue);
+    onInputChange(optionLabel);
     setShowOptions(false);
   };
 
@@ -62,19 +56,22 @@ export function SimpleCombobox({
       <Input
         type="text"
         placeholder={placeholder}
-        value={inputValue}
+        value={value}
         onChange={handleInputChange}
         onFocus={() => setShowOptions(true)}
         disabled={disabled}
       />
       {showOptions && options.length > 0 && (
-        <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-md mt-1">
+        <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">
           <ul>
             {options.map((option) => (
               <li
                 key={option.value}
                 className="px-3 py-2 cursor-pointer hover:bg-gray-100"
-                onClick={() => handleOptionClick(option.value)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleOptionClick(option.value, option.label);
+                }}
               >
                 {option.label}
               </li>

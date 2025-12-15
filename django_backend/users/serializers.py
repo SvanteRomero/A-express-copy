@@ -5,9 +5,72 @@ from .models import Session, AuditLog
 
 
 class SessionSerializer(serializers.ModelSerializer):
+    is_current = serializers.SerializerMethodField()
+    device_info = serializers.SerializerMethodField()
+    
     class Meta:
         model = Session
-        fields = ('id', 'device_name', 'user_agent', 'ip_address', 'created_at', 'last_activity', 'expires_at', 'is_revoked')
+        fields = ('id', 'device_name', 'device_info', 'user_agent', 'ip_address', 
+                  'created_at', 'last_activity', 'expires_at', 'is_revoked', 'is_current')
+    
+    def get_is_current(self, obj):
+        """Check if this session matches the current request's JWT."""
+        request = self.context.get('request')
+        if not request:
+            return False
+        
+        # Try to get JTI from the current request's access token
+        try:
+            from rest_framework_simplejwt.tokens import AccessToken
+            from django.conf import settings
+            
+            # Get token from cookie or header
+            token = request.COOKIES.get(settings.JWT_AUTH_COOKIE)
+            if not token:
+                auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+                if auth_header.startswith('Bearer '):
+                    token = auth_header[7:]
+            
+            if token:
+                access_token = AccessToken(token)
+                current_jti = str(access_token.get('jti', ''))
+                # Compare with session's JTI
+                return obj.jti == current_jti
+        except Exception:
+            pass
+        
+        return False
+    
+    def get_device_info(self, obj):
+        """Parse user agent to get friendly device name."""
+        ua = obj.user_agent or ''
+        
+        # Simple parsing for common patterns
+        if 'Windows' in ua:
+            os_name = 'Windows'
+        elif 'Mac OS' in ua or 'Macintosh' in ua:
+            os_name = 'macOS'
+        elif 'Linux' in ua:
+            os_name = 'Linux'
+        elif 'Android' in ua:
+            os_name = 'Android'
+        elif 'iPhone' in ua or 'iPad' in ua:
+            os_name = 'iOS'
+        else:
+            os_name = 'Unknown OS'
+        
+        if 'Chrome' in ua and 'Edg' not in ua:
+            browser = 'Chrome'
+        elif 'Firefox' in ua:
+            browser = 'Firefox'
+        elif 'Safari' in ua and 'Chrome' not in ua:
+            browser = 'Safari'
+        elif 'Edg' in ua:
+            browser = 'Edge'
+        else:
+            browser = 'Browser'
+        
+        return f"{browser} on {os_name}"
 
 
 class AuditLogSerializer(serializers.ModelSerializer):
@@ -28,9 +91,17 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created_at', 'last_login', 'full_name') 
         
     def get_profile_picture_url(self, obj):
-        request = self.context.get('request')
+        """Return absolute URL for profile picture that works in all environments."""
         if obj.profile_picture and hasattr(obj.profile_picture, 'url'):
-            return obj.profile_picture.url
+            url = obj.profile_picture.url
+            # S3 URLs are already absolute, return as-is
+            if url.startswith('http'):
+                return url
+            # For local development, build absolute URI with domain
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(url)
+            return url
         return None
 
 class UserListSerializer(serializers.ModelSerializer):
@@ -104,7 +175,9 @@ class LoginSerializer(serializers.Serializer):
         password = data.get('password')
         
         if username and password:
-            user = authenticate(username=username, password=password)
+            # Get request from context (required for django-axes)
+            request = self.context.get('request')
+            user = authenticate(request=request, username=username, password=password)
             if user:
                 if not user.is_active:
                     raise serializers.ValidationError('User account is disabled.')
@@ -112,3 +185,4 @@ class LoginSerializer(serializers.Serializer):
                 return data
             raise serializers.ValidationError('Unable to log in with provided credentials.')
         raise serializers.ValidationError('Must include "username" and "password".')
+

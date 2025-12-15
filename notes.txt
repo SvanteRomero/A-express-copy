@@ -1,1 +1,0 @@
-The Revenue Summary Report is actually the Payment Methods Breakdown and still depends on the PaymentMethodsPreview component for its function. Please take the time to go through it and edit it accordingly to keep it consistent across the frontend and backend

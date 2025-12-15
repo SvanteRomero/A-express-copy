@@ -1,19 +1,7 @@
 'use client'
 
-import { useAuth } from "@/lib/auth-context"
-import { DashboardLayout } from "@/components/dashboard/layouts/dashboard-layout"
-import { TechnicianTasksPage } from "@/components/tasks/technician-tasks-page"
+import { TechnicianTasksPage } from "@/components/tasks/task_lists/main/technician/technician-tasks-page"
 
 export default function TechnicianTasksRoutePage() {
-  const { isAuthenticated, user } = useAuth()
-
-  if (!isAuthenticated) {
-    return null
-  }
-
-  return (
-    <DashboardLayout>
-      <TechnicianTasksPage />
-    </DashboardLayout>
-  )
+  return <TechnicianTasksPage />
 }

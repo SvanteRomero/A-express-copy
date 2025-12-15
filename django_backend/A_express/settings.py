@@ -13,10 +13,15 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from datetime import timedelta
 from pathlib import Path
 import os
-import sys  # Add this import
+import sys
+import dj_database_url
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file
+load_dotenv(BASE_DIR / ".env")
 
 PROJECT_ROOT = (
     BASE_DIR.parent
@@ -28,12 +33,54 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-_%476ua0$d)=+=h=2dj$97a(dm2%mbmqnx@!ldi!1z%50h-+c_"
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    # Allow a development-only fallback when DEBUG would be True
+    if os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes"):
+        SECRET_KEY = "dev-only-insecure-key-do-not-use-in-production"
+    else:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured(
+            "The SECRET_KEY environment variable is required. "
+            "Set it in your environment or .env file."
+        )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = []
+# Production security settings for data in transit
+if not DEBUG:
+    # HTTP Strict Transport Security - force HTTPS for 1 year
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Railway uses a reverse proxy - trust X-Forwarded-Proto header
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    
+    # DON'T redirect HTTP→HTTPS - Railway's proxy handles this
+    # Setting this to True causes redirect loops with Railway
+    SECURE_SSL_REDIRECT = False
+    
+    # Secure cookies - only send over HTTPS
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Prevent browsers from guessing content types
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Railway provides RAILWAY_PUBLIC_DOMAIN
+RAILWAY_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "healthcheck.railway.app",  # Railway healthcheck
+    ".railway.app",  # All Railway subdomains
+]
+if RAILWAY_DOMAIN:
+    ALLOWED_HOSTS.append(RAILWAY_DOMAIN)
 
 # CORS settings for allowing frontend to access backend
 CORS_ALLOWED_ORIGINS = [
@@ -41,19 +88,50 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
 ]
 
+# Ensure FRONTEND_URL has a scheme (https://) before adding to CORS
+if FRONTEND_URL:
+    # Add https:// if missing
+    if not FRONTEND_URL.startswith("http://") and not FRONTEND_URL.startswith("https://"):
+        FRONTEND_URL = f"https://{FRONTEND_URL}"
+    if FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
+
 CORS_ALLOWED_ORIGIN_REGEXES = [
-     r"^https://.*\.app\.github\.dev$",
-     r"^https://.*\.gitpod\.io$",
- ]
+    r"^https://.*\.app\.github\.dev$",
+    r"^https://.*\.gitpod\.io$",
+    r"^https://.*\.railway\.app$",
+    r"^https://.*\.vercel\.app$",
+]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://localhost:8000",
     "https://127.0.0.1:8000",
-    "https://*.app.github.dev", # This covers the GitHub Codespaces preview URLs
+    "https://*.app.github.dev",
+    "https://*.railway.app",
 ]
+if FRONTEND_URL.startswith("https://"):
+    CSRF_TRUSTED_ORIGINS.append(FRONTEND_URL)
+
+# Allow cookies in CORS requests (required for HttpOnly cookie auth)
+CORS_ALLOW_CREDENTIALS = True
+
+# Cookie settings for JWT tokens
+JWT_AUTH_COOKIE = 'access_token'
+JWT_AUTH_REFRESH_COOKIE = 'refresh_token'
+JWT_AUTH_COOKIE_SECURE = not DEBUG  # True in production (HTTPS only)
+JWT_AUTH_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'  # None for cross-origin in production
+JWT_AUTH_COOKIE_HTTPONLY = True  # Prevent JavaScript access
+JWT_AUTH_COOKIE_PATH = '/'
 
 
 # Application definition
+
+# Check if Cloudinary is configured (before INSTALLED_APPS definition)
+_CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '')
+_USE_CLOUDINARY = bool(_CLOUDINARY_URL)
+
+# DEBUG: Print to Railway logs on startup
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -62,7 +140,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # For media-only Cloudinary use, cloudinary_storage comes AFTER staticfiles
+    *(['cloudinary_storage', 'cloudinary'] if _USE_CLOUDINARY else []),
     "corsheaders",
+    "axes",  # Brute-force protection
     "users",
     "financials",
     "Eapp",
@@ -76,12 +157,14 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Serve static files in production
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "axes.middleware.AxesMiddleware",  # Account lockout after failed attempts
 ]
 
 ROOT_URLCONF = "A_express.urls"
@@ -108,16 +191,40 @@ WSGI_APPLICATION = "A_express.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "my_django_api",
-        "USER": "root",
-        "PASSWORD": "",
-        "HOST": "127.0.0.1",
-        "PORT": "3306",
+# Use DATABASE_URL from Railway if available
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
+    # Production: Use PostgreSQL from Railway
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    # Local development: Try MySQL, fallback to SQLite
+    try:
+        import MySQLdb  # noqa: F401
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.mysql",
+                "NAME": "my_django_api",
+                "USER": "root",
+                "PASSWORD": "",
+                "HOST": "127.0.0.1",
+                "PORT": "3306",
+            }
+        }
+    except ImportError:
+        # SQLite fallback if MySQL not available
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": BASE_DIR / "db.sqlite3",
+            }
+        }
 
 
 AUTH_USER_MODEL = "users.User"
@@ -125,24 +232,79 @@ AUTH_USER_MODEL = "users.User"
 # REST Framework settings
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "users.authentication.CookieJWTAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",  # Fallback for testing
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
 }
 
-# JWT Settings
+# JWT Settings - Access token 15 min for security, silent refresh handles UX
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),  # Short for security
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
 }
 
-MEDIA_URL = "/api/media/"
+# =============================================================================
+# Media Storage Configuration
+# =============================================================================
+# Cloudinary: Free 25GB storage, auto-configured via CLOUDINARY_URL
+# Local dev: filesystem storage when CLOUDINARY_URL not set
+
+# Always define MEDIA_ROOT for safety (used by migrations, admin, etc.)
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+if _USE_CLOUDINARY:
+    # Parse CLOUDINARY_URL: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+    import cloudinary
+    
+    cloudinary_url = _CLOUDINARY_URL
+    _cloud_name = ''
+    _api_key = ''
+    _api_secret = ''
+    
+    if cloudinary_url.startswith('cloudinary://'):
+        url_without_protocol = cloudinary_url[13:]
+        if '@' in url_without_protocol:
+            credentials, _cloud_name = url_without_protocol.rsplit('@', 1)
+            if ':' in credentials:
+                _api_key, _api_secret = credentials.split(':', 1)
+    
+    # Configure cloudinary library directly
+    cloudinary.config(
+        cloud_name=_cloud_name,
+        api_key=_api_key,
+        api_secret=_api_secret,
+        secure=True
+    )
+
+    
+    # CRITICAL: django-cloudinary-storage reads from this settings dict
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': _cloud_name,
+        'API_KEY': _api_key,
+        'API_SECRET': _api_secret,
+    }
+    
+    # Django 5.1+ uses STORAGES dict instead of DEFAULT_FILE_STORAGE
+    STORAGES = {
+        'default': {
+            'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
+    MEDIA_URL = '/media/'
+else:
+    # Local development - use filesystem storage
+    MEDIA_URL = "/api/media/"
 
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -186,3 +348,17 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Django-Axes: Brute-force protection settings
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",  # Required for axes
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+# Axes configuration - account lockout after failed attempts
+AXES_FAILURE_LIMIT = 5  # Lock after 5 failed attempts
+AXES_COOLOFF_TIME = 0.5  # Hours (30 minutes)
+AXES_LOCKOUT_PARAMETERS = ["username", "ip_address"]  # Lock by username+IP combo
+AXES_RESET_ON_SUCCESS = True  # Reset counter on successful login
+AXES_LOCKOUT_CALLABLE = None  # Use default lockout response
+AXES_VERBOSE = False  # Don't log to console in production

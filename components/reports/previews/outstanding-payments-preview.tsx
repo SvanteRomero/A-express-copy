@@ -4,35 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table"
 import { Badge } from "@/components/ui/core/badge"
 import { useState, useEffect } from "react"
-
-interface OutstandingTask {
-    task_id: string
-    customer_name: string
-    customer_phone: string
-    total_cost: number
-    paid_amount: number
-    outstanding_balance: number
-    days_overdue: number
-    status: string
-    date_in: string
-}
-
-interface OutstandingPaymentsReport {
-    outstanding_tasks: OutstandingTask[]
-    summary: {
-        total_outstanding: number
-        task_count: number
-        average_balance: number
-    }
-    pagination?: {
-        current_page: number
-        page_size: number
-        total_tasks: number
-        total_pages: number
-        has_next: boolean
-        has_previous: boolean
-    }
-}
+import type { OutstandingPaymentsReport } from "../types"
 
 interface OutstandingPaymentsPreviewProps {
     report: OutstandingPaymentsReport
@@ -41,11 +13,11 @@ interface OutstandingPaymentsPreviewProps {
     isLoading?: boolean
 }
 
-export const OutstandingPaymentsPreview = ({ 
-    report, 
-    searchTerm, 
+export const OutstandingPaymentsPreview = ({
+    report,
+    searchTerm,
     onPageChange,
-    isLoading = false 
+    isLoading = false
 }: OutstandingPaymentsPreviewProps) => {
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(10)

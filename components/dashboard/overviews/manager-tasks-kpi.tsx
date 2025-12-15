@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useTasks } from "@/hooks/use-tasks";
+import useSWR from "swr";
+import { apiClient } from "@/lib/api-client";
 import {
   Card,
   CardContent,
@@ -10,8 +11,21 @@ import {
 } from "@/components/ui/layout/card";
 import { ClipboardList, Package } from "lucide-react";
 
+interface DashboardKpiData {
+  kpiData: {
+    totalActiveTasks: number;
+    revenueThisMonth: number;
+    tasksReadyForPickup: number;
+  };
+}
+
+const fetcher = (url: string) => apiClient.get(url).then(res => res.data);
+
 export function ManagerTasksKpi() {
-  const { data: tasksData, isLoading, error } = useTasks({});
+  const { data, isLoading, error } = useSWR<DashboardKpiData>(
+    "/reports/dashboard-data/",
+    fetcher
+  );
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -21,15 +35,7 @@ export function ManagerTasksKpi() {
     return <div>Error loading tasks</div>;
   }
 
-  const tasks = tasksData?.results || [];
-
-  const tasksReadyForPickup = tasks.filter(
-    (task) => task.status === "Ready for Pickup"
-  ).length;
-
-  const activeTasks = tasks.filter(
-    (task) => task.status === "In Progress" || task.status === "Completed"
-  ).length;
+  const kpiData = data?.kpiData;
 
   return (
     <>
@@ -39,7 +45,7 @@ export function ManagerTasksKpi() {
           <ClipboardList className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{activeTasks}</div>
+          <div className="text-2xl font-bold">{kpiData?.totalActiveTasks ?? 0}</div>
         </CardContent>
       </Card>
       <Card>
@@ -50,7 +56,7 @@ export function ManagerTasksKpi() {
           <Package className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{tasksReadyForPickup}</div>
+          <div className="text-2xl font-bold">{kpiData?.tasksReadyForPickup ?? 0}</div>
         </CardContent>
       </Card>
     </>

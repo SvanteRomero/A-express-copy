@@ -16,7 +16,7 @@ function getBaseApiUrl() {
     return process.env.NEXT_PUBLIC_API_URL;
   }
 
-  // 2. If running in the browser (client-side), detect the Codespace URL
+  // 2. If running in the browser (client-side), detect the deployment URL
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
     const protocol = window.location.protocol;
@@ -34,6 +34,16 @@ function getBaseApiUrl() {
         return `${protocol}//${backendHost}/api`;
       }
     }
+
+    // Detect Railway deployment (*.up.railway.app)
+    if (host.includes("railway.app")) {
+      // For Railway, the backend URL should be set via NEXT_PUBLIC_API_URL
+      // This is a fallback message - you should set the env var in Railway
+      console.warn(
+        "Running on Railway but NEXT_PUBLIC_API_URL is not set. " +
+        "Set this environment variable to your Django backend URL."
+      );
+    }
   }
 
   // 3. Fallback for local development (your machine)
@@ -44,22 +54,5 @@ export const getApiUrl = (endpoint: string): string => {
   return `${API_CONFIG.BASE_URL}${endpoint}`;
 };
 
-const getBaseUrl = (url: string) => {
-  if (url.includes("/api")) {
-    return url.split("/api")[0];
-  }
-  return url;
-};
-
-export const getMediaUrl = (path: string): string => {
-  if (!path) {
-    return "";
-  }
-  if (path.startsWith("http")) {
-    return path;
-  }
-  const baseUrl = getBaseUrl(API_CONFIG.BASE_URL);
-  // Ensure we don't end up with double slashes if path starts with /
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  return `${baseUrl}${cleanPath}`;
-};
+// NOTE: For media URLs, use getMediaUrl from '@/lib/media-utils' instead.
+// It handles S3 URLs (production) and local development URLs properly.

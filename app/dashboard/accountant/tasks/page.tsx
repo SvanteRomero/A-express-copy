@@ -1,10 +1,5 @@
-import AccountantTasksPage from "@/components/tasks/accountant-tasks-page";
-import { DashboardLayout } from "@/components/dashboard/layouts/dashboard-layout";
+import AccountantTasksPage from "@/components/tasks/task_lists/main/accountant/accountant-tasks-page";
 
 export default function AccountantTasks() {
-  return (
-    <DashboardLayout>
-      <AccountantTasksPage />
-    </DashboardLayout>
-  );
+  return <AccountantTasksPage />;
 }

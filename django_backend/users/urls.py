@@ -18,6 +18,15 @@ urlpatterns = [
     # Authentication endpoints
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
+    # CSRF token endpoint for frontend
+    path('csrf/', views.get_csrf_token, name='csrf_token'),
+    
+    # Cookie-based token refresh
+    path('auth/refresh/', views.refresh_token_cookie, name='token_refresh_cookie'),
+    
+    # Current user endpoint (uses cookie auth)
+    path('auth/me/', views.get_current_user, name='auth_me'),
+    
     path('', include(router.urls)),
     path('', include(list_router.urls)),
     path('', include(auth_router.urls)),
@@ -30,3 +39,4 @@ urlpatterns = [
     path('users/profile/sessions/<uuid:session_id>/revoke/', views.AuthViewSet.as_view({'post': 'revoke_session'}), name='users_profile_session_revoke'),
     path('users/profile/activity/', views.AuthViewSet.as_view({'get': 'profile_activity'}), name='users_profile_activity'),
 ]
+

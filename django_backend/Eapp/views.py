@@ -451,7 +451,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='add-payment')
     def add_payment(self, request, task_id=None):
-        print("Add payment called")
+
         if not (request.user.role in ['Manager', 'Front Desk', 'Accountant'] or request.user.is_superuser):
             return Response(
                 {"error": "You do not have permission to add payments."},
@@ -461,7 +461,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         serializer = PaymentSerializer(data=request.data)
         if serializer.is_valid():
             tech_support_category, _ = PaymentCategory.objects.get_or_create(name='Tech Support')
-            print("Saving payment")
+
             serializer.save(task=task, description=f"{task.customer.name} - {task.title}", category=tech_support_category)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

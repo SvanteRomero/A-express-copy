@@ -8,9 +8,6 @@ def get_current_date():
     return timezone.now().date()
     
 
-
-
-
 class Task(models.Model):
     class Status(models.TextChoices):
         PENDING = 'Pending', _('Pending')

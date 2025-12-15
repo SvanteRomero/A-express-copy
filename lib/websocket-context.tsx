@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useEffect, useState, useCallback } from "react"
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react"
 
 interface KPIData {
   totalActiveTasks: number
@@ -137,10 +137,12 @@ class MockWebSocketServer {
     callback(this.generateRandomData())
 
     // Start sending updates every 5 seconds
-    this.interval = setInterval(() => {
-      const data = this.generateRandomData()
-      this.callbacks.forEach((cb) => cb(data))
-    }, 5000)
+    if (!this.interval) {
+      this.interval = setInterval(() => {
+        const data = this.generateRandomData()
+        this.callbacks.forEach((cb) => cb(data))
+      }, 5000)
+    }
   }
 
   disconnect(callback: (data: WebSocketData) => void) {
@@ -160,56 +162,67 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [isConnecting, setIsConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const connect = useCallback(() => {
-    setIsConnecting(true)
-    setError(null)
+  // Use ref to store the callback for cleanup
+  const callbackRef = useRef<((data: WebSocketData) => void) | null>(null)
 
-    try {
-      // Simulate connection delay
-      setTimeout(() => {
-        mockServer.connect((newData) => {
-          setData((prevData) => {
-            if (prevData) {
-              // Merge new activities with existing ones, keeping only the latest 5
-              const allActivities = [...newData.recentActivities, ...prevData.recentActivities]
-              const uniqueActivities = allActivities
-                .filter((activity, index, self) => index === self.findIndex((a) => a.id === activity.id))
-                .slice(0, 5)
+  const handleData = useCallback((newData: WebSocketData) => {
+    setData((prevData) => {
+      if (prevData) {
+        // Merge new activities with existing ones, keeping only the latest 5
+        const allActivities = [...newData.recentActivities, ...prevData.recentActivities]
+        const uniqueActivities = allActivities
+          .filter((activity, index, self) => index === self.findIndex((a) => a.id === activity.id))
+          .slice(0, 5)
 
-              return {
-                ...newData,
-                recentActivities: uniqueActivities,
-              }
-            }
-            return newData
-          })
-        })
-        setIsConnected(true)
-        setIsConnecting(false)
-      }, 1000)
-    } catch (err) {
-      setError("Failed to connect to WebSocket")
-      setIsConnecting(false)
-    }
+        return {
+          ...newData,
+          recentActivities: uniqueActivities,
+        }
+      }
+      return newData
+    })
   }, [])
 
-  const disconnect = useCallback(() => {
-    if (data) {
-      mockServer.disconnect(() => {})
+  const reconnect = useCallback(() => {
+    // Disconnect existing
+    if (callbackRef.current) {
+      mockServer.disconnect(callbackRef.current)
     }
     setIsConnected(false)
     setData(null)
-  }, [data])
 
-  const reconnect = useCallback(() => {
-    disconnect()
-    setTimeout(connect, 1000)
-  }, [connect, disconnect])
+    // Reconnect after a delay
+    setTimeout(() => {
+      setIsConnecting(true)
+      setError(null)
+      callbackRef.current = handleData
+      mockServer.connect(handleData)
+      setIsConnected(true)
+      setIsConnecting(false)
+    }, 1000)
+  }, [handleData])
 
+  // Connect on mount, disconnect on unmount - empty deps to run once
   useEffect(() => {
-    connect()
-    return () => disconnect()
-  }, [connect, disconnect])
+    setIsConnecting(true)
+    setError(null)
+
+    // Simulate connection delay
+    const timeoutId = setTimeout(() => {
+      callbackRef.current = handleData
+      mockServer.connect(handleData)
+      setIsConnected(true)
+      setIsConnecting(false)
+    }, 1000)
+
+    return () => {
+      clearTimeout(timeoutId)
+      if (callbackRef.current) {
+        mockServer.disconnect(callbackRef.current)
+      }
+      setIsConnected(false)
+    }
+  }, [handleData])
 
   return (
     <WebSocketContext.Provider
@@ -225,3 +238,4 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     </WebSocketContext.Provider>
   )
 }
+

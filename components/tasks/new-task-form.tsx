@@ -21,8 +21,9 @@ import { useModels } from '@/hooks/use-models'
 import { useReferrers } from '@/hooks/use-referrers'
 import { SimpleCombobox } from '@/components/ui/core/combobox'
 import { toast } from '@/hooks/use-toast'
+import { useQueryClient } from '@tanstack/react-query'
 
-interface NewTaskFormProps {}
+interface NewTaskFormProps { }
 
 interface FormData {
   title: string;
@@ -67,14 +68,16 @@ const DEVICE_TYPE_OPTIONS = [
   { value: 'Motherboard Only', label: 'Motherboard Only' },
 ]
 
-export function NewTaskForm({}: NewTaskFormProps) {
+export function NewTaskForm({ }: NewTaskFormProps) {
   const { user } = useAuth()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [isReferred, setIsReferred] = useState(false)
   const [customerSearch, setCustomerSearch] = useState('')
   const [referrerSearch, setReferrerSearch] = useState('')
+  const [modelSearch, setModelSearch] = useState('')
   const [customerPage, setCustomerPage] = useState(1)
 
   const { data: technicians, isLoading: isLoadingTechnicians } = useTechnicians()
@@ -84,7 +87,7 @@ export function NewTaskForm({}: NewTaskFormProps) {
   const { data: locations, isLoading: isLoadingLocations } = useLocations()
   const { data: customers, isLoading: isLoadingCustomers } = useCustomers({ query: customerSearch, page: customerPage })
   const { data: referrers, isLoading: isLoadingReferrers } = useReferrers(referrerSearch)
-  const { data: models, isLoading: isLoadingModels } = useModels()
+  const { data: models, isLoading: isLoadingModels } = useModels({ query: modelSearch })
 
 
   const [formData, setFormData] = useState<FormData>({
@@ -125,13 +128,13 @@ export function NewTaskForm({}: NewTaskFormProps) {
 
   useEffect(() => {
     if (locations && locations.length > 0) {
-        setFormData(prev => ({...prev, current_location: locations[0].name}))
+      setFormData(prev => ({ ...prev, current_location: locations[0].name }))
     }
   }, [locations])
 
   useEffect(() => {
     if (user?.role === 'Manager') {
-        setFormData(prev => ({...prev, negotiated_by: user.id.toString()}))
+      setFormData(prev => ({ ...prev, negotiated_by: user.id.toString() }))
     }
   }, [user])
 
@@ -141,26 +144,32 @@ export function NewTaskForm({}: NewTaskFormProps) {
     if (!formData.customer_name.trim()) newErrors.customer_name = 'Name is required'
 
     formData.customer_phone_numbers.forEach((phone, index) => {
-        if (!phone.phone_number.trim()) {
-            newErrors[`customer_phone_${index}`] = 'Phone is required'
-        } else {
-            const phoneRegex = /^0\s?\d{3}\s?\d{3}\s?\d{3}$/;
-            if (!phoneRegex.test(phone.phone_number)) {
-                newErrors[`customer_phone_${index}`] = 'Invalid phone number format. Example: 0XXX XXX XXX'
-            }
+      if (!phone.phone_number.trim()) {
+        newErrors[`customer_phone_${index}`] = 'Phone is required'
+      } else {
+        const phoneRegex = /^0\s?\d{3}\s?\d{3}\s?\d{3}$/;
+        if (!phoneRegex.test(phone.phone_number)) {
+          newErrors[`customer_phone_${index}`] = 'Invalid phone number format. Example: 0XXX XXX XXX'
         }
+      }
     })
 
-    if (!formData.brand && !formData.laptop_model.trim()) {
-        newErrors.brand = 'Either brand or model is required';
-        newErrors.laptop_model = 'Either brand or model is required';
+    if (!formData.brand) newErrors.brand = 'Brand is required'
+    if (!formData.laptop_model.trim()) newErrors.laptop_model = 'Model is required'
+
+    if (!formData.estimated_cost || formData.estimated_cost <= 0) {
+      newErrors.estimated_cost = 'Estimated cost is required and must be greater than 0'
     }
 
     if (!formData.description.trim()) newErrors.description = 'Description is required'
     if (!formData.urgency) newErrors.urgency = 'Urgency is required'
     if (!formData.current_location) newErrors.current_location = 'Location is required'
     if ((formData.device_type === 'Not Full' || formData.device_type === 'Motherboard Only') && !formData.device_notes.trim()) {
-        newErrors.device_notes = 'Device notes are required for this device type'
+      newErrors.device_notes = 'Device notes are required for this device type'
+    }
+
+    if (formData.is_referred && !formData.referred_by.trim()) {
+      newErrors.referred_by = 'Referred by is required when task is referred'
     }
 
     setErrors(newErrors)
@@ -169,13 +178,13 @@ export function NewTaskForm({}: NewTaskFormProps) {
 
   const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData(prev => {
-        const newFormData = { ...prev, [field]: value };
-        if (field === 'device_type' && value === 'Motherboard Only') {
-            newFormData.laptop_model = 'Motherboard';
-        } else if (field === 'device_type' && prev.laptop_model === 'Motherboard') {
-            newFormData.laptop_model = '';
-        }
-        return newFormData;
+      const newFormData = { ...prev, [field]: value };
+      if (field === 'device_type' && value === 'Motherboard Only') {
+        newFormData.laptop_model = 'Motherboard';
+      } else if (field === 'device_type' && prev.laptop_model === 'Motherboard') {
+        newFormData.laptop_model = '';
+      }
+      return newFormData;
     })
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }))
@@ -222,6 +231,8 @@ export function NewTaskForm({}: NewTaskFormProps) {
           description: `Customer ${formData.customer_name} has been added to the database.`,
         });
       }
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
       setSubmitSuccess(true)
     } catch (error: any) {
       if (error.response) {
@@ -248,9 +259,9 @@ export function NewTaskForm({}: NewTaskFormProps) {
 
   const canAssignTechnician = user && (user.role === 'Manager' || user.role === 'Administrator' || user.role === 'Front Desk')
 
-  const customerOptions = customers ? customers.results.map((c: any) => ({ label: c.name, value: c.id.toString() })) : [];
+  const customerOptions = customers ? customers.results.map((c: any) => ({ label: c.name, value: c.id.toString() })).slice(0, 3) : [];
   const referrerOptions = referrers ? referrers.map((r: any) => ({ label: r.name, value: r.id.toString() })) : [];
-  const modelOptions = models ? models.map((m: any) => ({ label: m, value: m })) : [];
+  const modelOptions = models ? models.filter((m: any) => m?.name).map((m: any) => ({ label: m.name, value: m.name })).slice(0, 3) : [];
 
   return (
     <>
@@ -272,7 +283,7 @@ export function NewTaskForm({}: NewTaskFormProps) {
                 value={formData.customer_name}
                 onChange={(value) => {
                   const selectedCustomer = customers?.results?.find((c: any) => c.id.toString() === value)
-                  if(selectedCustomer){
+                  if (selectedCustomer) {
                     handleInputChange('customer_id', selectedCustomer.id)
                     handleInputChange('customer_name', selectedCustomer.name)
                     handleInputChange('customer_phone_numbers', selectedCustomer.phone_numbers)
@@ -325,7 +336,7 @@ export function NewTaskForm({}: NewTaskFormProps) {
               </Tabs>
             </FormField>
             <div className='grid grid-cols-2 gap-4'>
-              <FormField id='brand' label='Brand' error={errors.brand}>
+              <FormField id='brand' label='Brand' required error={errors.brand}>
                 <Select value={formData.brand} onValueChange={(value) => handleInputChange('brand', value)} disabled={isLoadingBrands}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select brand" />
@@ -339,7 +350,7 @@ export function NewTaskForm({}: NewTaskFormProps) {
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField id='laptop_model' label='Model' error={errors.laptop_model}>
+              <FormField id='laptop_model' label='Model' required error={errors.laptop_model}>
                 <SimpleCombobox
                   options={modelOptions}
                   value={formData.laptop_model}
@@ -348,9 +359,10 @@ export function NewTaskForm({}: NewTaskFormProps) {
                   }}
                   onInputChange={(value) => {
                     handleInputChange('laptop_model', value)
+                    setModelSearch(value)
                   }}
                   placeholder="Search or create model..."
-                  disabled={isLoadingModels || formData.device_type === 'Motherboard Only'}
+                  disabled={formData.device_type === 'Motherboard Only'}
                 />
               </FormField>
             </div>
@@ -383,15 +395,15 @@ export function NewTaskForm({}: NewTaskFormProps) {
               </Select>
             </FormField>
             <FormField id='device_notes' label='Device Notes' required={formData.device_type === 'Not Full' || formData.device_type === 'Motherboard Only'} error={errors.device_notes}>
-                <Textarea
-                  id='device_notes'
-                  value={formData.device_notes}
-                  onChange={(e) => handleInputChange('device_notes', e.target.value)}
-                  className={errors.device_notes ? 'border-red-500' : ''}
-                  placeholder="e.g. Customer brought only the motherboard and the screen."
-                />
-              </FormField>
-            <FormField id='estimated_cost' label='Estimated Cost (TSh)'>
+              <Textarea
+                id='device_notes'
+                value={formData.device_notes}
+                onChange={(e) => handleInputChange('device_notes', e.target.value)}
+                className={errors.device_notes ? 'border-red-500' : ''}
+                placeholder="e.g. Customer brought only the motherboard and the screen."
+              />
+            </FormField>
+            <FormField id='estimated_cost' label='Estimated Cost (TSh)' required error={errors.estimated_cost}>
               <CurrencyInput
                 id='estimated_cost'
                 value={formData.estimated_cost ?? 0}
@@ -427,29 +439,29 @@ export function NewTaskForm({}: NewTaskFormProps) {
                 </SelectContent>
               </Select>
             </FormField>
-  <FormField id='negotiated_by' label='Negotiated By'>
+            <FormField id='negotiated_by' label='Negotiated By'>
               {user?.role === 'Manager' ? (
-                  <Input
-                      id='negotiated_by'
-                      value={`${user.first_name} ${user.last_name}`}
-                      readOnly
-                      className='bg-gray-100'
-                  />
+                <Input
+                  id='negotiated_by'
+                  value={`${user.first_name} ${user.last_name}`}
+                  readOnly
+                  className='bg-gray-100'
+                />
               ) : (
-                  <Select value={formData.negotiated_by} onValueChange={(value) => handleInputChange('negotiated_by', value)} disabled={isLoadingManagers}>
-                      <SelectTrigger>
-                          <SelectValue placeholder="Select manager" />
-                      </SelectTrigger>
-                      <SelectContent>
-                          {managers?.map((manager) => (
-                              <SelectItem key={manager.id} value={manager.id.toString()}>
-                                  {manager.first_name} {manager.last_name}
-                              </SelectItem>
-                          ))}
-                      </SelectContent>
-                  </Select>
+                <Select value={formData.negotiated_by} onValueChange={(value) => handleInputChange('negotiated_by', value)} disabled={isLoadingManagers}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select manager" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {managers?.map((manager) => (
+                      <SelectItem key={manager.id} value={manager.id.toString()}>
+                        {manager.first_name} {manager.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
-              </FormField>
+            </FormField>
             {canAssignTechnician && (
               <FormField id='assigned_to' label='Assign Technician'>
                 <Select value={formData.assigned_to} onValueChange={(value) => handleInputChange('assigned_to', value)} disabled={isLoadingTechnicians || isLoadingWorkshopTechnicians}>
@@ -469,8 +481,8 @@ export function NewTaskForm({}: NewTaskFormProps) {
                 </Select>
               </FormField>
             )}
-          <div className="flex items-center space-x-2">
-            <Checkbox id="is_referred" checked={isReferred} onCheckedChange={(checked) => { setIsReferred(!!checked); handleInputChange('is_referred', !!checked); }} />
+            <div className="flex items-center space-x-2">
+              <Checkbox id="is_referred" checked={isReferred} onCheckedChange={(checked) => { setIsReferred(!!checked); handleInputChange('is_referred', !!checked); }} />
               <label
                 htmlFor="is_referred"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -479,13 +491,13 @@ export function NewTaskForm({}: NewTaskFormProps) {
               </label>
             </div>
             {isReferred && (
-              <FormField id='referred_by' label='Referred By'>
+              <FormField id='referred_by' label='Referred By' required error={errors.referred_by}>
                 <SimpleCombobox
                   options={referrerOptions}
                   value={formData.referred_by}
                   onChange={(value) => {
                     const selectedReferrer = referrers?.find((r: any) => r.id.toString() === value)
-                    if(selectedReferrer){
+                    if (selectedReferrer) {
                       handleInputChange('referred_by', selectedReferrer.name)
                     } else {
                       handleInputChange('referred_by', value)
