@@ -11,10 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/layout/popover"
 import { Calendar } from "@/components/ui/core/calendar"
 import { Input } from "@/components/ui/core/input";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { usePayments } from "@/hooks/use-payments"
 import { usePaymentMethods } from "@/hooks/use-payment-methods"
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/core/badge";
 import { AddExpenditureDialog } from "../financials/add-expenditure-dialog";
 import { ExpenditureRequestsList } from "../financials/expenditure-requests-list";
 import { FinancialSummaryPreview } from "../payments/financial-summary-preview";
@@ -45,6 +47,7 @@ export function PaymentsOverview() {
   const [isFinancialSummaryOpen, setIsFinancialSummaryOpen] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const isMobile = useIsMobile();
 
   const { user } = useAuth();
   const isManager = user?.role === 'Manager';
@@ -75,60 +78,110 @@ export function PaymentsOverview() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TZS' }).format(amount)
   }
 
-  const renderPaymentsTable = (paymentsToRender: Payment[]) => (
-    <div className='rounded-md border'>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Description</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead>Method</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Date</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+  const renderPaymentsTable = (paymentsToRender: Payment[]) => {
+    if (isMobile) {
+      return (
+        <div className="space-y-4">
           {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center">Loading...</TableCell>
-            </TableRow>
+            <div className="text-center py-4">Loading...</div>
           ) : paymentsToRender?.map((payment: Payment) => (
-            <TableRow key={payment.id}>
-              <TableCell>{payment.description}</TableCell>
-              <TableCell
-                className={parseFloat(payment.amount) > 0 ? 'text-green-600' : 'text-red-600'}
-              >
-                {formatCurrency(parseFloat(payment.amount))}
-              </TableCell>
-              <TableCell>{payment.method_name}</TableCell>
-              <TableCell>{payment.category_name}</TableCell>
-              <TableCell>{payment.date}</TableCell>
-            </TableRow>
+            <Card key={payment.id}>
+              <CardHeader className="p-4 pb-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-semibold">{payment.description}</div>
+                    <div className="text-xs text-muted-foreground">{payment.date}</div>
+                  </div>
+                  <div className={cn("font-bold", parseFloat(payment.amount) > 0 ? 'text-green-600' : 'text-red-600')}>
+                    {formatCurrency(parseFloat(payment.amount))}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 pt-0 space-y-2">
+                <div className="flex justify-between items-center text-sm border-t pt-2 mt-2">
+                  <Badge variant="secondary">{payment.method_name}</Badge>
+                  <span className="text-muted-foreground">{payment.category_name}</span>
+                </div>
+              </CardContent>
+            </Card>
           ))}
-        </TableBody>
-      </Table>
-      <div className="flex justify-end space-x-2 p-4">
-        <Button
-          onClick={() => setPage(prev => Math.max(1, prev - 1))}
-          disabled={!hasPreviousPage || isLoading}
-        >
-          Previous
-        </Button>
-        <Button
-          onClick={() => setPage(prev => prev + 1)}
-          disabled={!hasNextPage || isLoading}
-        >
-          Next
-        </Button>
+          <div className="flex justify-center space-x-2 py-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(prev => Math.max(1, prev - 1))}
+              disabled={!hasPreviousPage || isLoading}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(prev => prev + 1)}
+              disabled={!hasNextPage || isLoading}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className='rounded-md border'>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Description</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Method</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Date</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-24 text-center">Loading...</TableCell>
+              </TableRow>
+            ) : paymentsToRender?.map((payment: Payment) => (
+              <TableRow key={payment.id}>
+                <TableCell>{payment.description}</TableCell>
+                <TableCell
+                  className={parseFloat(payment.amount) > 0 ? 'text-green-600' : 'text-red-600'}
+                >
+                  {formatCurrency(parseFloat(payment.amount))}
+                </TableCell>
+                <TableCell>{payment.method_name}</TableCell>
+                <TableCell>{payment.category_name}</TableCell>
+                <TableCell>{payment.date}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <div className="flex justify-end space-x-2 p-4">
+          <Button
+            onClick={() => setPage(prev => Math.max(1, prev - 1))}
+            disabled={!hasPreviousPage || isLoading}
+          >
+            Previous
+          </Button>
+          <Button
+            onClick={() => setPage(prev => prev + 1)}
+            disabled={!hasNextPage || isLoading}
+          >
+            Next
+          </Button>
+        </div>
       </div>
-    </div>
-  );
+    )
+  };
 
   if (isError) return <div>Error fetching payments.</div>
 
   return (
     <div className='space-y-6'>
-      <div className='flex justify-between items-center'>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className='text-3xl font-bold tracking-tight'>Payments</h1>
           <p className='text-muted-foreground'>Manage and track all payment transactions</p>
@@ -196,7 +249,7 @@ export function PaymentsOverview() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue='revenue' onValueChange={setActiveTab} className='space-y-4'>
-            <div className='flex items-center justify-between'>
+            <div className={`flex ${isMobile ? 'flex-col gap-4' : 'items-center justify-between'}`}>
               <TabsList>
                 <TabsTrigger value='revenue'>Revenue</TabsTrigger>
                 <TabsTrigger value='expenditure'>Expenditure</TabsTrigger>
@@ -204,15 +257,15 @@ export function PaymentsOverview() {
               </TabsList>
 
               {activeTab !== 'requests' && (
-                <div className='flex items-center space-x-2'>
+                <div className={`flex ${isMobile ? 'flex-col gap-2 w-full mt-4' : 'items-center space-x-2'}`}>
                   <Input
                     placeholder="Search by description..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-[200px]"
+                    className={isMobile ? "w-full" : "w-[200px]"}
                   />
                   <Select value={methodFilter} onValueChange={setMethodFilter}>
-                    <SelectTrigger className='w-[140px]'><SelectValue placeholder='Method' /></SelectTrigger>
+                    <SelectTrigger className={isMobile ? "w-full" : "w-[140px]"}><SelectValue placeholder='Method' /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value='all'>All Methods</SelectItem>
                       {paymentMethods?.map((method) => (
@@ -221,7 +274,7 @@ export function PaymentsOverview() {
                     </SelectContent>
                   </Select>
                   <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className='w-[140px]'><SelectValue placeholder='Category' /></SelectTrigger>
+                    <SelectTrigger className={isMobile ? "w-full" : "w-[140px]"}><SelectValue placeholder='Category' /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value='all'>All Categories</SelectItem>
                       {paymentCategories?.map((category: any) => (
@@ -231,7 +284,7 @@ export function PaymentsOverview() {
                   </Select>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant={"outline"} className={cn("w-[280px] justify-start text-left font-normal", !date && "text-muted-foreground")}>
+                      <Button variant={"outline"} className={cn("justify-start text-left font-normal", !date && "text-muted-foreground", isMobile ? "w-full" : "w-[280px]")}>
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {date ? format(date, "PPP") : <span>Pick a date</span>}
                       </Button>

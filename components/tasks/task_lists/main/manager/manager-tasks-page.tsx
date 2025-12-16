@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/core/button";
 import { Plus } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { deleteTask} from "@/lib/api-client";
+import { deleteTask } from "@/lib/api-client";
 import { TasksDisplay } from "@/components/tasks/tasks-display";
 import { BrandManager } from "@/components/brands/brand-manager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs";
@@ -74,7 +74,7 @@ export function ManagerTasksPage() {
   const handleTerminateTask = (taskTitle: string) => {
     updateTaskMutation.mutate({ id: taskTitle, updates: { status: "Terminated" } });
   };
-  
+
   const handlePageChange = (tab: Tab, direction: 'next' | 'previous') => {
     setPages(prev => ({
       ...prev,
@@ -95,9 +95,9 @@ export function ManagerTasksPage() {
   }
 
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex-1 space-y-6 p-4 md:p-6">
       {/* Header Section */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Manager Tasks Portal</h1>
           <p className="text-gray-600 mt-2">Complete task management with Front Desk workflow capabilities</p>

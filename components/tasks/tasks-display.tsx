@@ -18,10 +18,14 @@ import {
   MapPin,
   MessageSquare,
   CheckCircle,
+  MoreVertical,
 } from "lucide-react"
 import {  AlertDialog,  AlertDialogAction,  AlertDialogCancel,  AlertDialogContent,  AlertDialogDescription,  AlertDialogFooter,  AlertDialogHeader,  AlertDialogTitle,  AlertDialogTrigger,} from "@/components/ui/feedback/alert-dialog"
 import { TaskFilters } from "./task-filters"
 import { getTaskStatusOptions } from "@/lib/tasks-api";
+import { useIsMobile } from "@/hooks/use-mobile"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/layout/card"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/feedback/dropdown-menu"
 
 
 import { Textarea } from "@/components/ui/core/textarea";
@@ -67,6 +71,7 @@ export function TasksDisplay({ tasks, technicians, onRowClick, showActions, onDe
   const [taskToPay, setTaskToPay] = useState<any | null>(null);
   const [isAddPaymentDialogOpen, setIsAddPaymentDialogOpen] = useState(false);
   const [selectedTaskToPay, setSelectedTaskToPay] = useState<any | null>(null);
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const fetchStatusOptions = async () => {
@@ -218,6 +223,308 @@ export function TasksDisplay({ tasks, technicians, onRowClick, showActions, onDe
         uniqueLocations={uniqueLocations}
         clearAllFilters={clearAllFilters}
       />
+      
+      {isMobile ? (
+        <div className="space-y-4">
+          {filteredAndSortedTasks.map((task) => (
+            <Card key={task.id} className="overflow-hidden" onClick={() => onRowClick(task)}>
+              <CardHeader className="p-4 flex flex-row items-start justify-between space-y-0 pb-2">
+                <div className="flex flex-col gap-1">
+                  <div className="font-semibold text-red-600">#{task.title}</div>
+                  <div className="text-sm font-medium">{task.customer_details?.name}</div>
+                </div>
+                {task.workshop_status === 'In Workshop' ? (
+                    <Badge className="bg-pink-100 text-pink-800 hover:bg-pink-100">
+                      In Workshop
+                    </Badge>
+                  ) : (
+                    getStatusBadge(task.status)
+                  )}
+              </CardHeader>
+              <CardContent className="p-4 pt-0 space-y-2">
+                 <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Laptop className="h-4 w-4" />
+                    <span>{task.laptop_model_details?.name}</span>
+                 </div>
+                 
+                 <div className="text-sm text-gray-600">
+                   {isManagerView ? (
+                     <div className="flex items-center gap-2">
+                       <MapPin className="h-4 w-4" />
+                       <span>{task.current_location}</span>
+                     </div>
+                   ) : isAccountantView ? (
+                     <div className="font-medium">
+                       Balance: TSh {task.outstanding_balance}
+                     </div>
+                   ) : (
+                     <p className="line-clamp-2">{task.description}</p>
+                   )}
+                 </div>
+
+                 <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <UserIcon className="h-4 w-4 text-gray-400" />
+                      <span>{task.assigned_to_details?.full_name || "Unassigned"}</span>
+                    </div>
+                    <div>{getPaymentStatusBadge(task.payment_status)}</div>
+                 </div>
+              </CardContent>
+              {showActions && (
+                <CardFooter className="p-4 bg-gray-50 flex flex-wrap gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+                    {isHistoryView && task.status === 'Picked Up' && new Date(task.updated_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="bg-blue-500 hover:bg-blue-600 text-white w-full sm:w-auto"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onReturnTask?.(task);
+                          }}
+                        >
+                          Return
+                        </Button>
+                      ) : isPickupView ? (
+                        <div className="flex gap-2 w-full">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+                                onClick={(e) => e.stopPropagation()}
+                                disabled={task.payment_status !== 'Fully Paid' && !task.is_debt}
+                              >
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Picked Up
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will mark the task as picked up.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => onPickedUp?.(task)}>
+                                  Confirm
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onNotifyCustomer?.(task.title, task.customer_details?.name);
+                            }}
+                          >
+                            <MessageSquare className="h-3 w-3 mr-1" />
+                            Notify
+                          </Button>
+                        </div>
+                      ) : isFrontDeskCompletedView ? (
+                        <div className="flex gap-2 w-full">
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onApprove?.(task.title);
+                            }}
+                          >
+                            Approve
+                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="flex-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedTask(task);
+                                }}
+                              >
+                                Reject
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Reject Task {selectedTask?.title}</DialogTitle>
+                              </DialogHeader>
+                              <Textarea
+                                placeholder="Enter rejection notes..."
+                                value={rejectionNotes}
+                                onChange={(e) => setRejectionNotes(e.target.value)}
+                              />
+                              <DialogFooter>
+                                <Button
+                                  onClick={() => {
+                                    onReject?.(selectedTask?.title, rejectionNotes);
+                                    setSelectedTask(null);
+                                    setRejectionNotes("");
+                                  }}
+                                >
+                                  Confirm
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      ) : isAccountantView ? (
+                        <div className="flex gap-2 w-full">
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedTaskToPay(task);
+                              setIsAddPaymentDialogOpen(true);
+                            }}
+                          >
+                            Add Payment
+                          </Button>
+                          {onRemindDebt && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onRemindDebt(task.title);
+                              }}
+                            >
+                              Remind Debt
+                            </Button>
+                          )}
+                        </div>
+                      ) : isCompletedTab ? (
+                        <div className="flex gap-2 w-full">
+                          <Button
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Add notification logic here in the future
+                            }}
+                          >
+                            Notify Customer
+                          </Button>
+                          {isHistoryView && task.status === 'Picked Up' && new Date(task.updated_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onReturnTask?.(task);
+                              }}
+                            >
+                              Return
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex gap-2 w-full justify-end">
+                          {["Pending", "In Progress"].includes(task.status) ? (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  className="w-full sm:w-auto"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                  }}
+                                >
+                                  Terminate
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone. This will terminate the task.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => onTerminateTask?.(task.title)}
+                                  >
+                                    Terminate
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          ) : (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-gray-300 text-gray-600 hover:bg-gray-50 bg-transparent flex-1 sm:flex-none"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onRowClick(task);
+                                }}
+                              >
+                                <Edit className="h-3 w-3 mr-1" />
+                                Edit
+                              </Button>
+                              {onDeleteTask && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      className="flex-1 sm:flex-none"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                      }}
+                                    >
+                                      <Trash2 className="h-3 w-3 mr-1" />
+                                      Delete
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete the task.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => onDeleteTask(task.title)}
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+                </CardFooter>
+              )}
+            </Card>
+          ))}
+           {filteredAndSortedTasks.length === 0 && (
+            <div className="text-center py-12">
+              <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks found</h3>
+              <p className="text-gray-600">Try adjusting your search criteria or filters</p>
+            </div>
+          )}
+        </div>
+      ) : (
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -563,6 +870,7 @@ export function TasksDisplay({ tasks, technicians, onRowClick, showActions, onDe
           </div>
         )}
       </div>
+      )}
 
       {selectedTaskToPay && (
         <AddPaymentDialog

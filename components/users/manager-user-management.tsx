@@ -32,10 +32,14 @@ import {
 import { Users, UserPlus, Search, Edit, Trash2, Shield, Activity, Clock, Loader2, MapPin } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { useUserManagement } from "@/lib/use-user-management"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { LocationsManager } from "../locations/locations-manager";
+
 
 export function ManagerUserManagement() {
   const { users, isLoading, createUser, updateUser, deleteUser, toggleUserStatus } = useUserManagement()
+  const isMobile = useIsMobile()
+
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isLocationsModalOpen, setIsLocationsModalOpen] = useState(false);
@@ -200,7 +204,7 @@ export function ManagerUserManagement() {
       {/* User Management Table */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>Team Management</CardTitle>
               <CardDescription>Manage your team members and their access levels</CardDescription>
@@ -254,7 +258,7 @@ export function ManagerUserManagement() {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
                         <Label htmlFor="first_name">First Name *</Label>
@@ -352,181 +356,255 @@ export function ManagerUserManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Username</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Workshop</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last Login</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          {isMobile ? (
+            <div className="space-y-4">
               {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.id}</TableCell>
-                  <TableCell>{user.first_name} {user.last_name}</TableCell>
-                  <TableCell>{user.username}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={user.role === "Manager" ? "bg-blue-100 text-blue-800" : user.role === "Technician" ? "bg-green-100 text-green-800" : user.role === "Accountant" ? "bg-yellow-100 text-yellow-800" : "bg-purple-100 text-purple-800"}>
-                      {user.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {user.role === "Technician" && (
-                      <Badge variant={user.is_workshop ? "default" : "secondary"}>
-                        {user.is_workshop ? "Yes" : "No"}
+                <Card key={user.id}>
+                  <CardHeader className="p-4 pb-2">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-semibold">{user.first_name} {user.last_name}</div>
+                        <div className="text-sm text-muted-foreground">{user.username}</div>
+                      </div>
+                      <Badge variant="outline" className={user.role === "Manager" ? "bg-blue-100 text-blue-800" : user.role === "Technician" ? "bg-green-100 text-green-800" : user.role === "Accountant" ? "bg-yellow-100 text-yellow-800" : "bg-purple-100 text-purple-800"}>
+                        {user.role}
                       </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Switch 
-                        checked={user.is_active} 
-                        onCheckedChange={() => handleToggleStatus(user.id, user.is_active)}
-                        disabled={isLoading}
-                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0 space-y-2">
+                    <div className="text-sm">
+                      <span className="text-muted-foreground block">Email:</span>
+                      {user.email}
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Status:</span>
+                        <Switch
+                          checked={user.is_active}
+                          onCheckedChange={() => handleToggleStatus(user.id, user.is_active)}
+                          disabled={isLoading}
+                        />
+                      </div>
                       <Badge variant={user.is_active ? "default" : "secondary"}>
                         {user.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    {user.last_login ? formatDateTime(user.last_login) : "Never"}
-                  </TableCell>
-                  <TableCell>
-                    {user.created_at ? formatDate(user.created_at) : "N/A"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm" onClick={() => setEditingUser(user)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                          <DialogHeader>
-                            <DialogTitle>Edit User</DialogTitle>
-                            <DialogDescription>Update user information and role.</DialogDescription>
-                          </DialogHeader>
-                          {editingUser && (
-                            <div className="grid gap-4 py-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                  <Label htmlFor="edit-first_name">First Name</Label>
-                                  <Input
-                                    id="edit-first_name"
-                                    value={editingUser.first_name}
-                                    onChange={(e: { target: { value: any } }) => setEditingUser({ ...editingUser, first_name: e.target.value })}
-                                  />
-                                </div>
-                                <div className="grid gap-2">
-                                  <Label htmlFor="edit-last_name">Last Name</Label>
-                                  <Input
-                                    id="edit-last_name"
-                                    value={editingUser.last_name}
-                                    onChange={(e: { target: { value: any } }) => setEditingUser({ ...editingUser, last_name: e.target.value })}
-                                  />
-                                </div>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                  <Label htmlFor="edit-email">Email</Label>
-                                  <Input
-                                    id="edit-email"
-                                    value={editingUser.email}
-                                    onChange={(e: { target: { value: any } }) => setEditingUser({ ...editingUser, email: e.target.value })}
-                                  />
-                                </div>
-                                <div className="grid gap-2">
-                                  <Label htmlFor="edit-phone">Phone</Label>
-                                  <Input
-                                    id="edit-phone"
-                                    value={editingUser.phone || ""}
-                                    onChange={(e: { target: { value: any } }) => setEditingUser({ ...editingUser, phone: e.target.value })}
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                  <Label htmlFor="edit-role">Role</Label>
-                                  <Select
-                                    value={editingUser.role}
-                                    onValueChange={(value: any) => setEditingUser({ ...editingUser, role: value })}
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Manager">Manager</SelectItem>
-                                      <SelectItem value="Technician">Technician</SelectItem>
-                                      <SelectItem value="Front Desk">Front Desk</SelectItem>
-                                      <SelectItem value="Accountant">Accountant</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                {editingUser.role === "Technician" && (
-                                  <div className="flex items-center space-x-2">
-                                    <Switch
-                                      id="edit-is_workshop"
-                                      checked={editingUser.is_workshop}
-                                      onCheckedChange={(checked) => setEditingUser({ ...editingUser, is_workshop: checked })}
-                                    />
-                                    <Label htmlFor="edit-is_workshop">Workshop</Label>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                          <DialogFooter>
-                            <Button variant="outline" onClick={() => setEditingUser(null)}>
-                              Cancel
-                            </Button>
-                            <Button onClick={handleUpdateUser} disabled={isLoading}>
-                              {isLoading ? "Updating..." : "Update User"}
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the user account for{" "}
-                              {user.first_name} {user.last_name}.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteUser(user.id)}>
-                              Delete User
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                    {user.role === "Technician" && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Workshop:</span>
+                        <Badge variant={user.is_workshop ? "default" : "secondary"}>
+                          {user.is_workshop ? "Yes" : "No"}
+                        </Badge>
+                      </div>
+                    )}
+                  </CardContent>
+                  <div className="p-2 bg-gray-50 flex justify-end gap-2 border-t rounded-b-lg">
+                    <Button variant="ghost" size="sm" onClick={() => setEditingUser(user)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the user account for{" "}
+                            {user.first_name} {user.last_name}.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteUser(user.id)}>
+                            Delete User
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </Card>
               ))}
-            </TableBody>
-          </Table>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Username</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Workshop</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Last Login</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.id}</TableCell>
+                    <TableCell>{user.first_name} {user.last_name}</TableCell>
+                    <TableCell>{user.username}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={user.role === "Manager" ? "bg-blue-100 text-blue-800" : user.role === "Technician" ? "bg-green-100 text-green-800" : user.role === "Accountant" ? "bg-yellow-100 text-yellow-800" : "bg-purple-100 text-purple-800"}>
+                        {user.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {user.role === "Technician" && (
+                        <Badge variant={user.is_workshop ? "default" : "secondary"}>
+                          {user.is_workshop ? "Yes" : "No"}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={user.is_active}
+                          onCheckedChange={() => handleToggleStatus(user.id, user.is_active)}
+                          disabled={isLoading}
+                        />
+                        <Badge variant={user.is_active ? "default" : "secondary"}>
+                          {user.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {user.last_login ? formatDateTime(user.last_login) : "Never"}
+                    </TableCell>
+                    <TableCell>
+                      {user.created_at ? formatDate(user.created_at) : "N/A"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm" onClick={() => setEditingUser(user)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle>Edit User</DialogTitle>
+                              <DialogDescription>Update user information and role.</DialogDescription>
+                            </DialogHeader>
+                            {editingUser && (
+                              <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="grid gap-2">
+                                    <Label htmlFor="edit-first_name">First Name</Label>
+                                    <Input
+                                      id="edit-first_name"
+                                      value={editingUser.first_name}
+                                      onChange={(e: { target: { value: any } }) => setEditingUser({ ...editingUser, first_name: e.target.value })}
+                                    />
+                                  </div>
+                                  <div className="grid gap-2">
+                                    <Label htmlFor="edit-last_name">Last Name</Label>
+                                    <Input
+                                      id="edit-last_name"
+                                      value={editingUser.last_name}
+                                      onChange={(e: { target: { value: any } }) => setEditingUser({ ...editingUser, last_name: e.target.value })}
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="grid gap-2">
+                                    <Label htmlFor="edit-email">Email</Label>
+                                    <Input
+                                      id="edit-email"
+                                      value={editingUser.email}
+                                      onChange={(e: { target: { value: any } }) => setEditingUser({ ...editingUser, email: e.target.value })}
+                                    />
+                                  </div>
+                                  <div className="grid gap-2">
+                                    <Label htmlFor="edit-phone">Phone</Label>
+                                    <Input
+                                      id="edit-phone"
+                                      value={editingUser.phone || ""}
+                                      onChange={(e: { target: { value: any } }) => setEditingUser({ ...editingUser, phone: e.target.value })}
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="grid gap-2">
+                                    <Label htmlFor="edit-role">Role</Label>
+                                    <Select
+                                      value={editingUser.role}
+                                      onValueChange={(value: any) => setEditingUser({ ...editingUser, role: value })}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Manager">Manager</SelectItem>
+                                        <SelectItem value="Technician">Technician</SelectItem>
+                                        <SelectItem value="Front Desk">Front Desk</SelectItem>
+                                        <SelectItem value="Accountant">Accountant</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  {editingUser.role === "Technician" && (
+                                    <div className="flex items-center space-x-2">
+                                      <Switch
+                                        id="edit-is_workshop"
+                                        checked={editingUser.is_workshop}
+                                        onCheckedChange={(checked) => setEditingUser({ ...editingUser, is_workshop: checked })}
+                                      />
+                                      <Label htmlFor="edit-is_workshop">Workshop</Label>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            <DialogFooter>
+                              <Button variant="outline" onClick={() => setEditingUser(null)}>
+                                Cancel
+                              </Button>
+                              <Button onClick={handleUpdateUser} disabled={isLoading}>
+                                {isLoading ? "Updating..." : "Update User"}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the user account for{" "}
+                                {user.first_name} {user.last_name}.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteUser(user.id)}>
+                                Delete User
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/core/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/layout/popover"
 import { Calendar } from "@/components/ui/core/calendar"
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
 import useSWR from 'swr'
 import { apiClient } from "@/lib/api-client"
 
@@ -118,6 +119,7 @@ export function FinancialSummaryPreview({ isOpen, onClose, openingBalance }: Fin
     const [startDate, setStartDate] = useState<Date | undefined>(new Date())
     const [activeTab, setActiveTab] = useState('summary')
     const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+    const isMobile = useIsMobile()
 
     const { data: financialData, error, isLoading, mutate } = useSWR<FinancialSummary>(
         isOpen && startDate
@@ -333,7 +335,7 @@ export function FinancialSummaryPreview({ isOpen, onClose, openingBalance }: Fin
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogContent className={cn("max-h-[90vh] overflow-hidden flex flex-col", isMobile ? "max-w-[95vw] w-full" : "max-w-6xl")}>
                 <DialogHeader>
                     <div className="flex justify-between items-center">
                         <div>
@@ -349,8 +351,8 @@ export function FinancialSummaryPreview({ isOpen, onClose, openingBalance }: Fin
                 </DialogHeader>
 
                 {/* Date Picker Controls */}
-                <div className="flex items-center justify-between space-x-4">
-                    <div className="flex items-center space-x-2">
+                <div className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center justify-between space-x-4'}`}>
+                    <div className={`flex ${isMobile ? 'flex-col gap-2' : 'items-center space-x-2'}`}>
                         <div className="flex items-center space-x-2">
                             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm font-medium">Start Date:</span>
@@ -360,8 +362,9 @@ export function FinancialSummaryPreview({ isOpen, onClose, openingBalance }: Fin
                                 <Button
                                     variant={"outline"}
                                     className={cn(
-                                        "w-[180px] justify-start text-left font-normal",
-                                        !startDate && "text-muted-foreground"
+                                        "justify-start text-left font-normal",
+                                        !startDate && "text-muted-foreground",
+                                        isMobile ? "w-full" : "w-[180px]"
                                     )}
                                 >
                                     {startDate ? format(startDate, "MMM dd, yyyy") : <span>Select start date</span>}
@@ -377,7 +380,7 @@ export function FinancialSummaryPreview({ isOpen, onClose, openingBalance }: Fin
                         </Popover>
                     </div>
 
-                    <Button onClick={handleExport} disabled={isLoading || !startDate}>
+                    <Button onClick={handleExport} disabled={isLoading || !startDate} className={isMobile ? "w-full" : ""}>
                         <Download className="h-4 w-4 mr-2" />
                         Export Report
                     </Button>
@@ -494,40 +497,70 @@ export function FinancialSummaryPreview({ isOpen, onClose, openingBalance }: Fin
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="rounded-md border">
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow>
-                                                        <TableHead>Task</TableHead>
-                                                        <TableHead>Description</TableHead>
-                                                        <TableHead>Amount</TableHead>
-                                                        <TableHead>Method</TableHead>
-                                                        <TableHead>Category</TableHead>
-                                                        <TableHead>Date</TableHead>
-                                                        <TableHead>Status</TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {financialData.revenue.map((payment) => (
-                                                        <TableRow key={payment.id}>
-                                                            <TableCell className="font-medium">{payment.task_title}</TableCell>
-                                                            <TableCell>{payment.description}</TableCell>
-                                                            <TableCell className="text-green-600 font-medium">
-                                                                {formatCurrency(payment.amount)}
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <Badge variant="outline">{payment.method_name}</Badge>
-                                                            </TableCell>
-                                                            <TableCell>{payment.category_name}</TableCell>
-                                                            <TableCell>{format(new Date(payment.date), 'MMM dd, yyyy')}</TableCell>
-                                                            <TableCell>
-                                                                <Badge variant="secondary">{payment.task_status}</Badge>
-                                                            </TableCell>
+                                        {isMobile ? (
+                                            <div className="space-y-4">
+                                                {financialData.revenue.map((payment) => (
+                                                    <Card key={payment.id} className="bg-green-50/50">
+                                                        <CardHeader className="p-3 pb-1">
+                                                            <div className="flex justify-between items-start">
+                                                                <div>
+                                                                    <div className="font-semibold text-sm">{payment.task_title}</div>
+                                                                    <div className="text-xs text-muted-foreground">{payment.description}</div>
+                                                                </div>
+                                                                <div className="text-green-600 font-bold text-sm">
+                                                                    {formatCurrency(payment.amount)}
+                                                                </div>
+                                                            </div>
+                                                        </CardHeader>
+                                                        <CardContent className="p-3 pt-1 space-y-1">
+                                                            <div className="flex justify-between items-center text-xs">
+                                                                <Badge variant="outline" className="text-xs">{payment.method_name}</Badge>
+                                                                <span className="text-muted-foreground">{payment.category_name}</span>
+                                                            </div>
+                                                            <div className="flex justify-between items-center text-xs">
+                                                                <span className="text-muted-foreground">{format(new Date(payment.date), 'MMM dd, yyyy')}</span>
+                                                                <Badge variant="secondary" className="text-xs">{payment.task_status}</Badge>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="rounded-md border">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Task</TableHead>
+                                                            <TableHead>Description</TableHead>
+                                                            <TableHead>Amount</TableHead>
+                                                            <TableHead>Method</TableHead>
+                                                            <TableHead>Category</TableHead>
+                                                            <TableHead>Date</TableHead>
+                                                            <TableHead>Status</TableHead>
                                                         </TableRow>
-                                                    ))}
-                                                </TableBody>
-                                            </Table>
-                                        </div>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {financialData.revenue.map((payment) => (
+                                                            <TableRow key={payment.id}>
+                                                                <TableCell className="font-medium">{payment.task_title}</TableCell>
+                                                                <TableCell>{payment.description}</TableCell>
+                                                                <TableCell className="text-green-600 font-medium">
+                                                                    {formatCurrency(payment.amount)}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <Badge variant="outline">{payment.method_name}</Badge>
+                                                                </TableCell>
+                                                                <TableCell>{payment.category_name}</TableCell>
+                                                                <TableCell>{format(new Date(payment.date), 'MMM dd, yyyy')}</TableCell>
+                                                                <TableCell>
+                                                                    <Badge variant="secondary">{payment.task_status}</Badge>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        )}
                                     </CardContent>
                                 </Card>
                             </TabsContent>
@@ -541,42 +574,74 @@ export function FinancialSummaryPreview({ isOpen, onClose, openingBalance }: Fin
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="rounded-md border">
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow>
-                                                        <TableHead>Description</TableHead>
-                                                        <TableHead>Amount</TableHead>
-                                                        <TableHead>Payment Method</TableHead>
-                                                        <TableHead>Category</TableHead>
-                                                        <TableHead>Status</TableHead>
-                                                        <TableHead>Requester</TableHead>
-                                                        <TableHead>Date</TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {financialData.expenditures.map((expenditure) => (
-                                                        <TableRow key={expenditure.id}>
-                                                            <TableCell className="font-medium">{expenditure.description}</TableCell>
-                                                            <TableCell className="text-red-600 font-medium">
-                                                                {formatCurrency(expenditure.amount)}
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <Badge variant="outline">{expenditure.payment_method.name}</Badge>
-                                                            </TableCell>
-                                                            <TableCell>{expenditure.category.name}</TableCell>
-                                                            <TableCell>
-                                                                <Badge variant={expenditure.status === 'Approved' ? 'default' : 'secondary'}>
+                                        {isMobile ? (
+                                            <div className="space-y-4">
+                                                {financialData.expenditures.map((expenditure) => (
+                                                    <Card key={expenditure.id} className="bg-red-50/50">
+                                                        <CardHeader className="p-3 pb-1">
+                                                            <div className="flex justify-between items-start">
+                                                                <div>
+                                                                    <div className="font-semibold text-sm">{expenditure.description}</div>
+                                                                    <div className="text-xs text-muted-foreground">{expenditure.requester?.full_name || 'N/A'}</div>
+                                                                </div>
+                                                                <div className="text-red-600 font-bold text-sm">
+                                                                    {formatCurrency(expenditure.amount)}
+                                                                </div>
+                                                            </div>
+                                                        </CardHeader>
+                                                        <CardContent className="p-3 pt-1 space-y-1">
+                                                            <div className="flex justify-between items-center text-xs">
+                                                                <Badge variant="outline" className="text-xs">{expenditure.payment_method?.name || 'N/A'}</Badge>
+                                                                <span className="text-muted-foreground">{expenditure.category?.name || 'N/A'}</span>
+                                                            </div>
+                                                            <div className="flex justify-between items-center text-xs">
+                                                                <span className="text-muted-foreground">{format(new Date(expenditure.created_at), 'MMM dd, yyyy')}</span>
+                                                                <Badge variant={expenditure.status === 'Approved' ? 'default' : 'secondary'} className="text-xs">
                                                                     {expenditure.status}
                                                                 </Badge>
-                                                            </TableCell>
-                                                            <TableCell>{expenditure.requester.full_name}</TableCell>
-                                                            <TableCell>{format(new Date(expenditure.created_at), 'MMM dd, yyyy')}</TableCell>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="rounded-md border">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Description</TableHead>
+                                                            <TableHead>Amount</TableHead>
+                                                            <TableHead>Payment Method</TableHead>
+                                                            <TableHead>Category</TableHead>
+                                                            <TableHead>Status</TableHead>
+                                                            <TableHead>Requester</TableHead>
+                                                            <TableHead>Date</TableHead>
                                                         </TableRow>
-                                                    ))}
-                                                </TableBody>
-                                            </Table>
-                                        </div>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {financialData.expenditures.map((expenditure) => (
+                                                            <TableRow key={expenditure.id}>
+                                                                <TableCell className="font-medium">{expenditure.description}</TableCell>
+                                                                <TableCell className="text-red-600 font-medium">
+                                                                    {formatCurrency(expenditure.amount)}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <Badge variant="outline">{expenditure.payment_method.name}</Badge>
+                                                                </TableCell>
+                                                                <TableCell>{expenditure.category.name}</TableCell>
+                                                                <TableCell>
+                                                                    <Badge variant={expenditure.status === 'Approved' ? 'default' : 'secondary'}>
+                                                                        {expenditure.status}
+                                                                    </Badge>
+                                                                </TableCell>
+                                                                <TableCell>{expenditure.requester.full_name}</TableCell>
+                                                                <TableCell>{format(new Date(expenditure.created_at), 'MMM dd, yyyy')}</TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        )}
                                     </CardContent>
                                 </Card>
                             </TabsContent>
