@@ -1,7 +1,7 @@
 
 "use client"
 
-import { PaymentsOverview } from "@/components/payments/payments-overview"
+import { PaymentsOverview } from "@/components/financials/payments/payments-overview"
 
 export default function PaymentsPage() {
   return (
