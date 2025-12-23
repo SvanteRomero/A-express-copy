@@ -155,3 +155,8 @@ export interface ExpenditureRequest {
   requester: { username: string };
   approver: { username: string } | null;
 }
+
+export interface PaymentCategory {
+  id: number;
+  name: string;
+}

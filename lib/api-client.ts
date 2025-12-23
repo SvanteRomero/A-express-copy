@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getApiUrl } from './config';
-import { ExpenditureRequest, PaginatedResponse } from './api';
+import { ExpenditureRequest, PaginatedResponse, PaymentCategory } from './api';
 import { logout } from './auth';
 
 // CSRF token storage (not HttpOnly, can be read by JS)
@@ -170,9 +170,9 @@ export const createAccount = (accountData: { name: string; balance: number; }) =
 export const updateAccount = (accountId: number, accountData: { name: string; }) => apiClient.patch(`/accounts/${accountId}/`, accountData);
 export const deleteAccount = (accountId: number) => apiClient.delete(`/accounts/${accountId}/`);
 
-export const getPaymentCategories = () => apiClient.get('/payment-categories/');
-export const createPaymentCategory = (data: any) => apiClient.post('/payment-categories/', data);
-export const updatePaymentCategory = (categoryId: number, data: any) => apiClient.patch(`/payment-categories/${categoryId}/`, data);
+export const getPaymentCategories = () => apiClient.get<PaymentCategory[]>('/payment-categories/');
+export const createPaymentCategory = (data: { name: string }) => apiClient.post<PaymentCategory>('/payment-categories/', data);
+export const updatePaymentCategory = (categoryId: number, data: { name: string }) => apiClient.patch<PaymentCategory>(`/payment-categories/${categoryId}/`, data);
 export const deletePaymentCategory = (categoryId: number) => apiClient.delete(`/payment-categories/${categoryId}/`);
 
 // Expenditure Requests

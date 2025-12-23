@@ -17,8 +17,8 @@ import { usePaymentMethods } from "@/hooks/use-payment-methods"
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/core/badge";
-import { AddExpenditureDialog } from "../financials/add-expenditure-dialog";
-import { ExpenditureRequestsList } from "../financials/expenditure-requests-list";
+import { AddExpenditureDialog } from "../add-expenditure-dialog";
+import { ExpenditureRequestsList } from "../expenditure-requests-list";
 import { FinancialSummaryPreview } from "../payments/financial-summary-preview";
 import useSWR from 'swr'
 import { apiClient } from "@/lib/api-client"
