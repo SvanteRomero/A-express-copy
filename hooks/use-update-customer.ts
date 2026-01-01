@@ -14,7 +14,14 @@ export function useUpdateCustomer() {
 
   return useMutation({
     mutationFn: async (customer: UpdatableCustomer) => {
-      const response = await apiClient.put(`customers/${customer.id}/`, customer);
+      // Transform phone_numbers to phone_numbers_write for the backend serializer
+      const payload = {
+        id: customer.id,
+        name: customer.name,
+        customer_type: customer.customer_type,
+        phone_numbers_write: customer.phone_numbers,
+      };
+      const response = await apiClient.put(`customers/${customer.id}/`, payload);
       return response.data;
     },
     onSuccess: () => {

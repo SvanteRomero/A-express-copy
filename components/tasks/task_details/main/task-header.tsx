@@ -1,14 +1,16 @@
 'use client'
 
+import { useState } from "react"
 import { Button } from "@/components/ui/core/button"
 import { Badge } from "@/components/ui/core/badge"
-import { ArrowLeft, AlertTriangle, CheckCircle } from "lucide-react"
+import { ArrowLeft, AlertTriangle, CheckCircle, MessageSquare } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { updateTask, addTaskActivity } from "@/lib/api-client"
 import { useTask } from "@/hooks/use-data"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
+import { SendCustomerUpdateModal } from "@/components/tasks/task_details/main/send-customer-update-modal"
 
 interface TaskHeaderProps {
   taskId: string
@@ -20,6 +22,7 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
   const queryClient = useQueryClient()
   const { data: taskData, isLoading, isError, error } = useTask(taskId)
   const { toast } = useToast()
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
 
   const updateTaskMutation = useMutation({
     mutationFn: (updates: { [key: string]: any }) => updateTask(taskId, updates),
@@ -152,6 +155,13 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
               Mark as Debt
             </Button>
           )}
+          <Button
+            className="bg-red-600 hover:bg-red-700 text-white"
+            onClick={() => setIsUpdateModalOpen(true)}
+          >
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Send Customer Update
+          </Button>
           {canMarkComplete && (
             <Button className="bg-red-600 hover:bg-red-700 text-white">
               <CheckCircle className="h-4 w-4 mr-2" />
@@ -176,6 +186,22 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
           )}
         </div>
       </div>
+
+      {/* Send Customer Update Modal */}
+      <SendCustomerUpdateModal
+        isOpen={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+        taskId={String(taskData.id)}
+        customerName={taskData.customer_details?.name || taskData.customer_name || "Customer"}
+        phoneNumbers={taskData.customer_details?.phone_numbers || []}
+        taskTitle={taskData.title}
+        taskStatus={taskData.status}
+        brand={taskData.brand_details?.name}
+        model={taskData.laptop_model_details?.name}
+        description={taskData.description}
+        totalCost={taskData.total_cost}
+        deviceNotes={taskData.device_notes}
+      />
     </>
   )
 }

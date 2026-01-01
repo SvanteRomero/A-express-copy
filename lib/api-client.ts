@@ -216,3 +216,7 @@ export const fetchPaymentMethods = async () => {
 
 // Referrers Search
 export const searchReferrers = (query: string) => apiClient.get(`/referrers/search/?query=${query}`);
+
+// Messaging - Send SMS to customers
+export const sendCustomerSMS = (taskId: string, data: { phone_number: string; message: string }) =>
+  apiClient.post(`/messaging/tasks/${taskId}/send-sms/`, data).then(res => res.data);

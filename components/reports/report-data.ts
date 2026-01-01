@@ -53,8 +53,8 @@ export const financialReports: ReportCard[] = [
   },
   {
     id: "payment-methods",
-      title: "Revenue Summary Report",
-      description: "Comprehensive summary of revenue by payment methods and channels",
+    title: "Revenue Summary Report",
+    description: "Comprehensive summary of revenue by payment methods and channels",
     icon: PieChart,
     href: "/dashboard/reports/payment-methods",
     category: "Financial",

@@ -151,6 +151,7 @@ INSTALLED_APPS = [
     "customers",
     "rest_framework",
     "reports",
+    "messaging",  # SMS messaging via Briq
     'django_extensions',
 ]
 
@@ -362,3 +363,11 @@ AXES_LOCKOUT_PARAMETERS = ["username", "ip_address"]  # Lock by username+IP comb
 AXES_RESET_ON_SUCCESS = True  # Reset counter on successful login
 AXES_LOCKOUT_CALLABLE = None  # Use default lockout response
 AXES_VERBOSE = False  # Don't log to console in production
+
+# =============================================================================
+# Briq SMS API Configuration
+# =============================================================================
+# Get your API key from: https://briq.tz/login
+BRIQ_API_KEY = os.environ.get('BRIQ_API_KEY', '')
+BRIQ_SENDER_ID = os.environ.get('BRIQ_SENDER_ID', 'A-EXPRESS')
+
