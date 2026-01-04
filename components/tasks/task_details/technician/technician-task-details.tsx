@@ -107,7 +107,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
       })
       return
     }
-    updateTaskMutation.mutate({ 
+    updateTaskMutation.mutate({
       workshop_location: selectedWorkshopLocation,
       workshop_technician: selectedWorkshopTechnician,
     });
@@ -246,7 +246,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">Laptop Model</label>
-                  <p className="text-lg font-semibold text-gray-900">{task.laptop_model}</p>
+                  <p className="text-lg font-semibold text-gray-900">{task.brand_details?.name} {task.laptop_model_details?.name || task.laptop_model}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">Date In</label>
@@ -278,13 +278,13 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                   <label className="text-sm font-medium text-gray-700">Current Status</label>
                   <div className="mt-2 flex items-center gap-2">
                     {getStatusBadge(task.status)}
-                    {['Solved', 'Not Solved'].includes(task.workshop_status) && (
+                    {['Solved', 'Not Solved'].includes(task.workshop_status || '') && (
                       <Badge className={task.workshop_status === 'Solved' ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
                         {task.workshop_status}
                       </Badge>
                     )}
                     {task.workshop_status === 'In Workshop' && (
-                        <Badge className="bg-pink-100 text-pink-800 hover:bg-pink-100">In Workshop</Badge>
+                      <Badge className="bg-pink-100 text-pink-800 hover:bg-pink-100">In Workshop</Badge>
                     )}
                   </div>
                 </div>
@@ -301,7 +301,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                     Mark as Complete
                   </Button>
                 )}
-                {task.status === 'In Progress' && !task.workshop_status && user?.id === task.assigned_to && (
+                {task.status === 'In Progress' && !user?.is_workshop && user?.id === task.assigned_to && (
                   <Dialog open={isSendToWorkshopDialogOpen} onOpenChange={setIsSendToWorkshopDialogOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50 bg-transparent">
@@ -325,7 +325,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                             </SelectTrigger>
                             <SelectContent>
                               {workshopLocations?.map(location => (
-                                <SelectItem key={location.id} value={location.id}>{location.name}</SelectItem>
+                                <SelectItem key={location.id} value={String(location.id)}>{location.name}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -338,7 +338,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                             </SelectTrigger>
                             <SelectContent>
                               {workshopTechnicians?.map(technician => (
-                                <SelectItem key={technician.id} value={technician.id}>{technician.full_name}</SelectItem>
+                                <SelectItem key={technician.id} value={String(technician.id)}>{technician.full_name}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -352,9 +352,9 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                   </Dialog>
                 )}
                 {user?.is_workshop && task.workshop_status === 'In Workshop' && (
-                  <WorkshopStatusButtons 
-                    onStatusChange={handleWorkshopStatusChange} 
-                    updating={updating} 
+                  <WorkshopStatusButtons
+                    onStatusChange={handleWorkshopStatusChange}
+                    updating={updating}
                   />
                 )}
               </div>

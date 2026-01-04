@@ -1,41 +1,46 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table"
 import {
-  Users,
   Calendar,
   DollarSign,
   FileText,
+  CreditCard,
+  Banknote,
 } from "lucide-react"
+import { getAccountantDashboardStats } from "@/lib/api-client"
+import { Button } from "@/components/ui/core/button"
+import Link from "next/link"
 
-// Mock data for tasks that are not fully paid
-const unpaidTasks = [
-  {
-    id: "T-1002",
-    customerName: "Jane Doe",
-    laptopModel: 'HP Spectre x360',
-    completedDate: "2024-01-16",
-    totalAmount: "TSh 450.00",
-    paidAmount: "TSh 200.00",
-    balance: "TSh 250.00",
-    status: "Completed",
-  },
-  {
-    id: "T-1003",
-    customerName: "Peter Jones",
-    laptopModel: "Lenovo Yoga",
-    completedDate: "2024-01-15",
-    totalAmount: "TSh 320.00",
-    paidAmount: "TSh 100.00",
-    balance: "TSh 220.00",
-    status: "Completed",
-  },
-]
-
-import { RevenueOverview } from "./revenue-overview";
+interface DashboardStats {
+  todays_revenue: number;
+  outstanding_payments_total: number;
+  pending_payment_count: number;
+}
 
 export default function AccountantDashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await getAccountantDashboardStats();
+        setStats(data);
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
+
   return (
     <div className="flex-1 space-y-6 p-6">
       {/* Header Section */}
@@ -45,16 +50,35 @@ export default function AccountantDashboard() {
       </div>
 
       {/* Daily Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <RevenueOverview />
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats?.todays_revenue !== undefined
+                ? new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS' }).format(stats.todays_revenue)
+                : 'TSh 0.00'
+              }
+            </div>
+            <p className="text-xs text-muted-foreground">Total payments received today</p>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Outstanding Payments</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Banknote className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">TSh 5,780.50</div>
-            <p className="text-xs text-muted-foreground">From 23 clients</p>
+            <div className="text-2xl font-bold">
+              {stats?.outstanding_payments_total !== undefined
+                ? new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS' }).format(stats.outstanding_payments_total)
+                : 'TSh 0.00'
+              }
+            </div>
+            <p className="text-xs text-muted-foreground">Total pending from all tasks</p>
           </CardContent>
         </Card>
         <Card>
@@ -63,57 +87,59 @@ export default function AccountantDashboard() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">15</div>
-            <p className="text-xs text-muted-foreground">Awaiting full payment</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Reports Generated</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">This month</p>
+            <div className="text-2xl font-bold">{stats?.pending_payment_count || 0}</div>
+            <p className="text-xs text-muted-foreground">Unpaid or partially paid tasks</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Unpaid Tasks */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tasks with Outstanding Payments</CardTitle>
-          <CardDescription>Tasks that have been completed but not fully paid.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Task ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Laptop Model</TableHead>
-                <TableHead>Completed</TableHead>
-                <TableHead>Total Amount</TableHead>
-                <TableHead>Paid Amount</TableHead>
-                <TableHead>Balance</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {unpaidTasks.map((task) => (
-                <TableRow key={task.id}>
-                  <TableCell className="font-medium">{task.id}</TableCell>
-                  <TableCell>{task.customerName}</TableCell>
-                  <TableCell>{task.laptopModel}</TableCell>
-                  <TableCell>{task.completedDate}</TableCell>
-                  <TableCell>{task.totalAmount}</TableCell>
-                  <TableCell>{task.paidAmount}</TableCell>
-                  <TableCell className="text-red-600 font-bold">{task.balance}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Quick Actions / Navigation */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Financials
+            </CardTitle>
+            <CardDescription>View all transactions and payment history.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link href="/dashboard/payments">View Payments</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Banknote className="h-5 w-5" />
+              Debts
+            </CardTitle>
+            <CardDescription>Manage outstanding debts and collections.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link href="/dashboard/debts">View Debts</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Expenditure Requests
+            </CardTitle>
+            <CardDescription>Review and approve expense requests.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link href="/dashboard/expenditure-requests">View Requests</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

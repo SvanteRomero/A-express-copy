@@ -76,6 +76,9 @@ class TaskDetailSerializer(serializers.ModelSerializer):
     )
     negotiated_by_details = UserSerializer(source="negotiated_by", read_only=True)
     laptop_model_details = ModelSerializer(source='laptop_model', read_only=True)
+    approved_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    sent_out_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    qc_rejected_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Task

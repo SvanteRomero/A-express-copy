@@ -51,3 +51,21 @@ class MessageLog(models.Model):
     
     def __str__(self):
         return f"SMS to {self.recipient_phone} - {self.status}"
+
+
+class MessageTemplate(models.Model):
+    """
+    Reusable SMS templates for bulk messaging.
+    """
+    name = models.CharField(max_length=100, unique=True)
+    content = models.TextField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Message Template'
+        verbose_name_plural = 'Message Templates'
+
+    def __str__(self):
+        return f"{self.name} ({self.get_category_display()})"

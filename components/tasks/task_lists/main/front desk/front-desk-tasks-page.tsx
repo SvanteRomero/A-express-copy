@@ -49,15 +49,21 @@ export function FrontDeskTasksPage() {
     router.push(`/dashboard/tasks/${task.title}`);
   }, [router]);
 
-  const handleApprove = useCallback(async (taskTitle: string) => {
+  const handleApprove = useCallback(async (task: any) => {
     if (user) {
+      const updates: any = {
+        status: "Ready for Pickup",
+        approved_by: user.id,
+        approved_at: new Date().toISOString(),
+      };
+
+      if (!task.workshop_status) {
+        updates.workshop_status = 'Solved';
+      }
+
       updateTaskMutation.mutate({
-        id: taskTitle,
-        updates: {
-          status: "Ready for Pickup",
-          approved_by: user.id,
-          approved_at: new Date().toISOString(),
-        },
+        id: task.title,
+        updates,
       });
     }
   }, [updateTaskMutation, user]);

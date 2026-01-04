@@ -8,47 +8,47 @@ interface Location {
     id: number;
     name: string;
     is_workshop: boolean;
-  }
+}
 
 export function useTechnicians() {
-  return useQuery<User[]>({
-    queryKey: ['technicians'],
-    queryFn: async () => {
-      const response = await listUsersByRole('Technician');
-      return response.data;
-    },
-  });
+    return useQuery<User[]>({
+        queryKey: ['technicians'],
+        queryFn: async () => {
+            const response = await listUsersByRole('Technician');
+            return response.data;
+        },
+    });
 }
 
 export function useManagers() {
     return useQuery<User[]>({
-      queryKey: ['managers'],
-      queryFn: async () => {
-        const response = await listUsersByRole('Manager');
-        return response.data;
-      },
+        queryKey: ['managers'],
+        queryFn: async () => {
+            const response = await listUsersByRole('Manager');
+            return response.data;
+        },
     });
-  }
+}
 
 export function useBrands() {
-  return useQuery<Brand[]>({
-    queryKey: ['brands'],
-    queryFn: async () => {
-      const response = await getBrands();
-      return response.data;
-    },
-  });
+    return useQuery<Brand[]>({
+        queryKey: ['brands'],
+        queryFn: async () => {
+            const response = await getBrands();
+            return response.data;
+        },
+    });
 }
 
 export function useLocations() {
     return useQuery<Location[]>({
-      queryKey: ['locations'],
-      queryFn: async () => {
-        const response = await getLocations();
-        return response.data;
-      },
+        queryKey: ['locations'],
+        queryFn: async () => {
+            const response = await getLocations();
+            return response.data;
+        },
     });
-  }
+}
 
 
 export function useInProgressTasks(isWorkshopView: boolean, userId: string | undefined) {
@@ -69,7 +69,7 @@ export function useInProgressTasks(isWorkshopView: boolean, userId: string | und
 
                 const normalTasks = normalTasksResponse.data.results?.filter((task: { workshop_status: string }) => task.workshop_status !== "In Workshop") || [];
                 const workshopTasks = workshopTasksResponse.data.results || [];
-                
+
                 // Merge and de-duplicate
                 const allTasks = new Map<number, Task>();
                 normalTasks.forEach((task: Task) => allTasks.set(task.id, task));
@@ -158,5 +158,20 @@ export function useWorkshopTechnicians() {
             const response = await listWorkshopTechnicians();
             return response.data;
         },
+    });
+}
+
+export function useTechnicianHistoryTasks(userId: string | number | undefined) {
+    return useQuery<Task[]>({
+        queryKey: ['technicianHistoryTasks', userId],
+        queryFn: async () => {
+            if (!userId) return [];
+            const response = await getTasks({
+                status: "Picked Up,Ready for Pickup",
+                activity_user: userId
+            });
+            return response.data.results || [];
+        },
+        enabled: !!userId,
     });
 }

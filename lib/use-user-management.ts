@@ -9,7 +9,7 @@ import {
   registerUser,
   updateUser as apiUpdateUser,
 } from "./api-client"
-import { useAuth } from "./auth-context"
+
 import { toast } from "@/hooks/use-toast"
 
 export interface User {
@@ -29,7 +29,7 @@ export interface User {
 }
 
 export function useUserManagement() {
-  const { tokens } = useAuth()
+
   const [users, setUsers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -84,7 +84,7 @@ export function useUserManagement() {
         title: "Success",
         description: "User created successfully",
       })
-      
+
       // Reload users list
       await loadUsers()
       return true
@@ -121,7 +121,7 @@ export function useUserManagement() {
         title: "Success",
         description: "User updated successfully",
       })
-      
+
       // Reload users list
       await loadUsers()
       return true
@@ -159,7 +159,7 @@ export function useUserManagement() {
         title: "Success",
         description: "User deleted successfully",
       })
-      
+
       // Reload users list
       await loadUsers()
       return true
@@ -181,7 +181,7 @@ export function useUserManagement() {
     setError(null)
 
     try {
-      const response = isActive 
+      const response = isActive
         ? await activateUser(userId)
         : await deactivateUser(userId)
 
@@ -199,7 +199,7 @@ export function useUserManagement() {
         title: "Success",
         description: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
       })
-      
+
       // Reload users list
       await loadUsers()
       return true

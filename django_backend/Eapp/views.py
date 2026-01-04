@@ -5,8 +5,10 @@ from customers.serializers import CustomerSerializer
 from rest_framework import status, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.shortcuts import render
 from django.utils import timezone
-from users.models import User
+from requests.exceptions import RequestException
 from financials.serializers import PaymentSerializer, CostBreakdownSerializer
 from .models import Task, TaskActivity
 from .serializers import (
@@ -20,6 +22,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .filters import TaskFilter
 from .pagination import StandardResultsSetPagination
 from customers.models import Customer, Referrer
+from rest_framework.views import APIView
+from messaging.models import MessageLog
 
 
 def generate_task_id():
@@ -488,3 +492,131 @@ class ModelViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = self.get_queryset()
         # Ensure no None or empty strings are returned
         return Response([model for model in queryset if model])
+
+class DashboardStats(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        today = timezone.now().date()
+        now = timezone.now()
+        
+        # 1. New Tasks Created Today
+        new_tasks_count = Task.objects.filter(created_at__date=today).count()
+        
+        # 2. Messages Sent Today
+        messages_sent_count = MessageLog.objects.filter(sent_at__date=today, status='sent').count()
+        
+        # 3. Tasks Ready for Pickup
+        tasks_ready_for_pickup_count = Task.objects.filter(status=Task.Status.READY_FOR_PICKUP).count()
+
+        # 4. Total Active Tasks (excluding closed states)
+        # Using logic from reports/views.py: exclude Ready for Pickup, Picked Up, Terminated AND Completed?
+        # reports/views.py excluded ["Ready for Pickup","Picked Up", "Terminated"]. "Completed" might be a valid active state in some contexts 
+        # but usually Completed means done. Let's add Completed to exclude list to be safe or stick to reports logic.
+        # reports logic: exclude(status__in=["Ready for Pickup","Picked Up", "Terminated"])
+        # Wait, if I stick to reports logic exactly:
+        total_active_tasks_count = Task.objects.exclude(
+            status__in=["Ready for Pickup", "Picked Up", "Terminated", "Completed"]
+        ).count()
+
+        # 5. Revenue This Month
+        revenue_this_month = (
+            Payment.objects.filter(
+                date__month=now.month, date__year=now.year
+            ).aggregate(total=Sum("amount"))["total"]
+            or 0
+        )
+        
+        data = {
+            "new_tasks_count": new_tasks_count,
+            "messages_sent_count": messages_sent_count,
+            "tasks_ready_for_pickup_count": tasks_ready_for_pickup_count,
+            "active_tasks_count": total_active_tasks_count,
+            "revenue_this_month": float(revenue_this_month),
+        }
+        return Response(data)
+
+class TechnicianDashboardStats(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        today = timezone.now().date()
+        
+        # 1. Assigned Tasks (Pending)
+        assigned_count = Task.objects.filter(assigned_to=user, status="Pending").count()
+        
+        # 2. In Progress Tasks
+        in_progress_count = Task.objects.filter(assigned_to=user, status="In Progress").count()
+        
+        # 3. Completed Today
+        completed_today_count = Task.objects.filter(
+            assigned_to=user,
+            status="Completed",
+            updated_at__date=today
+        ).count()
+        
+        # 4. Urgent Tasks (Active + Yupo/Ina Haraka)
+        # Active means not Completed, Picked Up, Terminated or Ready for Pickup?
+        # User defined High Priority as "Yupo" and "Ina Haraka".
+        # Assuming we only care about active urgent tasks.
+        urgent_count = Task.objects.filter(
+            assigned_to=user,
+            urgency__in=["Yupo", "Ina Haraka"]
+        ).exclude(
+             status__in=["Completed", "Picked Up", "Terminated", "Ready for Pickup"]
+        ).count()
+
+        # 5. Recent Activity (Last 5 updated tasks for this user)
+        recent_tasks_qs = Task.objects.filter(assigned_to=user).order_by('-updated_at')[:5]
+        recent_tasks_data = []
+        for t in recent_tasks_qs:
+             recent_tasks_data.append({
+                 "id": t.title, # using title as ID for display
+                 "title": t.title,
+                 "laptop_model_name": t.laptop_model.name if t.laptop_model else "Device",
+                 "status": t.status
+             })
+
+        data = {
+            "assigned_count": assigned_count,
+            "in_progress_count": in_progress_count,
+            "completed_today_count": completed_today_count,
+            "urgent_count": urgent_count,
+            "recent_tasks": recent_tasks_data
+        }
+        return Response(data)
+
+class AccountantDashboardStats(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        today = timezone.now().date()
+        
+        # 1. Today's Revenue (Sum of payments made today)
+        todays_revenue = (
+            Payment.objects.filter(
+                date=today
+            ).aggregate(total=Sum("amount"))["total"]
+            or 0
+        )
+        
+        # 2. Outstanding Payments (Sum of outstanding balance for all tasks)
+        outstanding_payments_total = (
+            Task.objects.aggregate(
+                total=Sum(F("total_cost") - F("paid_amount"))
+            )["total"] 
+            or 0
+        )
+
+        # 3. Tasks Pending Payment (Count of tasks with payment status 'Unpaid' or 'Partially Paid')
+        pending_payment_count = Task.objects.filter(
+            payment_status__in=['Unpaid', 'Partially Paid']
+        ).count()
+
+        data = {
+            "todays_revenue": float(todays_revenue),
+            "outstanding_payments_total": float(outstanding_payments_total),
+            "pending_payment_count": pending_payment_count,
+        }
+        return Response(data)

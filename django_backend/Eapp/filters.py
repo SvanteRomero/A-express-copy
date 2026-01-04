@@ -8,6 +8,8 @@ class TaskFilter(django_filters.FilterSet):
     updated_at = django_filters.DateFromToRangeFilter()
     status = django_filters.CharFilter(method='filter_status')
 
+    activity_user = django_filters.NumberFilter(method='filter_activity_user')
+
     class Meta:
         model = Task
         fields = {
@@ -22,6 +24,9 @@ class TaskFilter(django_filters.FilterSet):
     def filter_status(self, queryset, name, value):
         statuses = value.split(',')
         return queryset.filter(status__in=statuses)
+
+    def filter_activity_user(self, queryset, name, value):
+        return queryset.filter(activities__user_id=value).distinct()
 
 
 class PaymentFilter(django_filters.FilterSet):

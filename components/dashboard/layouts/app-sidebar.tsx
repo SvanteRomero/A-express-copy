@@ -20,6 +20,7 @@ import {
   Activity,
   UserCog,
   Banknote,
+  MessageSquare,
 } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -140,6 +141,11 @@ const navigationItems = {
       icon: FileText,
     },
     {
+      title: "Bulk Messages",
+      url: "/dashboard/messaging",
+      icon: MessageSquare,
+    },
+    {
       title: "Payments",
       url: "/dashboard/payments",
       icon: CreditCard,
@@ -167,10 +173,11 @@ const navigationItems = {
       icon: ClipboardList,
     },
     {
-      title: "Customers",
-      url: "/dashboard/customers",
-      icon: Building2,
+      title: "History",
+      url: "/dashboard/technician/history",
+      icon: FileText,
     },
+
     {
       title: "Profile",
       url: "/dashboard/profile",
@@ -184,9 +191,9 @@ const navigationItems = {
       icon: Home,
     },
     {
-      title: "Customers",
-      url: "/dashboard/customers",
-      icon: Building2,
+      title: "Bulk Messages",
+      url: "/dashboard/messaging",
+      icon: MessageSquare,
     },
     {
       title: "Tasks",
@@ -229,11 +236,6 @@ const navigationItems = {
       title: "Payments",
       url: "/dashboard/payments",
       icon: CreditCard,
-    },
-    {
-      title: "Reports",
-      url: "/dashboard/reports",
-      icon: FileText,
     },
     {
       title: "Profile",

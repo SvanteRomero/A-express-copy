@@ -41,7 +41,7 @@ const getStatusBadge = (status: string) => {
     case "Cancelled":
       return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">{status}</Badge>
     case "Terminated":
-        return <Badge className="bg-red-200 text-red-900 hover:bg-red-200">{status}</Badge>
+      return <Badge className="bg-red-200 text-red-900 hover:bg-red-200">{status}</Badge>
     default:
       return <Badge variant="secondary">{status}</Badge>
   }
@@ -68,31 +68,31 @@ export function InWorkshopTasksList() {
 
   if (isLoading) {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>In Workshop Tasks</CardTitle>
-                <CardDescription>Tasks that are currently in the workshop.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-                </div>
-            </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>In Workshop Tasks</CardTitle>
+          <CardDescription>Tasks that are currently in the workshop.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (isError) {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>In Workshop Tasks</CardTitle>
-                <CardDescription>Tasks that are currently in the workshop.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="text-red-500">Error: {error.message}</div>
-            </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>In Workshop Tasks</CardTitle>
+          <CardDescription>Tasks that are currently in the workshop.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-red-500">Error: {error.message}</div>
+        </CardContent>
+      </Card>
     )
   }
 
@@ -121,15 +121,15 @@ export function InWorkshopTasksList() {
                   <div className="flex items-center gap-4 text-sm text-gray-600">
                     <div className="flex items-center gap-2">
                       <Laptop className="h-4 w-4" />
-                      <span>{task.laptop_model}</span>
+                      <span>{task.brand_details?.name} {task.laptop_model_details?.name || task.laptop_model}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        {getStatusBadge(task.status)}
+                      {getStatusBadge(task.status)}
                     </div>
                     {task.workshop_status && (
-                        <div className="flex items-center gap-2">
-                            {getWorkshopStatusBadge(task.workshop_status)}
-                        </div>
+                      <div className="flex items-center gap-2">
+                        {getWorkshopStatusBadge(task.workshop_status)}
+                      </div>
                     )}
                   </div>
                 </div>
