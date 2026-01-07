@@ -36,28 +36,6 @@ import { getSessions, revokeSession, revokeAllSessions, getAuditLogs, getProfile
 import { profile } from "console"
 import { create } from "domain"
 
-// Mock user data
-// const mockUserData = {
-//   profilePicture: "",
-//   phone: "(555) 123-4567",
-//   address: "123 Main St, Anytown, ST 12345",
-//   bio: "Experienced professional dedicated to providing excellent service at A+ express.",
-//   employeeId: "EMP-001",
-//   department: "Management",
-//   startDate: "2023-01-15",
-//   lastLogin: "2024-01-15 09:30 AM",
-//   twoFactorEnabled: false,
-//   emailNotifications: true,
-//   pushNotifications: true,
-//   taskUpdates: true,
-//   systemAlerts: true,
-//   weeklyReports: false,
-// }
-
-// Mock activity data
-// Mock activity data
-
-
 
 export function UserProfilePage() {
   const { user } = useAuth()

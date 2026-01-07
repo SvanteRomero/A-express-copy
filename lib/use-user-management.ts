@@ -11,6 +11,8 @@ import {
 } from "./api-client"
 
 import { toast } from "@/hooks/use-toast"
+import { useNotifications } from "@/lib/notification-context"
+import { handleApiError } from "@/lib/error-handling"
 
 export interface User {
   id: number
@@ -33,6 +35,7 @@ export function useUserManagement() {
   const [users, setUsers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { addNotification } = useNotifications()
 
   // Load users on component mount
   useEffect(() => {
@@ -68,33 +71,26 @@ export function useUserManagement() {
     setError(null)
 
     try {
-      const response = await registerUser(userData)
-
-      if (response.data.error) {
-        setError(response.data.error)
-        toast({
-          title: "Error",
-          description: response.data.error,
-          variant: "destructive",
-        })
-        return false
-      }
+      await registerUser(userData)
 
       toast({
         title: "Success",
         description: "User created successfully",
+        className: "bg-green-600 text-white border-green-600",
+      })
+
+      addNotification({
+        title: "New Team Member",
+        message: `User ${userData.first_name} ${userData.last_name} (${userData.role}) has been added to the team.`,
+        type: "success",
+        priority: "medium",
       })
 
       // Reload users list
       await loadUsers()
       return true
     } catch (err: any) {
-      setError(err.message || "Failed to create user")
-      toast({
-        title: "Error",
-        description: "Failed to create user",
-        variant: "destructive",
-      })
+      handleApiError(err, "Failed to create user")
       return false
     } finally {
       setIsLoading(false)
@@ -106,32 +102,19 @@ export function useUserManagement() {
     setError(null)
 
     try {
-      const response = await apiUpdateUser(userId, userData);
-      if (response.data.error) {
-        setError(response.data.error)
-        toast({
-          title: "Error",
-          description: response.data.error,
-          variant: "destructive",
-        })
-        return false
-      }
+      await apiUpdateUser(userId, userData);
 
       toast({
         title: "Success",
         description: "User updated successfully",
+        className: "bg-green-600 text-white border-green-600",
       })
 
       // Reload users list
       await loadUsers()
       return true
     } catch (err: any) {
-      setError(err.message || "Failed to update user")
-      toast({
-        title: "Error",
-        description: "Failed to update user",
-        variant: "destructive",
-      })
+      handleApiError(err, "Failed to update user")
       return false
     } finally {
       setIsLoading(false)
@@ -143,33 +126,26 @@ export function useUserManagement() {
     setError(null)
 
     try {
-      const response = await apiDeleteUser(userId)
-
-      if (response.data.error) {
-        setError(response.data.error)
-        toast({
-          title: "Error",
-          description: response.data.error,
-          variant: "destructive",
-        })
-        return false
-      }
+      await apiDeleteUser(userId)
 
       toast({
         title: "Success",
         description: "User deleted successfully",
+        className: "bg-green-600 text-white border-green-600",
+      })
+
+      addNotification({
+        title: "Team Member Removed",
+        message: `A user account has been permanently deleted.`,
+        type: "warning",
+        priority: "high",
       })
 
       // Reload users list
       await loadUsers()
       return true
     } catch (err: any) {
-      setError(err.message || "Failed to delete user")
-      toast({
-        title: "Error",
-        description: "Failed to delete user",
-        variant: "destructive",
-      })
+      handleApiError(err, "Failed to delete user")
       return false
     } finally {
       setIsLoading(false)
@@ -181,35 +157,31 @@ export function useUserManagement() {
     setError(null)
 
     try {
-      const response = isActive
+      isActive
         ? await activateUser(userId)
         : await deactivateUser(userId)
-
-      if (response.data.error) {
-        setError(response.data.error)
-        toast({
-          title: "Error",
-          description: response.data.error,
-          variant: "destructive",
-        })
-        return false
-      }
 
       toast({
         title: "Success",
         description: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
+        className: "bg-green-600 text-white border-green-600",
       })
+
+      // Only notify on deactivation as it's a significant security/access event
+      if (!isActive) {
+        addNotification({
+          title: "Access Revoked",
+          message: `User access has been deactivated by an administrator.`,
+          type: "warning",
+          priority: "medium",
+        })
+      }
 
       // Reload users list
       await loadUsers()
       return true
     } catch (err: any) {
-      setError(err.message || `Failed to ${isActive ? 'activate' : 'deactivate'} user`)
-      toast({
-        title: "Error",
-        description: `Failed to ${isActive ? 'activate' : 'deactivate'} user`,
-        variant: "destructive",
-      })
+      handleApiError(err, `Failed to ${isActive ? 'activate' : 'deactivate'} user`)
       return false
     } finally {
       setIsLoading(false)

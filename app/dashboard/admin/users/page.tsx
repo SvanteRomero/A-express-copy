@@ -1,6 +1,6 @@
 "use client"
-import { UserManagementPage } from "@/components/users/user-management-page"
+import { UserManagement } from "@/components/users/user-management"
 
 export default function AdminUsersPage() {
-  return <UserManagementPage />
+  return <UserManagement />
 }

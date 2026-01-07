@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/feedback/alert-dialog"
 import { createTask, createCustomer } from '@/lib/api-client'
 import { useAuth } from '@/lib/auth-context'
+import { useNotifications } from '@/lib/notification-context'
+import { handleApiError } from '@/lib/error-handling'
 import { Checkbox } from '@/components/ui/core/checkbox'
 import { CurrencyInput } from "@/components/ui/core/currency-input";
 import { useTechnicians, useManagers, useBrands, useLocations, useWorkshopTechnicians } from '@/hooks/use-data'
@@ -219,6 +221,8 @@ export function NewTaskForm({ }: NewTaskFormProps) {
     handleInputChange('customer_phone_numbers', newPhoneNumbers);
   };
 
+  const { addNotification } = useNotifications()
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateForm()) return
@@ -248,6 +252,16 @@ export function NewTaskForm({ }: NewTaskFormProps) {
       toast({
         title: 'Task Created!',
         description: 'The new task has been added to the system.',
+        className: "bg-green-600 text-white border-green-600",
+      })
+
+      // Add persistent notification for history
+      addNotification({
+        title: "New Task Created",
+        message: `Task for ${formData.customer_name} (${formData.device_type}) has been created successfully.`,
+        type: "success",
+        priority: "medium",
+        actionUrl: "/dashboard/tasks" // Ideally this would link to the specific task if ID was returned
       })
 
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
@@ -255,32 +269,19 @@ export function NewTaskForm({ }: NewTaskFormProps) {
 
       handleSuccessRedirect()
     } catch (error: any) {
-      if (error.response?.data) {
-        const errorData = error.response.data;
-        // Check for duplicate phone number error
-        if (errorData.phone_number_duplicate) {
-          const { phone, customer_name } = errorData.phone_number_duplicate;
-          setDuplicatePhoneAlert({
-            isOpen: true,
-            phone: phone,
-            customerName: customer_name
-          });
-        } else {
-          console.error('Error creating task:', errorData);
-          toast({
-            title: 'Error',
-            description: 'Failed to create task. Please try again.',
-            variant: 'destructive'
-          });
-        }
-      } else {
-        console.error('Error creating task:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to create task. Please try again.',
-          variant: 'destructive'
+      // Special handling for duplicate phone (business logic error that needs modal)
+      if (error.response?.data?.phone_number_duplicate) {
+        const { phone, customer_name } = error.response.data.phone_number_duplicate;
+        setDuplicatePhoneAlert({
+          isOpen: true,
+          phone: phone,
+          customerName: customer_name
         });
+        return; // Exit early, no toast needed as modal is shown
       }
+
+      // Standard API error handling
+      handleApiError(error, 'Failed to create task. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
