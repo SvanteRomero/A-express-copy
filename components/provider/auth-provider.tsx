@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useState, useEffect } from "react"
 import { login as apiLogin, checkAuth } from "@/lib/api-client"
 import { apiClient } from "@/lib/api-client"
 import axios from 'axios';
@@ -24,7 +24,7 @@ export interface User {
     bio?: string
 }
 
-interface AuthContextType {
+export interface AuthContextType {
     user: User | null
     isAuthenticated: boolean
     setUser: (user: User | null) => void
@@ -34,7 +34,7 @@ interface AuthContextType {
     refreshAuth: () => Promise<boolean>
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
@@ -72,6 +72,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         initAuth()
     }, [])
 
+    useEffect(() => {
+        const handleLogoutEvent = () => {
+            logout();
+        };
+
+        window.addEventListener('auth:logout', handleLogoutEvent);
+
+        return () => {
+            window.removeEventListener('auth:logout', handleLogoutEvent);
+        };
+    }, []);
+
     const login = async (username: string, password: string): Promise<boolean> => {
         try {
             const response = await apiLogin(username, password);
@@ -79,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (response.data && response.data.user) {
                 const { user: userData } = response.data as { user: User };
                 setUser(userData);
-                // User data is stored in localStorage by apiLogin
+                localStorage.setItem("auth_user", JSON.stringify(userData));
                 return true;
             }
             return false;
@@ -137,13 +149,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshAuth,
     }
 
-    return <AuthContext.Provider value={ value }> { children } </AuthContext.Provider>
-}
-
-export function useAuth() {
-    const context = useContext(AuthContext)
-    if (context === undefined) {
-        throw new Error("useAuth must be used within an AuthProvider")
-    }
-    return context
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

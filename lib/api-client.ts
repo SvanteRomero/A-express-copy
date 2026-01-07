@@ -3,17 +3,6 @@ import { getApiUrl } from './config';
 import { PaginatedResponse } from './api';
 import { ExpenditureRequest, PaymentCategory } from '@/components/tasks/types';
 
-// Simple logout function for use in interceptor (can't import from use-auth due to circular deps)
-const handleLogout = async () => {
-  try {
-    await axios.post(getApiUrl('/logout/'), {}, { withCredentials: true });
-  } catch (error) {
-    console.error('Logout error:', error);
-  }
-  localStorage.removeItem('auth_user');
-  window.location.href = '/';
-};
-
 // CSRF token storage (not HttpOnly, can be read by JS)
 let csrfToken: string | null = null;
 
@@ -79,7 +68,10 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         // Refresh failed, logout user
-        handleLogout();
+        // Refresh failed, logout user via event
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('auth:logout'));
+        }
         return Promise.reject(refreshError);
       }
     }
@@ -124,12 +116,7 @@ export const listWorkshopTechnicians = () => apiClient.get('list/workshop-techni
 export const login = async (username: any, password: any) => {
   // Tokens are now set as HttpOnly cookies by the server
   // No need to store them in localStorage
-  const response = await apiClient.post('/login/', { username, password });
-  // Store only user data (not tokens) in localStorage
-  if (response.data.user) {
-    localStorage.setItem('auth_user', JSON.stringify(response.data.user));
-  }
-  return response;
+  return await apiClient.post('/login/', { username, password });
 };
 
 // Check if user is authenticated using cookie auth
