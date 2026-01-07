@@ -10,6 +10,15 @@ import { Textarea } from '@/components/ui/core/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/core/select'
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/layout/tabs";
 import { AlertTriangle, CheckCircle } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/feedback/alert-dialog"
 import { createTask, createCustomer } from '@/lib/api-client'
 import { useAuth } from '@/lib/auth-context'
 import { Checkbox } from '@/components/ui/core/checkbox'
@@ -77,6 +86,11 @@ export function NewTaskForm({ }: NewTaskFormProps) {
   const [referrerSearch, setReferrerSearch] = useState('')
   const [modelSearch, setModelSearch] = useState('')
   const [customerPage, setCustomerPage] = useState(1)
+  const [duplicatePhoneAlert, setDuplicatePhoneAlert] = useState<{
+    isOpen: boolean;
+    phone: string;
+    customerName: string;
+  }>({ isOpen: false, phone: '', customerName: '' })
 
   const { data: technicians, isLoading: isLoadingTechnicians } = useTechnicians()
   const { data: workshopTechnicians, isLoading: isLoadingWorkshopTechnicians } = useWorkshopTechnicians()
@@ -238,13 +252,34 @@ export function NewTaskForm({ }: NewTaskFormProps) {
 
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
       queryClient.invalidateQueries({ queryKey: ['customers'] })
-      
+
       handleSuccessRedirect()
     } catch (error: any) {
-      if (error.response) {
-        console.error('Error creating task:', error.response.data)
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        // Check for duplicate phone number error
+        if (errorData.phone_number_duplicate) {
+          const { phone, customer_name } = errorData.phone_number_duplicate;
+          setDuplicatePhoneAlert({
+            isOpen: true,
+            phone: phone,
+            customerName: customer_name
+          });
+        } else {
+          console.error('Error creating task:', errorData);
+          toast({
+            title: 'Error',
+            description: 'Failed to create task. Please try again.',
+            variant: 'destructive'
+          });
+        }
       } else {
-        console.error('Error creating task:', error)
+        console.error('Error creating task:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to create task. Please try again.',
+          variant: 'destructive'
+        });
       }
     } finally {
       setIsSubmitting(false)
@@ -529,6 +564,27 @@ export function NewTaskForm({ }: NewTaskFormProps) {
           </Button>
         </div>
       </form>
+
+      <AlertDialog open={duplicatePhoneAlert.isOpen} onOpenChange={(open) => setDuplicatePhoneAlert(prev => ({ ...prev, isOpen: open }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              Phone Number Already Exists
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              The phone number <strong>{duplicatePhoneAlert.phone}</strong> already belongs to another customer: <strong>{duplicatePhoneAlert.customerName}</strong>.
+              <br /><br />
+              Please use a different phone number or select the existing customer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setDuplicatePhoneAlert({ isOpen: false, phone: '', customerName: '' })}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

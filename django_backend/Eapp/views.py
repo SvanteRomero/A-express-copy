@@ -134,24 +134,32 @@ class TaskViewSet(viewsets.ModelViewSet):
         customer_data = data.pop('customer', None)
         customer_created = False
         if customer_data:
-            phone_numbers = customer_data.get('phone_numbers', [])
-            customer = None
-            if phone_numbers:
-                first_phone_number = phone_numbers[0].get('phone_number')
-                if first_phone_number:
+            from django.db import transaction
+            
+            with transaction.atomic():
+                customer = None
+                customer_id = customer_data.get('id')
+                
+                # First, try to find customer by ID (if provided from dropdown selection)
+                if customer_id:
                     try:
-                        customer = Customer.objects.get(phone_numbers__phone_number=first_phone_number)
+                        customer = Customer.objects.get(id=customer_id)
                     except Customer.DoesNotExist:
-                        pass  # Customer not found, will be created
-
-            if customer:
-                data['customer'] = customer.id
-            else:
-                customer_serializer = CustomerSerializer(data=customer_data)
-                customer_serializer.is_valid(raise_exception=True)
-                customer = customer_serializer.save()
-                data['customer'] = customer.id
-                customer_created = True
+                        pass
+                
+                if customer:
+                    # Customer exists - update with any new phone numbers
+                    customer_serializer = CustomerSerializer(customer, data=customer_data, partial=True)
+                    customer_serializer.is_valid(raise_exception=True)
+                    customer_serializer.save()
+                    data['customer'] = customer.id
+                else:
+                    # New customer - create them
+                    customer_serializer = CustomerSerializer(data=customer_data)
+                    customer_serializer.is_valid(raise_exception=True)
+                    customer = customer_serializer.save()
+                    data['customer'] = customer.id
+                    customer_created = True
         
         # Laptop Model creation/retrieval logic
         laptop_model_name = data.pop('laptop_model', None)

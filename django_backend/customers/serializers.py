@@ -59,7 +59,22 @@ class CustomerSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'customer_type', 'phone_numbers', 'phone_numbers_write', 'has_debt', 'tasks_count']
 
     def create(self, validated_data):
+        from rest_framework import serializers
         phone_numbers_data = validated_data.pop('phone_numbers', [])
+        
+        # Check for duplicate phone numbers belonging to other customers
+        for phone_number_data in phone_numbers_data:
+            phone = phone_number_data.get('phone_number', '')
+            if phone:
+                existing = PhoneNumber.objects.filter(phone_number=phone).select_related('customer').first()
+                if existing:
+                    raise serializers.ValidationError({
+                        'phone_number_duplicate': {
+                            'phone': phone,
+                            'customer_name': existing.customer.name
+                        }
+                    })
+        
         customer = Customer.objects.create(**validated_data)
         for phone_number_data in phone_numbers_data:
             # Encrypt phone number before saving
@@ -76,6 +91,8 @@ class CustomerSerializer(serializers.ModelSerializer):
         instance.save()
 
         with transaction.atomic():
+            from rest_framework import serializers
+            
             # Separate new and existing phone numbers
             new_phone_numbers = []
             existing_phone_numbers_data = []
@@ -83,9 +100,17 @@ class CustomerSerializer(serializers.ModelSerializer):
                 if 'id' in pn_data:
                     existing_phone_numbers_data.append(pn_data)
                 else:
-                    # Encrypt new phone numbers
+                    # Check if this new phone number already belongs to another customer
                     phone = pn_data.get('phone_number', '')
                     if phone:
+                        existing = PhoneNumber.objects.filter(phone_number=phone).exclude(customer=instance).select_related('customer').first()
+                        if existing:
+                            raise serializers.ValidationError({
+                                'phone_number_duplicate': {
+                                    'phone': phone,
+                                    'customer_name': existing.customer.name
+                                }
+                            })
                         phone = encrypt_value(phone)
                     new_phone_numbers.append(PhoneNumber(customer=instance, phone_number=phone))
 
