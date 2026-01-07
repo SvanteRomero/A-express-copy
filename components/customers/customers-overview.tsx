@@ -1,5 +1,4 @@
-import { useCustomerStats } from "@/hooks/use-customer-stats";
-import { useCustomerAcquisition } from "@/hooks/use-customer-acquisition";
+import { useCustomerStats, useCustomerAcquisition } from "@/hooks/use-customers";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/layout/card";
 import { Badge } from "@/components/ui/core/badge";
 import { Button } from "@/components/ui/core/button";
