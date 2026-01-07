@@ -13,7 +13,6 @@ import { AlertTriangle, CheckCircle } from 'lucide-react'
 import { createTask, createCustomer } from '@/lib/api-client'
 import { useAuth } from '@/lib/auth-context'
 import { Checkbox } from '@/components/ui/core/checkbox'
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/feedback/alert-dialog";
 import { CurrencyInput } from "@/components/ui/core/currency-input";
 import { useTechnicians, useManagers, useBrands, useLocations, useWorkshopTechnicians } from '@/hooks/use-data'
 import { useCustomers } from '@/hooks/use-customers'
@@ -73,7 +72,6 @@ export function NewTaskForm({ }: NewTaskFormProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitSuccess, setSubmitSuccess] = useState(false)
   const [isReferred, setIsReferred] = useState(false)
   const [customerSearch, setCustomerSearch] = useState('')
   const [referrerSearch, setReferrerSearch] = useState('')
@@ -225,15 +223,23 @@ export function NewTaskForm({ }: NewTaskFormProps) {
         referred_by: formData.is_referred ? formData.referred_by : null,
       };
       const response = await createTask(taskData)
+
       if (response.data.customer_created) {
         toast({
           title: 'Customer Created',
           description: `Customer ${formData.customer_name} has been added to the database.`,
         });
       }
+
+      toast({
+        title: 'Task Created!',
+        description: 'The new task has been added to the system.',
+      })
+
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
       queryClient.invalidateQueries({ queryKey: ['customers'] })
-      setSubmitSuccess(true)
+      
+      handleSuccessRedirect()
     } catch (error: any) {
       if (error.response) {
         console.error('Error creating task:', error.response.data)
@@ -523,19 +529,6 @@ export function NewTaskForm({ }: NewTaskFormProps) {
           </Button>
         </div>
       </form>
-      <AlertDialog open={submitSuccess} onOpenChange={setSubmitSuccess}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Task Created!</AlertDialogTitle>
-            <AlertDialogDescription>
-              The new task has been added to the system.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={handleSuccessRedirect}>Go to Tasks</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   )
 }
