@@ -1,6 +1,6 @@
 'use client';
 
-import { usePaymentMethods } from '@/hooks/use-payment-methods';
+import { usePaymentMethods } from '@/hooks/use-payments';
 import {
   Dialog,
   DialogContent,

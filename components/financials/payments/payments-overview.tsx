@@ -12,8 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/layout/
 import { Calendar } from "@/components/ui/core/calendar"
 import { Input } from "@/components/ui/core/input";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { usePayments } from "@/hooks/use-payments"
-import { usePaymentMethods } from "@/hooks/use-payment-methods"
+import { usePayments, usePaymentMethods } from "@/hooks/use-payments"
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/core/badge";

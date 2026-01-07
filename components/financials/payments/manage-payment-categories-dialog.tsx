@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/core/button';
 import { DialogFooter } from '@/components/ui/feedback/dialog';
 import { Input } from '@/components/ui/core/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/layout/table';
-import { usePaymentCategories } from '@/hooks/use-payment-categories';
+import { usePaymentCategories } from '@/hooks/use-payments';
 import { createPaymentCategory, updatePaymentCategory, deletePaymentCategory } from "@/lib/api-client";
 import { PaymentCategory } from "@/components/tasks/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
