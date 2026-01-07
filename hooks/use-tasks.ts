@@ -2,14 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getTasks, createTask, updateTask as apiUpdateTask, createCostBreakdown, getDebts } from '@/lib/api-client'
-import { Task } from '@/components/tasks/types'
-
-export interface PaginatedTasks {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: Task[];
-}
+import { Task, PaginatedTasks } from '@/components/tasks/types'
 
 export function useTasks(filters?: {
   status?: string

@@ -2,6 +2,14 @@ import { UserResponse } from "@/components/users/types";
 import { Customer, PhoneNumber, Referrer } from "@/components/customers/types";
 import { Brand } from "@/components/brands/types";
 
+export interface PaginatedTasks {
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: Task[];
+}
+
+
 export interface CostBreakdown {
     id: number;
     description: string;

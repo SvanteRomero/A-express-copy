@@ -5,11 +5,7 @@ import { User } from "@/lib/use-user-management"
 import { Brand } from '@/components/brands/types';
 import { Task } from '@/components/tasks/types';
 
-interface Location {
-    id: number;
-    name: string;
-    is_workshop: boolean;
-}
+import { Location } from "@/components/locations/types";
 
 export function useTechnicians() {
     return useQuery<User[]>({

@@ -19,11 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/feedback/alert-dialog";
 
-interface Location {
-  id: number;
-  name: string;
-  is_workshop: boolean;
-}
+import { Location } from "@/components/locations/types";
 
 export function LocationsManager() {
   const [locations, setLocations] = useState<Location[]>([]);
