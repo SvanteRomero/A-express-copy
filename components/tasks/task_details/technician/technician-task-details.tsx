@@ -1,7 +1,8 @@
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card"
-import { Badge } from "@/components/ui/core/badge"
 import { Button } from "@/components/ui/core/button"
+import { Badge } from "@/components/ui/core/badge"
+import { StatusBadge, UrgencyBadge, WorkshopStatusBadge } from "@/components/tasks/task_utils/task-badges"
 import { Textarea } from "@/components/ui/core/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select"
 import { Separator } from "@/components/ui/core/separator"
@@ -126,39 +127,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
     })
   }
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig: any = {
-      "Pending": { label: "Pending", color: "bg-gray-100 text-gray-800" },
-      "In Progress": { label: "In Progress", color: "bg-blue-100 text-blue-800" },
-      "Awaiting Parts": { label: "Awaiting Parts", color: "bg-orange-100 text-orange-800" },
-      "Completed": { label: "Completed", color: "bg-green-100 text-green-800" },
-      "Ready for Pickup": { label: "Ready for Pickup", color: "bg-green-100 text-green-800" },
-      "Picked Up": { label: "Picked Up", color: "bg-purple-100 text-purple-800" },
-      "Cancelled": { label: "Cancelled", color: "bg-red-100 text-red-800" },
-    }
 
-    const config = statusConfig[status] || {
-      label: status,
-      color: "bg-gray-100 text-gray-800",
-    }
-    return <Badge className={`${config.color} hover:${config.color}`}>{config.label}</Badge>
-  }
-
-  const getUrgencyBadge = (urgency: string) => {
-    const urgencyConfig: any = {
-      Yupo: { label: "Yupo", color: "bg-green-100 text-green-800" },
-      "Katoka kidogo": { label: "Katoka kidogo", color: "bg-yellow-100 text-yellow-800" },
-      Kaacha: { label: "Kaacha", color: "bg-red-100 text-red-800" },
-      Expedited: { label: "Expedited", color: "bg-blue-100 text-blue-800" },
-      "Ina Haraka": { label: "Ina Haraka", color: "bg-purple-100 text-purple-800" },
-    }
-
-    const config = urgencyConfig[urgency] || {
-      label: urgency,
-      color: "bg-gray-100 text-gray-800",
-    }
-    return <Badge className={`${config.color} hover:${config.color}`}>{config.label}</Badge>
-  }
 
   const getNoteIcon = (type: string) => {
     const iconMap: any = {
@@ -277,14 +246,12 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                 <div>
                   <label className="text-sm font-medium text-gray-700">Current Status</label>
                   <div className="mt-2 flex items-center gap-2">
-                    {getStatusBadge(task.status)}
+                    <StatusBadge status={task.status} />
                     {['Solved', 'Not Solved'].includes(task.workshop_status || '') && (
-                      <Badge className={task.workshop_status === 'Solved' ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
-                        {task.workshop_status}
-                      </Badge>
+                      <WorkshopStatusBadge status={task.workshop_status || ''} />
                     )}
                     {task.workshop_status === 'In Workshop' && (
-                      <Badge className="bg-pink-100 text-pink-800 hover:bg-pink-100">In Workshop</Badge>
+                      <WorkshopStatusBadge status='In Workshop' />
                     )}
                   </div>
                 </div>
@@ -449,7 +416,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                 <AlertTriangle className="h-4 w-4 text-gray-500" />
                 <div>
                   <p className="text-sm font-medium">Priority</p>
-                  <div className="mt-1">{getUrgencyBadge(task.urgency)}</div>
+                  <div className="mt-1"><UrgencyBadge urgency={task.urgency} /></div>
                 </div>
               </div>
             </CardContent>

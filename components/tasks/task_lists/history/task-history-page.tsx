@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/core/button";
-import { TasksDisplay } from "../../tasks-display";
+import { TasksDisplay } from "../../task_utils/tasks-display";
 import { useTasks } from "@/hooks/use-tasks";
 import { useTechnicians } from "@/hooks/use-data";
 import { ReturnTaskDialog } from "../../return-task-dialog";
@@ -65,9 +65,9 @@ export function TaskHistoryPage({
 
   if (isError) {
     return (
-        <div className="flex-1 space-y-6 p-6">
-            <div className="text-red-500">Error: {error.message}</div>
-        </div>
+      <div className="flex-1 space-y-6 p-6">
+        <div className="text-red-500">Error: {error.message}</div>
+      </div>
     )
   }
 

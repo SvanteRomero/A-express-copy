@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useTasks } from "@/hooks/use-tasks";
-import { TasksDisplay } from "../../../tasks-display";
+import { TasksDisplay } from "../../../task_utils/tasks-display";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addTaskPayment } from "@/lib/api-client";
@@ -13,7 +13,7 @@ const DebtsPage = () => {
   const queryClient = useQueryClient();
 
   const addTaskPaymentMutation = useMutation({
-    mutationFn: ({ taskId, amount, methodId }: { taskId: string; amount: number; methodId: number }) => 
+    mutationFn: ({ taskId, amount, methodId }: { taskId: string; amount: number; methodId: number }) =>
       addTaskPayment(taskId, { amount, method: methodId, date: new Date().toISOString().split('T')[0] }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
@@ -50,7 +50,7 @@ const DebtsPage = () => {
         onRowClick={handleRowClick}
         showActions={true}
         onAddPayment={handleAddPayment}
-        onRemindDebt={() => {}}
+        onRemindDebt={() => { }}
         isAccountantView={true}
       />
     </div>

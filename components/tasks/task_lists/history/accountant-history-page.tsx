@@ -1,7 +1,7 @@
 'use client';
 
 import { useTasks } from '@/hooks/use-tasks';
-import { TasksDisplay } from '../../tasks-display';
+import { TasksDisplay } from '../../task_utils/tasks-display';
 import { useRouter } from 'next/navigation';
 
 export default function AccountantHistoryPage() {
@@ -24,9 +24,9 @@ export default function AccountantHistoryPage() {
 
   if (isError) {
     return (
-        <div className="flex-1 space-y-6 p-6">
-            <div className="text-red-500">Error: {error.message}</div>
-        </div>
+      <div className="flex-1 space-y-6 p-6">
+        <div className="text-red-500">Error: {error.message}</div>
+      </div>
     )
   }
 

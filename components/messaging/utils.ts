@@ -38,17 +38,41 @@ export const replaceTemplateVariables = (template: string, customer: Customer) =
         .replace(/{daysOverdue}/g, Math.max(0, customer.daysWaiting - 7).toString())
 };
 
-export const getStatusColor = (status: string) => {
-    switch (status) {
-        case "Ready for Pickup":
-            return "bg-green-100 text-green-800 hover:bg-green-100";
-        case "In Progress":
-            return "bg-blue-100 text-blue-800 hover:bg-blue-100";
-        case "Awaiting Parts":
-            return "bg-orange-100 text-orange-800 hover:bg-orange-100";
-        case "Quote Sent":
-            return "bg-purple-100 text-purple-800 hover:bg-purple-100";
-        default:
-            return "secondary";
-    }
+export function transformTasksToCustomers(
+    tasks: any[],
+    selectedTaskIds: Set<number>
+): Customer[] {
+    return tasks
+        .filter((task: any) => {
+            const hasCustomer = task.customer || task.customer_details;
+            return hasCustomer;
+        })
+        .map((task: any) => {
+            const customer = task.customer_details || {};
+            const deviceName = `${task.laptop_model_details?.name || ''} ${task.brand || ''}`.trim();
+            const phoneNumbersList = customer.phone_numbers?.map((p: any) => p.phone_number) || [];
+            const initialPhone = phoneNumbersList[0] || customer.phone_number_1 || '';
+
+            return {
+                id: task.id.toString(),
+                taskId: task.id,
+                taskDisplayId: task.title || task.id.toString(),
+                customerId: customer.id ? customer.id.toString() : `unknown-${task.id}`,
+                name: (customer.name || `${customer.first_name || ''} ${customer.last_name || ''}`).trim() || 'Unknown Customer',
+                phone: initialPhone,
+                phoneNumbers: phoneNumbersList,
+                selectedPhone: initialPhone,
+                device: deviceName || 'Unknown Device',
+                description: task.description || '',
+                deviceNotes: task.device_notes || '',
+                status: task.status,
+                workshopStatus: task.workshop_status,
+                amount: task.total_cost,
+                outstandingBalance: task.outstanding_balance,
+                isDebt: task.is_debt && parseFloat(task.outstanding_balance || '0') > 0,
+                daysWaiting: Math.floor((Date.now() - new Date(task.created_at).getTime()) / (1000 * 60 * 60 * 24)),
+                selected: selectedTaskIds.has(task.id)
+            };
+        });
 }
+

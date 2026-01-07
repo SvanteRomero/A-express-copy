@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { deleteTask, addTaskPayment } from "@/lib/api-client";
-import { TasksDisplay } from "@/components/tasks/tasks-display";
+import { TasksDisplay } from "@/components/tasks/task_utils/tasks-display";
 import { useTasks } from "@/hooks/use-tasks";
 import { useTechnicians } from "@/hooks/use-data";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,7 +19,7 @@ export default function AccountantTasksPage() {
   const { data: technicians } = useTechnicians();
 
   const addTaskPaymentMutation = useMutation({
-    mutationFn: ({ taskId, amount, methodId }: { taskId: string; amount: number; methodId: number }) => 
+    mutationFn: ({ taskId, amount, methodId }: { taskId: string; amount: number; methodId: number }) =>
       addTaskPayment(taskId, { amount, method: methodId, date: new Date().toISOString().split('T')[0], category: 1 }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
@@ -50,9 +50,9 @@ export default function AccountantTasksPage() {
 
   if (isError) {
     return (
-        <div className="flex-1 space-y-6 p-6">
-            <div className="text-red-500">Error: {error.message}</div>
-        </div>
+      <div className="flex-1 space-y-6 p-6">
+        <div className="text-red-500">Error: {error.message}</div>
+      </div>
     )
   }
 
