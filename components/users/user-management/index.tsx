@@ -30,6 +30,7 @@ export function UserManagement() {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [isLocationsModalOpen, setIsLocationsModalOpen] = useState(false)
     const [editingUser, setEditingUser] = useState<any>(null)
+    const [isEditOpen, setIsEditOpen] = useState(false)
     const [newUser, setNewUser] = useState({
         username: "",
         email: "",
@@ -77,6 +78,11 @@ export function UserManagement() {
         }
     }
 
+    const handleEditUser = (user: any) => {
+        setEditingUser(user)
+        setIsEditOpen(true)
+    }
+
     const handleUpdateUser = async () => {
         if (!editingUser) return
 
@@ -90,7 +96,8 @@ export function UserManagement() {
         })
 
         if (success) {
-            setEditingUser(null)
+            setIsEditOpen(false)
+            // Optional: setEditingUser(null) after delay or on next open to prevent "empty" flash during close animation
         }
     }
 
@@ -162,7 +169,7 @@ export function UserManagement() {
                     {isMobile ? (
                         <UserMobileList
                             users={filteredUsers}
-                            onEdit={setEditingUser}
+                            onEdit={handleEditUser}
                             onDelete={handleDeleteUser}
                             onToggleStatus={handleToggleStatus}
                             isLoading={isLoading}
@@ -170,7 +177,7 @@ export function UserManagement() {
                     ) : (
                         <UserTable
                             users={filteredUsers}
-                            onEdit={setEditingUser}
+                            onEdit={handleEditUser}
                             onDelete={handleDeleteUser}
                             onToggleStatus={handleToggleStatus}
                             isLoading={isLoading}
@@ -189,8 +196,8 @@ export function UserManagement() {
             />
 
             <EditUserDialog
-                isOpen={!!editingUser}
-                onOpenChange={(open) => !open && setEditingUser(null)}
+                isOpen={isEditOpen}
+                onOpenChange={setIsEditOpen}
                 editingUser={editingUser}
                 setEditingUser={setEditingUser}
                 onUpdateUser={handleUpdateUser}

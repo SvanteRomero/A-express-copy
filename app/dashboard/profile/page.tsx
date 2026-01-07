@@ -1,7 +1,7 @@
 "use client"
 
-import { UserProfilePage } from "@/components/users/user-profile-page"
+import { UserProfileView } from "@/components/users/user-profile/user-profile-view"
 
 export default function ProfilePage() {
-  return <UserProfilePage />
+  return <UserProfileView />
 }
