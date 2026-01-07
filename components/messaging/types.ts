@@ -12,6 +12,9 @@ export interface Customer {
     deviceNotes: string;
     status: string;
     workshopStatus?: string;
+    amount?: string;
+    outstandingBalance?: string;
+    isDebt?: boolean;
     daysWaiting: number;
     selected?: boolean;
 }

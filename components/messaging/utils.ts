@@ -1,28 +1,39 @@
 import { Customer, MessageTemplate } from "./types";
 
-const getSwahiliStatus = (status: string, workshopStatus?: string) => {
-    // Special case for workshop returns
-    if (workshopStatus === "Not Solved") return "TAYARI KUCHUKULIWA, HAIJAPONA";
-    if (workshopStatus === "Solved") return "TAYARI KUCHUKULIWA, IMEPONA";
-
-    // Standard statuses
-    const s = status.toLowerCase();
-    if (s.includes('ready') || s === 'completed') return "TAYARI KUCHUKULIWA";
-    if (s.includes('progress') || s.includes('diagnostic')) return "INAREKEBISHWA";
-    if (s.includes('picked')) return "IMESHACHUKULIWA";
-    return status.toUpperCase();
+// Helper to get status description and pickup instruction based on workshop status
+const getStatusDetails = (workshopStatus?: string) => {
+    if (workshopStatus === "Not Solved") {
+        return {
+            description: "kiko tayari kuchukuliwa. Kwa bahati mbaya, hatukuweza kutatua tatizo hilo",
+            instruction: "Tafadhali fika dukani uchukue kifaa chako"
+        };
+    }
+    // Solved or default
+    return {
+        description: "kimefanikiwa kurekebishwa na kiko tayari kuchukuliwa",
+        instruction: "Tafadhali fika dukani wakati wa saa za kazi uchukue kifaa chako"
+    };
 };
 
 export const replaceTemplateVariables = (template: string, customer: Customer) => {
+    const statusDetails = getStatusDetails(customer.workshopStatus);
+
+    const truncate = (str: string = '', length: number) => {
+        if (str.length <= length) return str;
+        return str.substring(0, length) + '..';
+    };
+
     return template
-        .replace(/{customer}/g, customer.name)
-        .replace(/{device}/g, customer.device)
+        .replace(/{customer}/g, truncate(customer.name, 15))
+        .replace(/{device}/g, truncate(customer.device, 20))
         .replace(/{taskId}/g, customer.taskDisplayId)
-        .replace(/{description}/g, customer.description)
-        .replace(/{status}/g, getSwahiliStatus(customer.status, customer.workshopStatus))
-        .replace(/{notes}/g, customer.deviceNotes ? `||| Maelezo: ${customer.deviceNotes}` : '')
-        // .replace(/{service}/g, customer.service) // Not in type yet
-        // .replace(/{amount}/g, customer.amount) // Not in type yet
+        .replace(/{description}/g, truncate(customer.description, 30))
+        .replace(/{status}/g, customer.status.toUpperCase()) // Fallback for simple status
+        .replace(/{status_description}/g, statusDetails.description)
+        .replace(/{pickup_instruction}/g, statusDetails.instruction)
+        .replace(/{notes}/g, customer.deviceNotes ? ` ${truncate(customer.deviceNotes, 25)}` : '')
+        .replace(/{cost}|{amount}/g, customer.amount ? `${parseFloat(customer.amount).toLocaleString()}/=` : "0/=")
+        .replace(/{outstanding_balance}/g, customer.outstandingBalance ? `${parseFloat(customer.outstandingBalance).toLocaleString()}/=` : "0/=")
         .replace(/{daysWaiting}/g, customer.daysWaiting.toString())
         .replace(/{daysOverdue}/g, Math.max(0, customer.daysWaiting - 7).toString())
 };

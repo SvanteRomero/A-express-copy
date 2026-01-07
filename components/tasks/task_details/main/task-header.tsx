@@ -201,6 +201,7 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
         description={taskData.description}
         totalCost={taskData.total_cost}
         deviceNotes={taskData.device_notes}
+        workshopStatus={taskData.workshop_status || undefined}
       />
     </>
   )

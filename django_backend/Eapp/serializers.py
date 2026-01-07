@@ -20,6 +20,7 @@ class TaskListSerializer(serializers.ModelSerializer):
     assigned_to_details = UserListSerializer(source='assigned_to', read_only=True)
     outstanding_balance = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     laptop_model_details = ModelSerializer(source='laptop_model', read_only=True)
+    total_cost = serializers.DecimalField(source='calculated_total_cost', max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = Task
@@ -38,6 +39,8 @@ class TaskListSerializer(serializers.ModelSerializer):
             'customer_details',
             'assigned_to_details',
             'outstanding_balance',
+            'total_cost',
+            'is_debt',
         )
 
 class TaskDetailSerializer(serializers.ModelSerializer):

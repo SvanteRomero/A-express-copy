@@ -438,6 +438,44 @@ def clear_tasks():
     Task.objects.all().delete()
     print("All tasks and activities cleared!")
 
+def seed_message_templates():
+    """
+    Seed standard professional message templates
+    """
+    print("Seeding message templates...")
+    
+    # Define templates
+    templates_data = [
+        {
+            "name": "Ready for Pickup (Solved)",
+            "content": "Habari {customer}, kifaa chako {device} (Kazi #{taskId}) kimefanikiwa kurekebishwa na kiko tayari kuchukuliwa. Tatizo: {description}. Maelezo: {notes} | Gharama: {amount}. Tafadhali fika dukani wakati wa saa za kazi uchukue kifaa chako. Asante kwa kuchagua A-Express."
+        },
+        {
+            "name": "Ready for Pickup (Not Solved)",
+            "content": "Habari {customer}, kifaa chako {device} (Kazi #{taskId}) kiko tayari kuchukuliwa. Kwa bahati mbaya, hatukuweza kutatua tatizo hilo. Tatizo: {description}. Maelezo: {notes} | Gharama: {amount}. Tafadhali fika dukani uchukue kifaa chako. Asante kwa kuchagua A-Express."
+        },
+        {
+            "name": "Repair in Progress",
+            "content": "Habari {customer}, kifaa chako {device} (Kazi #{taskId}) kimepokelewa na mafundi wetu wameanza kukifanyia kazi. Tatizo: {description}. Maelezo: {notes} | Gharama: {amount}. Tutaujulisha kitakapokuwa tayari. Asante kwa kuvuta subira."
+        }
+    ]
+    
+    created_count = 0
+    updated_count = 0
+    
+    for t_data in templates_data:
+        template, created = MessageTemplate.objects.update_or_create(
+            name=t_data["name"],
+            defaults={
+                "content": t_data["content"],
+                "is_active": True
+            }
+        )
+        if created:
+            created_count += 1
+        else:
+            updated_count += 1
+            
 if __name__ == '__main__':
     # Uncomment the line below to clear existing data
     # clear_tasks()

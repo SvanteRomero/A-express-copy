@@ -107,6 +107,9 @@ export function ComposeView() {
                         deviceNotes: task.device_notes || '',
                         status: task.status,
                         workshopStatus: task.workshop_status,
+                        amount: task.total_cost,
+                        outstandingBalance: task.outstanding_balance,
+                        isDebt: task.is_debt && parseFloat(task.outstanding_balance || '0') > 0,
                         daysWaiting: Math.floor((Date.now() - new Date(task.created_at).getTime()) / (1000 * 60 * 60 * 24)),
                         selected: false
                     };
@@ -122,8 +125,26 @@ export function ComposeView() {
     const currentTemplate = templates.find(t => t.id.toString() === selectedTemplate);
 
     // Filter customers
+    // Filter customers
     const filteredCustomers = customers.filter(c => {
         const searchLower = searchQuery.toLowerCase();
+
+        // Template-based filtering
+        if (currentTemplate) {
+            const templateNameLower = currentTemplate.name.toLowerCase();
+            const statusLower = c.status.toLowerCase();
+
+            if (templateNameLower.includes("ready for pickup")) {
+                if (statusLower !== "ready for pickup") return false;
+            } else if (templateNameLower.includes("repair in progress")) {
+                // Exclude finished/ready statuses
+                const finishedStatuses = ["ready for pickup", "picked up", "completed", "terminated", "cancelled", "failed"];
+                if (finishedStatuses.some(s => statusLower.includes(s))) return false;
+            } else if (templateNameLower.includes("remind debt") || templateNameLower.includes("deni")) {
+                if (!c.isDebt || statusLower !== "picked up") return false;
+            }
+        }
+
         return (
             c.name.toLowerCase().includes(searchLower) ||
             c.phone.includes(searchLower) ||
@@ -303,39 +324,51 @@ export function ComposeView() {
                                 {displayedCustomers.length === 0 ? (
                                     <div className="text-center py-8 text-muted-foreground">No customers found matching your search.</div>
                                 ) : (
-                                    displayedCustomers.map(customer => (
-                                        <div key={customer.id} className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${customer.selected ? 'bg-primary/5 border-primary' : 'hover:bg-muted/50'}`}>
-                                            <Checkbox id={`c-${customer.id}`} checked={customer.selected} onCheckedChange={() => toggleCustomer(customer.taskId)} className="mt-1" />
-                                            <div className="flex-1 space-y-1">
-                                                <div className="flex items-center justify-between">
-                                                    <Label htmlFor={`c-${customer.id}`} className="font-medium cursor-pointer">{customer.name}</Label>
-                                                    <Badge className={getStatusBadgeColor(customer.status, customer.workshopStatus)} variant="outline">
-                                                        {customer.workshopStatus ? `${customer.status} (${customer.workshopStatus})` : customer.status}
-                                                    </Badge>
-                                                </div>
-                                                <div className="text-sm text-muted-foreground flex items-center gap-2">
-                                                    <span>{customer.device}</span>
-                                                    <span>•</span>
-                                                    <span className={customer.phoneNumbers.length > 1 ? "text-primary font-medium" : ""}>
-                                                        {customer.selectedPhone || "No Phone"}
-                                                    </span>
-                                                    {customer.phoneNumbers.length > 1 && (
-                                                        <Button
-                                                            variant="secondary"
-                                                            size="sm"
-                                                            className="h-6 px-2 text-xs border border-primary/20 hover:bg-primary/10 text-primary"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setManagementTarget(customer);
-                                                            }}
-                                                        >
-                                                            Change
-                                                        </Button>
-                                                    )}
+                                    displayedCustomers.map(customer => {
+                                        const canSelect = !!selectedTemplate || useCustomMessage;
+                                        return (
+                                            <div key={customer.id} className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${customer.selected ? 'bg-primary/5 border-primary' : 'hover:bg-muted/50'} ${!canSelect ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                                <Checkbox
+                                                    id={`c-${customer.id}`}
+                                                    checked={customer.selected}
+                                                    onCheckedChange={() => canSelect && toggleCustomer(customer.taskId)}
+                                                    disabled={!canSelect}
+                                                    className="mt-1"
+                                                />
+                                                <div className="flex-1 space-y-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <Label htmlFor={`c-${customer.id}`} className={`font-medium ${canSelect ? 'cursor-pointer' : 'cursor-not-allowed'}`}>{customer.name}</Label>
+                                                        <div className="flex items-center gap-2">
+                                                            {customer.isDebt && <Badge variant="destructive" className="bg-red-500 hover:bg-red-600">Debt</Badge>}
+                                                            <Badge className={getStatusBadgeColor(customer.status, customer.workshopStatus)} variant="outline">
+                                                                {customer.workshopStatus ? `${customer.status} (${customer.workshopStatus})` : customer.status}
+                                                            </Badge>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                                        <span>{customer.device}</span>
+                                                        <span>•</span>
+                                                        <span className={customer.phoneNumbers.length > 1 ? "text-primary font-medium" : ""}>
+                                                            {customer.selectedPhone || "No Phone"}
+                                                        </span>
+                                                        {customer.phoneNumbers.length > 1 && (
+                                                            <Button
+                                                                variant="secondary"
+                                                                size="sm"
+                                                                className="h-6 px-2 text-xs border border-primary/20 hover:bg-primary/10 text-primary"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setManagementTarget(customer);
+                                                                }}
+                                                            >
+                                                                Change
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </div>
 

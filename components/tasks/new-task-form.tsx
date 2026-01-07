@@ -218,7 +218,7 @@ export function NewTaskForm({ }: NewTaskFormProps) {
         customer: {
           id: formData.customer_id,
           name: formData.customer_name,
-          phone_numbers: formData.customer_phone_numbers,
+          phone_numbers_write: formData.customer_phone_numbers,
           customer_type: formData.customer_type,
         },
         negotiated_by: formData.negotiated_by || null,

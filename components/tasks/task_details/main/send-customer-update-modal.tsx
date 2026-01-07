@@ -36,6 +36,7 @@ interface SendCustomerUpdateModalProps {
     description?: string
     totalCost?: string
     deviceNotes?: string
+    workshopStatus?: string
 }
 
 // Status translation map
@@ -60,19 +61,25 @@ function buildSwahiliTemplate(
         totalCost?: string
         deviceNotes?: string
         statusSwahili: string
+        workshopStatus?: string
     }
 ): string {
     const deviceInfo = [data.brand, data.model].filter(Boolean).join(" ")
-    const cost = data.totalCost ? `${parseFloat(data.totalCost).toLocaleString()}/=` : "-"
-    const notes = data.deviceNotes?.trim() ? ` | Maelezo: ${data.deviceNotes.trim()}` : ""
+    const cost = data.totalCost ? `${parseFloat(data.totalCost).toLocaleString()}/=` : "0/="
+    const notes = data.deviceNotes?.trim() || "Hakuna"
+    const description = data.description || "Hakuna"
     const inquiry = "Kwa maelezo zaidi piga: 0745869216"
 
     if (templateId === "ready_pickup") {
-        return `Habari ${data.customerName} | Kazi: ${data.taskTitle} | Kifaa: ${deviceInfo || "-"} | Tatizo: ${data.description || "-"} | Gharama: ${cost} | Hali: TAYARI KUCHUKULIWA${notes} | ${inquiry} - A-Express`
+        if (data.workshopStatus === "Not Solved") {
+            return `Habari ${data.customerName}, kifaa chako ${deviceInfo || "-"} (Kazi #${data.taskTitle}) kiko tayari kuchukuliwa. Kwa bahati mbaya, hatukuweza kutatua tatizo hilo. Tatizo: ${description}. Maelezo: ${notes}. Gharama: ${cost}. Tafadhali fika dukani uchukue kifaa chako. Asante kwa kuchagua A-Express.`
+        }
+        // Solved or default
+        return `Habari ${data.customerName}, kifaa chako ${deviceInfo || "-"} (Kazi #${data.taskTitle}) kimefanikiwa kurekebishwa na kiko tayari kuchukuliwa. Tatizo: ${description}. Maelezo: ${notes}. Gharama: ${cost}. Tafadhali fika dukani wakati wa saa za kazi uchukue kifaa chako. Asante kwa kuchagua A-Express.`
     }
 
     if (templateId === "repair_in_progress") {
-        return `Habari ${data.customerName} | Kazi: ${data.taskTitle} | Kifaa: ${deviceInfo || "-"} | Tatizo: ${data.description || "-"} | Gharama: ${cost} | Hali: INAREKEBISHWA${notes} | ${inquiry} - A-Express`
+        return `Habari ${data.customerName}, kifaa chako ${deviceInfo || "-"} (Kazi #${data.taskTitle}) kimepokelewa na mafundi wetu wameanza kukifanyia kazi. Tatizo: ${description}. Maelezo: ${notes}. Gharama: ${cost}. Tutaujulisha kitakapokuwa tayari. Asante kwa kuvuta subira.`
     }
 
     return ""
@@ -98,6 +105,7 @@ export function SendCustomerUpdateModal({
     description,
     totalCost,
     deviceNotes,
+    workshopStatus,
 }: SendCustomerUpdateModalProps) {
     const [selectedPhone, setSelectedPhone] = useState<string>(phoneNumbers[0]?.phone_number || "")
     const [selectedTemplate, setSelectedTemplate] = useState<string>("custom")
@@ -127,6 +135,7 @@ export function SendCustomerUpdateModal({
             totalCost,
             deviceNotes,
             statusSwahili,
+            workshopStatus,
         })
         setMessage(filledMessage)
     }
