@@ -18,6 +18,7 @@ export function useTasks(filters?: {
   page?: number
   updated_at_after?: string
   debts?: boolean
+  template_filter?: string
 }) {
   return useQuery<PaginatedTasks>({
     queryKey: ['tasks', filters],

@@ -225,7 +225,8 @@ export const getMessageTemplates = () => apiClient.get('/messaging/templates/').
 export const createMessageTemplate = (data: any) => apiClient.post('/messaging/templates/', data).then(res => res.data);
 export const updateMessageTemplate = (id: number, data: any) => apiClient.put(`/messaging/templates/${id}/`, data).then(res => res.data);
 export const sendBulkSMS = (data: any) => apiClient.post('/messaging/bulk-send/', data).then(res => res.data);
-export const getMessageHistory = () => apiClient.get('/messaging/history/').then(res => res.data);
+export const getMessageHistory = (params: { page?: number; search?: string } = {}) =>
+  apiClient.get('/messaging/history/', { params }).then(res => res.data);
 // Dashboard Stats
 export const getDashboardStats = () => apiClient.get('/dashboard-stats/').then(res => res.data);
 export const getTechnicianDashboardStats = () => apiClient.get('/technician-dashboard-stats/').then(res => res.data);

@@ -1,67 +1,67 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/layout/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table";
 import { Badge } from "@/components/ui/core/badge";
 import { Search, RotateCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/core/input";
 import { Button } from "@/components/ui/core/button";
-import { getStatusColor } from "./utils"; // Reusing status color logic if applicable, or defining new ones
+import { getStatusColor } from "./utils";
 import { getMessageHistory } from "@/lib/api-client";
+
+const ITEMS_PER_PAGE = 20;
 
 export function MessageHistory() {
     const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-
-    // Pagination
-    const ITEMS_PER_PAGE = 20;
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
 
-    const fetchHistory = async () => {
+    // Debounce search input
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setCurrentPage(1); // Reset to first page on search
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const fetchHistory = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await getMessageHistory();
-            // Assuming standard pagination checking
-            const results = Array.isArray(data) ? data : data.results || [];
-            if (Array.isArray(results)) {
-                // Sort by ID desc (newest first)
-                setLogs(results.sort((a: any, b: any) => b.id - a.id));
+            const data = await getMessageHistory({
+                page: currentPage,
+                search: debouncedSearch || undefined,
+            });
+            // Handle paginated response
+            if (data && typeof data === 'object' && 'results' in data) {
+                setLogs(data.results);
+                setTotalCount(data.count || 0);
+            } else if (Array.isArray(data)) {
+                // Fallback for non-paginated response
+                setLogs(data);
+                setTotalCount(data.length);
             } else {
                 setLogs([]);
+                setTotalCount(0);
             }
         } catch (error) {
             console.error("Failed to fetch history", error);
+            setLogs([]);
+            setTotalCount(0);
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, debouncedSearch]);
 
     useEffect(() => {
         fetchHistory();
-    }, []);
+    }, [fetchHistory]);
 
-    const filteredLogs = logs.filter(log => {
-        const searchLower = searchQuery.toLowerCase();
-        return (
-            log.recipient_phone.includes(searchLower) ||
-            log.customer_name.toLowerCase().includes(searchLower) ||
-            log.message_content.toLowerCase().includes(searchLower)
-        );
-    });
-
-    // Reset page when search changes
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchQuery]);
-
-    // Pagination Logic
-    const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
-    const displayedLogs = filteredLogs.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
+    const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
     return (
         <Card>
@@ -108,14 +108,14 @@ export function MessageHistory() {
                                         Loading history...
                                     </TableCell>
                                 </TableRow>
-                            ) : filteredLogs.length === 0 ? (
+                            ) : logs.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                                         No message history found.
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                displayedLogs.map((log) => (
+                                logs.map((log) => (
                                     <TableRow key={log.id}>
                                         <TableCell className="whitespace-nowrap">
                                             {new Date(log.sent_at).toLocaleString()}
@@ -145,25 +145,25 @@ export function MessageHistory() {
                 </div>
 
                 {/* Pagination Controls */}
-                {filteredLogs.length > ITEMS_PER_PAGE && (
+                {totalPages > 1 && (
                     <div className="flex items-center justify-between pt-4 mt-4">
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
+                            disabled={currentPage === 1 || loading}
                         >
                             <ChevronLeft className="h-4 w-4 mr-1" />
                             Previous
                         </Button>
                         <span className="text-sm text-muted-foreground">
-                            Page {currentPage} of {totalPages}
+                            Page {currentPage} of {totalPages} ({totalCount} total)
                         </span>
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
+                            disabled={currentPage === totalPages || loading}
                         >
                             Next
                             <ChevronRight className="h-4 w-4 ml-1" />

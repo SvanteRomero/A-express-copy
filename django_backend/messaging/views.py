@@ -98,13 +98,33 @@ class MessageTemplateViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
+from Eapp.pagination import StandardResultsSetPagination
+from django_filters import rest_framework as filters
+from django.db.models import Q
+
+class MessageLogFilter(filters.FilterSet):
+    search = filters.CharFilter(method='search_filter')
+    
+    class Meta:
+        model = MessageLog
+        fields = ['status']
+    
+    def search_filter(self, queryset, name, value):
+        return queryset.filter(
+            Q(recipient_phone__icontains=value) |
+            Q(message_content__icontains=value) |
+            Q(task__customer__name__icontains=value)
+        )
+
 class MessageLogViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    Read-only view for message history logs.
+    Read-only view for message history logs with pagination and search.
     """
     queryset = MessageLog.objects.all().select_related('task', 'task__customer', 'sent_by').order_by('-sent_at')
     serializer_class = MessageLogSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    filterset_class = MessageLogFilter
 
 
 from common.encryption import decrypt_value

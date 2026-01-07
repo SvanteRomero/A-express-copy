@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/layout/card";
 import { Button } from "@/components/ui/core/button";
 import { Input } from "@/components/ui/core/input";
@@ -18,22 +18,125 @@ import { getMessageTemplates, sendBulkSMS } from "@/lib/api-client";
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/feedback/dialog";
 
+const ITEMS_PER_PAGE = 20;
+
 export function ComposeView() {
     // State
     const [selectedTemplate, setSelectedTemplate] = useState<string>("");
     const [customMessage, setCustomMessage] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
-    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [templates, setTemplates] = useState<MessageTemplate[]>([]);
     const [loading, setLoading] = useState(false);
     const [useCustomMessage, setUseCustomMessage] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+
     // Phone Number Management
     const [managementTarget, setManagementTarget] = useState<Customer | null>(null);
     const [previewModalOpen, setPreviewModalOpen] = useState(false);
 
+    // Persist selected customer task IDs across pages
+    const [selectedTaskIds, setSelectedTaskIds] = useState<Set<number>>(new Set());
+    // Store customer data for selected items (for preview modal)
+    const [selectedCustomersData, setSelectedCustomersData] = useState<Map<number, Customer>>(new Map());
+
+    // Debounce search input
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setCurrentPage(1); // Reset to first page on search
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    // Derive template_filter from selected template
+    const currentTemplate = templates.find(t => t.id.toString() === selectedTemplate);
+
+    const templateFilter = useMemo(() => {
+        if (!currentTemplate || useCustomMessage) return undefined;
+        const name = currentTemplate.name.toLowerCase();
+        if (name.includes("ready for pickup")) return "ready_for_pickup";
+        if (name.includes("repair in progress")) return "repair_in_progress";
+        if (name.includes("remind debt") || name.includes("deni")) return "debt_reminder";
+        return undefined;
+    }, [currentTemplate, useCustomMessage]);
+
+    // Fetch tasks with server-side pagination and filtering
+    const { data: tasksData, isLoading: tasksLoading } = useTasks({
+        page: currentPage,
+        search: debouncedSearch || undefined,
+        template_filter: templateFilter,
+    });
+
+    // Fetch Templates
+    useEffect(() => {
+        getMessageTemplates()
+            .then(data => {
+                setTemplates(data);
+                if (data.length > 0) {
+                    const firstValid = data.find((t: MessageTemplate) => t.name !== "General (Custom)");
+                    if (firstValid) setSelectedTemplate(firstValid.id.toString());
+                }
+            })
+            .catch(err => console.error("Failed to fetch templates:", err));
+    }, []);
+
+    // Reset selections when template changes
+    useEffect(() => {
+        setSelectedTaskIds(new Set());
+        setSelectedCustomersData(new Map());
+        setCurrentPage(1);
+    }, [selectedTemplate, useCustomMessage]);
+
+    // Transform tasks to customers
+    const displayedCustomers: Customer[] = useMemo(() => {
+        if (!tasksData?.results) return [];
+
+        return tasksData.results
+            .filter((task: any) => {
+                const hasCustomer = task.customer || task.customer_details;
+                return hasCustomer;
+            })
+            .map((task: any) => {
+                const customer = task.customer_details || {};
+                const deviceName = `${task.laptop_model_details?.name || ''} ${task.brand || ''}`.trim();
+                const phoneNumbersList = customer.phone_numbers?.map((p: any) => p.phone_number) || [];
+                const initialPhone = phoneNumbersList[0] || customer.phone_number_1 || '';
+
+                return {
+                    id: task.id.toString(),
+                    taskId: task.id,
+                    taskDisplayId: task.title || task.id.toString(),
+                    customerId: customer.id ? customer.id.toString() : `unknown-${task.id}`,
+                    name: (customer.name || `${customer.first_name || ''} ${customer.last_name || ''}`).trim() || 'Unknown Customer',
+                    phone: initialPhone,
+                    phoneNumbers: phoneNumbersList,
+                    selectedPhone: initialPhone,
+                    device: deviceName || 'Unknown Device',
+                    description: task.description || '',
+                    deviceNotes: task.device_notes || '',
+                    status: task.status,
+                    workshopStatus: task.workshop_status,
+                    amount: task.total_cost,
+                    outstandingBalance: task.outstanding_balance,
+                    isDebt: task.is_debt && parseFloat(task.outstanding_balance || '0') > 0,
+                    daysWaiting: Math.floor((Date.now() - new Date(task.created_at).getTime()) / (1000 * 60 * 60 * 24)),
+                    selected: selectedTaskIds.has(task.id)
+                };
+            });
+    }, [tasksData, selectedTaskIds]);
+
+    const totalCount = tasksData?.count || 0;
+    const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
+    // Get all selected customers (from stored data)
+    const selectedCustomers = useMemo(() => {
+        return Array.from(selectedCustomersData.values());
+    }, [selectedCustomersData]);
+
     const getGroupedSelectedCustomers = () => {
         const groups: { [key: string]: Customer[] } = {};
-        customers.filter(c => c.selected).forEach(c => {
+        selectedCustomers.forEach(c => {
             const key = c.customerId || `unknown-${c.id}`;
             if (!groups[key]) groups[key] = [];
             groups[key].push(c);
@@ -42,124 +145,19 @@ export function ComposeView() {
     };
 
     const handleUpdateCustomerPhone = (customerId: string, newPhone: string) => {
-        setCustomers(prev => prev.map(c =>
-            (c.customerId === customerId || (!c.customerId && `unknown-${c.id}` === customerId))
-                ? { ...c, selectedPhone: newPhone }
-                : c
-        ));
-    };
-
-    // Pagination
-    const ITEMS_PER_PAGE = 20;
-    const [currentPage, setCurrentPage] = useState(1);
-
-    // Real API Hooks
-    // We fetch all tasks to allow filtering/searching client-side for now
-    const { data: tasksData, isLoading: tasksLoading } = useTasks();
-
-    // Fetch Templates
-    useEffect(() => {
-        getMessageTemplates()
-            .then(data => {
-                setTemplates(data);
-                if (data.length > 0) {
-                    // Auto-select first normal template
-                    const firstValid = data.find((t: MessageTemplate) => t.name !== "General (Custom)");
-                    if (firstValid) setSelectedTemplate(firstValid.id.toString());
+        setSelectedCustomersData(prev => {
+            const newMap = new Map(prev);
+            newMap.forEach((customer, taskId) => {
+                if (customer.customerId === customerId || (!customer.customerId && `unknown-${customer.id}` === customerId)) {
+                    newMap.set(taskId, { ...customer, selectedPhone: newPhone });
                 }
-            })
-            .catch(err => console.error("Failed to fetch templates:", err));
-    }, []);
-
-    // Transform tasks to customers
-    useEffect(() => {
-        if (tasksData?.results) {
-            console.log("Raw Tasks Data:", tasksData.results);
-            const mappedCustomers: Customer[] = tasksData.results
-                .filter((task: any) => {
-                    const hasCustomer = task.customer || task.customer_details;
-                    if (!hasCustomer) console.warn("Task missing customer:", task);
-                    return hasCustomer;
-                })
-                .map((task: any) => {
-                    const customer = task.customer_details || {};
-                    // Brand might be an ID or object depending on serializer, accessing safely
-                    // For TaskListSerializer, brand is just ID, but let's check if we have name mapping or if I need to fetch brands.
-                    // Actually TaskListSerializer doesn't return brand_details. 
-                    // Use model details for device name if brand is missing or ID.
-                    const deviceName = `${task.laptop_model_details?.name || ''} ${task.brand || ''}`.trim();
-
-                    // Extract phone numbers
-                    const phoneNumbersList = customer.phone_numbers?.map((p: any) => p.phone_number) || [];
-                    const initialPhone = phoneNumbersList[0] || customer.phone_number_1 || '';
-
-                    return {
-                        id: task.id.toString(),
-                        taskId: task.id,
-                        taskDisplayId: task.title || task.id.toString(),
-                        customerId: customer.id ? customer.id.toString() : `unknown-${task.id}`,
-                        name: (customer.name || `${customer.first_name || ''} ${customer.last_name || ''}`).trim() || 'Unknown Customer',
-                        phone: initialPhone, // Display (primary)
-                        phoneNumbers: phoneNumbersList,
-                        selectedPhone: initialPhone,
-                        device: deviceName || 'Unknown Device',
-                        description: task.description || '',
-                        deviceNotes: task.device_notes || '',
-                        status: task.status,
-                        workshopStatus: task.workshop_status,
-                        amount: task.total_cost,
-                        outstandingBalance: task.outstanding_balance,
-                        isDebt: task.is_debt && parseFloat(task.outstanding_balance || '0') > 0,
-                        daysWaiting: Math.floor((Date.now() - new Date(task.created_at).getTime()) / (1000 * 60 * 60 * 24)),
-                        selected: false
-                    };
-                });
-            console.log("Mapped Customers:", mappedCustomers);
-            setCustomers(mappedCustomers);
-        }
-    }, [tasksData]);
-
-
-
-    // Derived state
-    const currentTemplate = templates.find(t => t.id.toString() === selectedTemplate);
-
-    // Filter customers
-    // Filter customers
-    const filteredCustomers = customers.filter(c => {
-        const searchLower = searchQuery.toLowerCase();
-
-        // Template-based filtering
-        if (currentTemplate) {
-            const templateNameLower = currentTemplate.name.toLowerCase();
-            const statusLower = c.status.toLowerCase();
-
-            if (templateNameLower.includes("ready for pickup")) {
-                if (statusLower !== "ready for pickup") return false;
-            } else if (templateNameLower.includes("repair in progress")) {
-                // Exclude finished/ready statuses
-                const finishedStatuses = ["ready for pickup", "picked up", "completed", "terminated", "cancelled", "failed"];
-                if (finishedStatuses.some(s => statusLower.includes(s))) return false;
-            } else if (templateNameLower.includes("remind debt") || templateNameLower.includes("deni")) {
-                if (!c.isDebt || statusLower !== "picked up") return false;
-            }
-        }
-
-        return (
-            c.name.toLowerCase().includes(searchLower) ||
-            c.phone.includes(searchLower) ||
-            c.device.toLowerCase().includes(searchLower) ||
-            c.taskId.toString().includes(searchLower)
-        );
-    });
-
-    const displayedCustomers = filteredCustomers;
-    const selectedCustomers = customers.filter(c => c.selected);
-    const selectedDisplayed = displayedCustomers.filter(c => c.selected);
+            });
+            return newMap;
+        });
+    };
 
     const handlePreview = () => {
         if (!selectedCustomers.length) return;
-        // Validate: No newlines
         if (useCustomMessage && customMessage.includes('\n')) {
             alert("Warning: SMS cannot contain line breaks. They will be removed.");
         }
@@ -168,7 +166,7 @@ export function ComposeView() {
 
     const handleConfirmSend = async () => {
         setPreviewModalOpen(false);
-        handleSend(true); // Signal to proceed
+        handleSend(true);
     };
 
     const handleSend = async (confirmed = false) => {
@@ -196,7 +194,8 @@ export function ComposeView() {
             if (data.success) {
                 alert(`Success: ${data.summary.sent} sent, ${data.summary.failed} failed.`);
                 // Reset selection
-                setCustomers(prev => prev.map(c => ({ ...c, selected: false })));
+                setSelectedTaskIds(new Set());
+                setSelectedCustomersData(new Map());
                 setCustomMessage("");
                 setSelectedTemplate("");
                 setUseCustomMessage(false);
@@ -211,12 +210,29 @@ export function ComposeView() {
         }
     };
 
-    const toggleCustomer = (taskId: number) => {
-        setCustomers(prev => prev.map(c => c.taskId === taskId ? { ...c, selected: !c.selected } : c));
+    const toggleCustomer = (customer: Customer) => {
+        const taskId = customer.taskId;
+        setSelectedTaskIds(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(taskId)) {
+                newSet.delete(taskId);
+            } else {
+                newSet.add(taskId);
+            }
+            return newSet;
+        });
+
+        setSelectedCustomersData(prev => {
+            const newMap = new Map(prev);
+            if (newMap.has(taskId)) {
+                newMap.delete(taskId);
+            } else {
+                newMap.set(taskId, customer);
+            }
+            return newMap;
+        });
     };
 
-    // Helper for status colors
-    // Helper for status colors
     const getStatusBadgeColor = (status: string, workshopStatus?: string) => {
         if (workshopStatus === "Not Solved") return "bg-red-100 text-red-800 border-red-200 hover:bg-red-100";
         if (workshopStatus === "Solved") return "bg-green-100 text-green-800 border-green-200 hover:bg-green-100";
@@ -269,7 +285,6 @@ export function ComposeView() {
                                         setUseCustomMessage(!!checked);
                                         if (!checked) {
                                             setCustomMessage("");
-                                            // Restore default template if none selected
                                             if (!selectedTemplate && templates.length > 0) {
                                                 const firstValid = templates.find(t => t.name !== "General (Custom)");
                                                 if (firstValid) setSelectedTemplate(firstValid.id.toString());
@@ -321,17 +336,20 @@ export function ComposeView() {
                             </div>
 
                             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                                {displayedCustomers.length === 0 ? (
+                                {tasksLoading ? (
+                                    <div className="text-center py-8 text-muted-foreground">Loading recipients...</div>
+                                ) : displayedCustomers.length === 0 ? (
                                     <div className="text-center py-8 text-muted-foreground">No customers found matching your search.</div>
                                 ) : (
                                     displayedCustomers.map(customer => {
                                         const canSelect = !!selectedTemplate || useCustomMessage;
+                                        const isSelected = selectedTaskIds.has(customer.taskId);
                                         return (
-                                            <div key={customer.id} className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${customer.selected ? 'bg-primary/5 border-primary' : 'hover:bg-muted/50'} ${!canSelect ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                            <div key={customer.id} className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${isSelected ? 'bg-primary/5 border-primary' : 'hover:bg-muted/50'} ${!canSelect ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                                 <Checkbox
                                                     id={`c-${customer.id}`}
-                                                    checked={customer.selected}
-                                                    onCheckedChange={() => canSelect && toggleCustomer(customer.taskId)}
+                                                    checked={isSelected}
+                                                    onCheckedChange={() => canSelect && toggleCustomer(customer)}
                                                     disabled={!canSelect}
                                                     className="mt-1"
                                                 />
@@ -373,25 +391,25 @@ export function ComposeView() {
                             </div>
 
                             {/* Pagination Controls */}
-                            {filteredCustomers.length > ITEMS_PER_PAGE && (
+                            {totalPages > 1 && (
                                 <div className="flex items-center justify-between pt-4 border-t mt-4">
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                        disabled={currentPage === 1}
+                                        disabled={currentPage === 1 || tasksLoading}
                                     >
                                         <ChevronLeft className="h-4 w-4 mr-1" />
                                         Previous
                                     </Button>
                                     <span className="text-sm text-muted-foreground">
-                                        Page {currentPage} of {Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE)}
+                                        Page {currentPage} of {totalPages} ({totalCount} total)
                                     </span>
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE)))}
-                                        disabled={currentPage === Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE)}
+                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                        disabled={currentPage === totalPages || tasksLoading}
                                     >
                                         Next
                                         <ChevronRight className="h-4 w-4 ml-1" />
@@ -415,12 +433,6 @@ export function ComposeView() {
                     <div className="space-y-4 py-4">
                         {Object.entries(getGroupedSelectedCustomers()).map(([customerId, groupTasks]) => {
                             const representative = groupTasks[0];
-                            console.log("Debug Preview:", {
-                                selectedTemplate,
-                                typeOfSelected: typeof selectedTemplate,
-                                templateIds: templates.map(t => ({ id: t.id, type: typeof t.id })),
-                                found: templates.find(t => t.id.toString() === selectedTemplate)
-                            });
                             const templateToUse = templates.find(t => t.id.toString() === selectedTemplate);
                             const content = useCustomMessage
                                 ? customMessage
@@ -484,9 +496,14 @@ export function ComposeView() {
                                 key={idx}
                                 className={`flex items-center justify-between p-3 rounded border cursor-pointer hover:bg-muted ${managementTarget.selectedPhone === phone ? 'border-primary bg-primary/5' : ''}`}
                                 onClick={() => {
-                                    setCustomers(prev => prev.map(c =>
-                                        c.taskId === managementTarget.taskId ? { ...c, selectedPhone: phone } : c
-                                    ));
+                                    // Update both the displayed customer and stored data
+                                    if (selectedCustomersData.has(managementTarget.taskId)) {
+                                        setSelectedCustomersData(prev => {
+                                            const newMap = new Map(prev);
+                                            newMap.set(managementTarget.taskId, { ...managementTarget, selectedPhone: phone });
+                                            return newMap;
+                                        });
+                                    }
                                     setManagementTarget(null);
                                 }}
                             >
