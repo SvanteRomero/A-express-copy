@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/core/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table";
 import { DollarSign, Edit, Plus, Trash2 } from "lucide-react";
-import { Task, CostBreakdown as CostBreakdownType } from '@/lib/api';
+import { Task, CostBreakdown as CostBreakdownType } from '@/components/tasks/types';
 
 interface CostBreakdownProps {
   task: Task;
@@ -87,7 +87,7 @@ export function CostBreakdown({ task }: CostBreakdownProps) {
             {costBreakdowns?.map((item) => (
               <TableRow key={item.id}>
                 <TableCell>{item.description}</TableCell>
-                <TableCell 
+                <TableCell
                   className={`text-right ${item.cost_type === 'Subtractive' ? 'text-red-600' : item.cost_type === 'Additive' ? 'text-green-600' : ''}`}>
                   {item.cost_type === 'Subtractive' ? '- ' : item.cost_type === 'Additive' ? '+ ' : ''}TSh {parseFloat(item.amount).toFixed(2)}
                 </TableCell>

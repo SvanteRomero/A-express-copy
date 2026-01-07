@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getApiUrl } from './config';
-import { ExpenditureRequest, PaginatedResponse, PaymentCategory } from './api';
+import { PaginatedResponse } from './api';
+import { ExpenditureRequest, PaymentCategory } from '@/components/tasks/types';
 import { logout } from './auth';
 
 // CSRF token storage (not HttpOnly, can be read by JS)

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getPaymentCategories } from "@/lib/api-client";
-import { PaymentCategory } from "@/lib/api";
+import { PaymentCategory } from "@/components/tasks/types";
 
 export const usePaymentCategories = () => {
   const { data, ...rest } = useQuery<PaymentCategory[]>({

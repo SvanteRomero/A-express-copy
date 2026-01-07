@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getTasks, getTask, listWorkshopLocations, listWorkshopTechnicians, updateTask, listUsersByRole, getBrands, getLocations } from '@/lib/api-client'
 import { getTaskStatusOptions, getTaskUrgencyOptions } from '@/lib/tasks-api'
 import { User } from "@/lib/use-user-management"
-import { Brand, Task } from '@/lib/api'
+import { Brand } from '@/components/brands/types';
+import { Task } from '@/components/tasks/types';
 
 interface Location {
     id: number;

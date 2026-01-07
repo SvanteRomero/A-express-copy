@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/core/button';
 import { Input } from '@/components/ui/core/input';
 import { Label } from '@/components/ui/core/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/core/select';
-import { Customer } from '@/lib/api';
+import { Customer } from '@/components/customers/types';
 import { useUpdateCustomer } from '@/hooks/use-update-customer';
 import { Phone, Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
 

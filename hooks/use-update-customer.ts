@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { Customer, PhoneNumber } from '@/lib/api';
+import { Customer, PhoneNumber } from '@/components/customers/types';
 
 // This allows for phone numbers that don't have an ID yet
 type UpdatablePhoneNumber = Omit<PhoneNumber, 'id'> & { id?: number };

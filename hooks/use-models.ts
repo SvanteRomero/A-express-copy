@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { searchModels } from '@/lib/api-client';
-import { Model } from '@/lib/api';
+import { Model } from '@/components/brands/types';
 
 export function useModels({ query }: { query: string }) {
   const { data, isLoading, isError } = useQuery<Model[]>({

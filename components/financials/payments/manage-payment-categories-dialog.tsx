@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/core/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/layout/table';
 import { usePaymentCategories } from '@/hooks/use-payment-categories';
 import { createPaymentCategory, updatePaymentCategory, deletePaymentCategory } from "@/lib/api-client";
-import { PaymentCategory } from "@/lib/api";
+import { PaymentCategory } from "@/components/tasks/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from 'react';
 import { Edit, Plus, Trash2 } from 'lucide-react';

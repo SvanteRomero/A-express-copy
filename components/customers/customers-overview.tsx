@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Users, TrendingUp, Search, Plus, Edit, Trash2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { EditCustomerDialog } from "./edit-customer-dialog";
-import { Customer } from "@/lib/api";
+import { Customer } from "@/components/customers/types";
 import { useCustomers } from "@/hooks/use-customers";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";

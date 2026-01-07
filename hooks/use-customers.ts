@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { searchCustomers } from '@/lib/api-client';
-import { Customer, PaginatedResponse } from '@/lib/api';
+import { PaginatedResponse } from '@/lib/api';
+import { Customer } from '@/components/customers/types';
 
 export function useCustomers({ query, page }: { query: string; page: number }) {
   const { data, isLoading, isError } = useQuery<PaginatedResponse<Customer>>({

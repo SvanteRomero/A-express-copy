@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/core/button";
 import { getBrands, createBrand } from "@/lib/api-client";
-import { Brand } from "@/lib/api";
+import { Brand } from "@/components/brands/types";
 import { Input } from "@/components/ui/core/input";
 
 export function BrandManager() {
