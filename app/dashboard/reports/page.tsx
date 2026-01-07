@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { ReportsOverview } from "@/components/reports/reports-overview"
 
 export default function ReportsPage() {

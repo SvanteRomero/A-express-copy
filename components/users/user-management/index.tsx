@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/feedback/dialog"
 import { UserPlus, Search, MapPin, Loader2 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
-import { useUserManagement } from "@/lib/use-user-management"
+import { useUserManagement } from "@/hooks/use-user-management"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { LocationsManager } from "../../locations/locations-manager"
 import { UserStats } from "./user-stats"

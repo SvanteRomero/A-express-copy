@@ -5,7 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/hooks/use-auth';
 import { createExpenditureRequest, createAndApproveExpenditureRequest, getTasks, getPaymentCategories, getPaymentMethods } from '@/lib/api-client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/feedback/dialog";
 import { Button } from "@/components/ui/core/button";
@@ -141,7 +141,7 @@ export function AddExpenditureDialog({ isOpen, onClose, mode = 'expenditure', ta
                               setOpenTaskCombobox(false);
                             }}
                           >
-                             <Check className={cn("mr-2 h-4 w-4", !field.value ? "opacity-100" : "opacity-0")} />
+                            <Check className={cn("mr-2 h-4 w-4", !field.value ? "opacity-100" : "opacity-0")} />
                             None
                           </CommandItem>
                           {taskOptions.map((task: { label: string; value: string; }) => (
@@ -206,7 +206,7 @@ export function AddExpenditureDialog({ isOpen, onClose, mode = 'expenditure', ta
               name="category_id"
               control={control}
               rules={{ required: true }}
-                              render={({ field }) => (
+              render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value ? String(field.value) : undefined}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a category..." />
@@ -227,7 +227,7 @@ export function AddExpenditureDialog({ isOpen, onClose, mode = 'expenditure', ta
               name="payment_method_id"
               control={control}
               rules={{ required: true }}
-                              render={({ field }) => (
+              render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value ? String(field.value) : undefined}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a method..." />

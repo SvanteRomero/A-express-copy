@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { listWorkshopTechnicians, listUsersByRole } from '@/lib/api-client'
-import { User } from "@/lib/use-user-management"
+import { User } from "@/hooks/use-user-management"
 
 export function useTechnicians() {
     return useQuery<User[]>({

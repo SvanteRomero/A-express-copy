@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { AdminSettingsPage } from "@/components/settings/admin-settings-page"
 
 export default function AdminSettings() {

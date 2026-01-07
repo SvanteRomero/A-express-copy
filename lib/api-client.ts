@@ -2,7 +2,17 @@ import axios from 'axios';
 import { getApiUrl } from './config';
 import { PaginatedResponse } from './api';
 import { ExpenditureRequest, PaymentCategory } from '@/components/tasks/types';
-import { logout } from './auth';
+
+// Simple logout function for use in interceptor (can't import from use-auth due to circular deps)
+const handleLogout = async () => {
+  try {
+    await axios.post(getApiUrl('/logout/'), {}, { withCredentials: true });
+  } catch (error) {
+    console.error('Logout error:', error);
+  }
+  localStorage.removeItem('auth_user');
+  window.location.href = '/';
+};
 
 // CSRF token storage (not HttpOnly, can be read by JS)
 let csrfToken: string | null = null;
@@ -69,7 +79,7 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         // Refresh failed, logout user
-        logout();
+        handleLogout();
         return Promise.reject(refreshError);
       }
     }

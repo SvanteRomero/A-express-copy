@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { Button } from "@/components/ui/core/button"
 import { StatusBadge, UrgencyBadge, WorkshopStatusBadge } from "@/components/tasks/task_utils/task-badges"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { Laptop } from "lucide-react"
 import { useInWorkshopTasks } from "@/hooks/use-tasks"
 

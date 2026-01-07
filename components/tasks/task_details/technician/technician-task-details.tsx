@@ -44,7 +44,7 @@ import {
   Plus,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { updateTask, addTaskActivity } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
 import { useTask } from "@/hooks/use-tasks";

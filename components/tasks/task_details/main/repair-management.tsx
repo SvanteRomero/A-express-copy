@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/core/button"
 import { Label } from "@/components/ui/core/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { updateTask, addTaskActivity } from "@/lib/api-client"
 import { useTask, useTaskStatusOptions, useTaskUrgencyOptions } from "@/hooks/use-tasks"
 import { useTechnicians } from "@/hooks/use-users"

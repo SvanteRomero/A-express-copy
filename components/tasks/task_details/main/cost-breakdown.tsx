@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createCostBreakdown, deleteCostBreakdown } from '@/lib/api-client';
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/layout/card";
 import { Button } from "@/components/ui/core/button";
 import { Input } from "@/components/ui/core/input";

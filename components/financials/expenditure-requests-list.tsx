@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card";
 import { Button } from "@/components/ui/core/button";
 import { Badge } from "@/components/ui/core/badge";
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";

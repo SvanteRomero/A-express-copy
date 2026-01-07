@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { UserManagement } from "@/components/users/user-management"
 
 export default function ManagerUsersPage() {

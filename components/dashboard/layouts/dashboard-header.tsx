@@ -2,7 +2,7 @@
 
 import { SidebarTrigger } from "@/components/ui/layout/sidebar"
 import { Separator } from "@/components/ui/core/separator"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 
 export function DashboardHeader() {
   const { user } = useAuth()

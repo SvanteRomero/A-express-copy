@@ -8,7 +8,7 @@ import {
   deleteUser as apiDeleteUser,
   registerUser,
   updateUser as apiUpdateUser,
-} from "./api-client"
+} from "@/lib/api-client"
 
 import { toast } from "@/hooks/use-toast"
 import { useNotifications } from "@/lib/notification-context"

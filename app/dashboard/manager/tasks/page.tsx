@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { ManagerTasksPage } from "@/components/tasks/task_lists/main/manager/manager-tasks-page"
 
 export default function ManagerTasksPageRoute() {

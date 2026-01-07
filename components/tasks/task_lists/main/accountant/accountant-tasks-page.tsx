@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/hooks/use-auth";
 import { deleteTask, addTaskPayment } from "@/lib/api-client";
 import { TasksDisplay } from "@/components/tasks/task_utils/tasks-display";
 import { useTasks } from "@/hooks/use-tasks";

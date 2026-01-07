@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { SystemAuditLog } from "@/components/system/system-audit-log"
 
 export default function AuditLogPage() {

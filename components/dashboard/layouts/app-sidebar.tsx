@@ -46,7 +46,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/layout/sidebar"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { getMediaUrl } from "@/lib/media-utils"
 import Link from "next/link"
 

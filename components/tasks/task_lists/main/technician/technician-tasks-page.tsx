@@ -1,7 +1,7 @@
 'use client'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { InProgressTasksList } from "@/components/tasks/task_lists/main/technician/in-progress-tasks-list"
 import { InWorkshopTasksList } from "@/components/tasks/task_lists/main/technician/in-workshop-tasks-list"
 import { CompletedTasksList } from "@/components/tasks/task_lists/main/technician/completed-tasks-list"

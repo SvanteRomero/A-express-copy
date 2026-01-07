@@ -19,7 +19,7 @@ import {
   Lock,
   Activity,
 } from "lucide-react"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/feedback/dialog";
 import ManagePaymentMethodsDialog from "../financials/payments/manage-payment-methods-dialog";
 import ManagePaymentCategoriesDialog from "../financials/payments/manage-payment-categories-dialog";

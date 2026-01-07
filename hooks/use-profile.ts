@@ -5,8 +5,8 @@ import {
   updateProfile as apiUpdateProfile,
   changePassword as apiChangePassword,
   uploadProfilePicture as apiUploadProfilePicture,
-} from "./api-client"
-import { useAuth } from "./auth-context"
+} from "@/lib/api-client"
+import { useAuth } from "@/hooks/use-auth"
 
 export interface ProfileData {
   first_name: string

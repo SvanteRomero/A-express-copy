@@ -1,8 +1,8 @@
 "use client"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs"
-import { useAuth } from "@/lib/auth-context"
-import { useProfile } from "@/lib/use-profile"
+import { useAuth } from "@/hooks/use-auth"
+import { useProfile } from "@/hooks/use-profile"
 import { ProfilePictureCard } from "./profile-tab/profile-picture-card"
 import { PersonalInfoCard } from "./profile-tab/personal-info-card"
 import { EmployeeInfoCard } from "./profile-tab/employee-info-card"

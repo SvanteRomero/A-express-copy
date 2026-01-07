@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/core/button";
 import { Plus } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/hooks/use-auth";
 import { deleteTask } from "@/lib/api-client";
 import { TasksDisplay } from "@/components/tasks/task_utils/tasks-display";
 import { BrandManager } from "@/components/brands/brand-manager";

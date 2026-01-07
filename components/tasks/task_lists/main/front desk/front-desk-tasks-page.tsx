@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout
 import { useTasks, useUpdateTask } from "@/hooks/use-tasks";
 import { useToast } from "@/hooks/use-toast";
 import { useTechnicians } from "@/hooks/use-users";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/hooks/use-auth";
 
 type PageState = {
   "not-completed": number;

@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { FrontDeskTasksPage } from "@/components/tasks/task_lists/main/front desk/front-desk-tasks-page"
 
 export default function FrontDeskTasksPageRoute() {
