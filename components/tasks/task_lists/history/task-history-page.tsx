@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/core/button";
 import { TasksDisplay } from "../../task_utils/tasks-display";
 import { useTasks } from "@/hooks/use-tasks";
-import { useTechnicians } from "@/hooks/use-data";
+import { useTechnicians } from "@/hooks/use-users";
 import { ReturnTaskDialog } from "../../return-task-dialog";
 
 interface GenericTaskHistoryPageProps {

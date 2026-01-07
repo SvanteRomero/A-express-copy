@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { deleteTask, addTaskPayment } from "@/lib/api-client";
 import { TasksDisplay } from "@/components/tasks/task_utils/tasks-display";
 import { useTasks } from "@/hooks/use-tasks";
-import { useTechnicians } from "@/hooks/use-data";
+import { useTechnicians } from "@/hooks/use-users";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 

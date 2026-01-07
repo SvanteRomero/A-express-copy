@@ -22,7 +22,8 @@ import {
 } from '@/components/ui/core/select';
 import { Checkbox } from '@/components/ui/core/checkbox';
 import { useUpdateTask, useCreateCostBreakdown } from '@/hooks/use-tasks';
-import { useTaskUrgencyOptions, useTechnicians } from '@/hooks/use-data';
+import { useTaskUrgencyOptions } from '@/hooks/use-tasks';
+import { useTechnicians } from '@/hooks/use-users';
 import { useMutation } from '@tanstack/react-query';
 import { addTaskActivity } from '@/lib/api-client';
 
@@ -34,7 +35,7 @@ interface ReturnTaskDialogProps {
 
 export function ReturnTaskDialog({ task, isOpen, onClose }: ReturnTaskDialogProps) {
   const [newIssueDescription, setNewIssueDescription] = useState('');
-  const [newEstimatedCost, setNewEstimatedCost] = useState<number | '' >('');
+  const [newEstimatedCost, setNewEstimatedCost] = useState<number | ''>('');
   const [urgency, setUrgency] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [renegotiate, setRenegotiate] = useState(false);
@@ -43,7 +44,7 @@ export function ReturnTaskDialog({ task, isOpen, onClose }: ReturnTaskDialogProp
   const { data: urgencyOptions } = useTaskUrgencyOptions();
   const { data: technicians } = useTechnicians();
 
-  const addTaskActivityMutation = useMutation({ 
+  const addTaskActivityMutation = useMutation({
     mutationFn: (data: any) => addTaskActivity(task.title, data)
   });
 

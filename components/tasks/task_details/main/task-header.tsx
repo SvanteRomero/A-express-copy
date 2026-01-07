@@ -6,7 +6,7 @@ import { ArrowLeft, AlertTriangle, CheckCircle, MessageSquare } from "lucide-rea
 import { StatusBadge, UrgencyBadge, PaymentStatusBadge, WorkshopStatusBadge } from "@/components/tasks/task_utils/task-badges"
 import { useAuth } from "@/lib/auth-context"
 import { updateTask, addTaskActivity } from "@/lib/api-client"
-import { useTask } from "@/hooks/use-data"
+import { useTask } from "@/hooks/use-tasks"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"

@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { getPayments } from '@/lib/payments-api'
-import { getPaymentMethods, getPaymentCategories } from '@/lib/api-client'
+import { getPaymentMethods, getPaymentCategories, apiClient } from '@/lib/api-client'
 import { PaymentMethod } from '@/components/financials/types'
 import { PaymentCategory } from '@/components/tasks/types'
 
@@ -19,6 +19,14 @@ interface PaymentFilters {
   task_payments?: boolean;
   page?: number;
   page_size?: number;
+}
+
+interface RevenueOverview {
+  opening_balance?: number;
+  today_revenue: number;
+  day_over_day_change: number;
+  today_expenditure?: number;
+  expenditure_day_over_day_change?: number;
 }
 
 // ============================================================================
@@ -60,5 +68,18 @@ export function usePaymentCategories() {
   return useQuery<PaymentCategory[]>({
     queryKey: ['payment-categories'],
     queryFn: () => getPaymentCategories().then((res) => res.data),
+  });
+}
+
+/**
+ * Fetch revenue overview statistics (opening balance, today's revenue/expenditure, day-over-day changes)
+ */
+export function useRevenueOverview() {
+  return useQuery<RevenueOverview>({
+    queryKey: ['revenue-overview'],
+    queryFn: async () => {
+      const response = await apiClient.get('/revenue-overview/');
+      return response.data;
+    },
   });
 }

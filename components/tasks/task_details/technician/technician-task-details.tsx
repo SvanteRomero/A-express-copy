@@ -47,7 +47,9 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { updateTask, addTaskActivity } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
-import { useTask, useWorkshopLocations, useWorkshopTechnicians } from "@/hooks/use-data";
+import { useTask } from "@/hooks/use-tasks";
+import { useWorkshopLocations } from "@/hooks/use-locations";
+import { useWorkshopTechnicians } from "@/hooks/use-users";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface TechnicianTaskDetailsProps {

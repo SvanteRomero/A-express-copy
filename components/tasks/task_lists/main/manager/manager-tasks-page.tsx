@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/feedback/dialog";
 import { useTasks, useUpdateTask } from "@/hooks/use-tasks";
-import { useTechnicians } from "@/hooks/use-data";
+import { useTechnicians } from "@/hooks/use-users";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 type Tab = 'pending' | 'completed';

@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { addTaskPayment } from "@/lib/api-client"
-import { useTask } from "@/hooks/use-data"
+import { useTask } from "@/hooks/use-tasks"
 import { usePaymentMethods } from "@/hooks/use-payments"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"

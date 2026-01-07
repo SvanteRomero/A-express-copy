@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/core/button"
 import { StatusBadge, UrgencyBadge, WorkshopStatusBadge } from "@/components/tasks/task_utils/task-badges"
 import { useAuth } from "@/lib/auth-context"
 import { Laptop } from "lucide-react"
-import { useInWorkshopTasks } from "@/hooks/use-data"
+import { useInWorkshopTasks } from "@/hooks/use-tasks"
 
 
 

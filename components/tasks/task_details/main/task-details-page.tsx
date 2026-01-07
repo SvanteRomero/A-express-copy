@@ -8,7 +8,7 @@ import Financials from "@/components/tasks/task_details/main/financials";
 import TaskHeader from "@/components/tasks/task_details/main/task-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs";
-import { useTask } from "@/hooks/use-data";
+import { useTask } from "@/hooks/use-tasks";
 import { TaskActivityLog } from "@/components/tasks/task_details/main/task-activity-log";
 
 interface TaskDetailsPageProps {

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/core/label"
 import { User, Phone, Pencil, Save, X } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { updateTask } from "@/lib/api-client"
-import { useTask } from "@/hooks/use-data"
+import { useTask } from "@/hooks/use-tasks"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 

@@ -5,7 +5,7 @@ import { MessageTemplate, Customer } from "./types";
 import { transformTasksToCustomers } from "./utils";
 import { useTasks } from "@/hooks/use-tasks";
 import { getMessageTemplates, sendBulkSMS } from "@/lib/api-client";
-import { useComposeState } from "@/hooks/use-compose-state";
+import { useComposeState } from "@/hooks/use-message-compose";
 import {
     TemplateSelector,
     RecipientsList,

@@ -8,7 +8,7 @@ import { TasksDisplay } from "@/components/tasks/task_utils/tasks-display";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs";
 import { useTasks, useUpdateTask } from "@/hooks/use-tasks";
 import { useToast } from "@/hooks/use-toast";
-import { useTechnicians } from "@/hooks/use-data";
+import { useTechnicians } from "@/hooks/use-users";
 import { useAuth } from "@/lib/auth-context";
 
 type PageState = {

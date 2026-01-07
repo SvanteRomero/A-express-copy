@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/core/badge";
 import { Search, RotateCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/core/input";
 import { Button } from "@/components/ui/core/button";
-import { getStatusColor } from "./utils";
 import { getMessageHistory } from "@/lib/api-client";
 
 const ITEMS_PER_PAGE = 20;
