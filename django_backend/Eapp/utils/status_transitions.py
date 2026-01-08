@@ -1,5 +1,5 @@
 
-from .models import User, Task
+from Eapp.models import User, Task
 
 ALLOWED_TRANSITIONS = {
     'Front Desk': {

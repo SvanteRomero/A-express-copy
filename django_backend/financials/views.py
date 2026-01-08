@@ -296,3 +296,46 @@ class FinancialSummaryView(APIView):
 
         serializer = FinancialSummarySerializer(financial_data)
         return Response(serializer.data)
+
+
+# =============================================================================
+# Accountant Dashboard Stats
+# =============================================================================
+
+from django.db.models import F
+
+
+class AccountantDashboardStats(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        today = timezone.now().date()
+        
+        # 1. Today's Revenue (Sum of payments made today)
+        todays_revenue = (
+            Payment.objects.filter(
+                date=today
+            ).aggregate(total=Sum("amount"))["total"]
+            or 0
+        )
+        
+        # 2. Outstanding Payments (Sum of outstanding balance for all tasks)
+        outstanding_payments_total = (
+            Task.objects.aggregate(
+                total=Sum(F("total_cost") - F("paid_amount"))
+            )["total"] 
+            or 0
+        )
+
+        # 3. Tasks Pending Payment (Count of tasks with payment status 'Unpaid' or 'Partially Paid')
+        pending_payment_count = Task.objects.filter(
+            payment_status__in=['Unpaid', 'Partially Paid']
+        ).count()
+
+        data = {
+            "todays_revenue": float(todays_revenue),
+            "outstanding_payments_total": float(outstanding_payments_total),
+            "pending_payment_count": pending_payment_count,
+        }
+        return Response(data)
+

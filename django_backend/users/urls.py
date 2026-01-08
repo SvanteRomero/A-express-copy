@@ -38,5 +38,8 @@ urlpatterns = [
     path('users/profile/sessions/revoke-all/', views.AuthViewSet.as_view({'post': 'revoke_all_sessions'}), name='users_profile_sessions_revoke_all'),
     path('users/profile/sessions/<uuid:session_id>/revoke/', views.AuthViewSet.as_view({'post': 'revoke_session'}), name='users_profile_session_revoke'),
     path('users/profile/activity/', views.AuthViewSet.as_view({'get': 'profile_activity'}), name='users_profile_activity'),
+    
+    # Technician Dashboard Stats
+    path('technician-dashboard-stats/', views.TechnicianDashboardStats.as_view(), name='technician-dashboard-stats'),
 ]
 

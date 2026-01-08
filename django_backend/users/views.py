@@ -532,3 +532,59 @@ def get_current_user(request):
         'authenticated': True
     })
 
+
+# =============================================================================
+# Technician Dashboard Stats
+# =============================================================================
+
+from rest_framework.views import APIView
+from Eapp.models import Task
+
+
+class TechnicianDashboardStats(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        today = timezone.now().date()
+        
+        # 1. Assigned Tasks (Pending)
+        assigned_count = Task.objects.filter(assigned_to=user, status="Pending").count()
+        
+        # 2. In Progress Tasks
+        in_progress_count = Task.objects.filter(assigned_to=user, status="In Progress").count()
+        
+        # 3. Completed Today
+        completed_today_count = Task.objects.filter(
+            assigned_to=user,
+            status="Completed",
+            updated_at__date=today
+        ).count()
+        
+        # 4. Urgent Tasks (Active + Yupo/Ina Haraka)
+        urgent_count = Task.objects.filter(
+            assigned_to=user,
+            urgency__in=["Yupo", "Ina Haraka"]
+        ).exclude(
+             status__in=["Completed", "Picked Up", "Terminated", "Ready for Pickup"]
+        ).count()
+
+        # 5. Recent Activity (Last 5 updated tasks for this user)
+        recent_tasks_qs = Task.objects.filter(assigned_to=user).order_by('-updated_at')[:5]
+        recent_tasks_data = []
+        for t in recent_tasks_qs:
+             recent_tasks_data.append({
+                 "id": t.title,
+                 "title": t.title,
+                 "laptop_model_name": t.laptop_model.name if t.laptop_model else "Device",
+                 "status": t.status
+             })
+
+        data = {
+            "assigned_count": assigned_count,
+            "in_progress_count": in_progress_count,
+            "completed_today_count": completed_today_count,
+            "urgent_count": urgent_count,
+            "recent_tasks": recent_tasks_data
+        }
+        return Response(data)

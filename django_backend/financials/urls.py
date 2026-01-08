@@ -25,4 +25,10 @@ urlpatterns = [
         views.FinancialSummaryView.as_view(),
         name="financial-summary",
     ),
+    # Accountant Dashboard Stats
+    path(
+        "accountant-dashboard-stats/",
+        views.AccountantDashboardStats.as_view(),
+        name="accountant-dashboard-stats",
+    ),
 ]
