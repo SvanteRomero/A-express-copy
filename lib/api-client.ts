@@ -230,3 +230,12 @@ export const getMessageHistory = (params: { page?: number; search?: string } = {
 export const getDashboardStats = () => apiClient.get('/dashboard-stats/').then(res => res.data);
 export const getTechnicianDashboardStats = () => apiClient.get('/technician-dashboard-stats/').then(res => res.data);
 export const getAccountantDashboardStats = () => apiClient.get('/accountant-dashboard-stats/').then(res => res.data);
+
+// System Settings
+export interface SystemSettings {
+  auto_sms_on_task_creation: boolean;
+  updated_at: string;
+}
+export const getSystemSettings = () => apiClient.get<SystemSettings>('/system-settings/').then(res => res.data);
+export const updateSystemSettings = (data: Partial<SystemSettings>) => apiClient.patch<SystemSettings>('/system-settings/', data).then(res => res.data);
+

@@ -300,6 +300,15 @@ export function useNewTaskForm() {
                 className: "bg-green-600 text-white border-green-600",
             })
 
+            // Show SMS notification toast if SMS was sent
+            if (response.data.sms_sent) {
+                toast({
+                    title: 'Customer Notified',
+                    description: `Registration SMS sent to ${response.data.sms_phone}`,
+                    className: "bg-blue-600 text-white border-blue-600",
+                })
+            }
+
             addNotification({
                 title: "New Task Created",
                 message: `Task for ${formData.customer_name} (${formData.device_type}) has been created successfully.`,

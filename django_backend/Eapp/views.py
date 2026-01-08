@@ -149,6 +149,28 @@ class TaskViewSet(viewsets.ModelViewSet):
         response_data = self.get_serializer(task).data
         response_data['customer_created'] = customer_created
         
+        # Send task registration SMS if enabled
+        response_data['sms_sent'] = False
+        response_data['sms_phone'] = None
+        
+        try:
+            from settings.models import SystemSettings
+            from messaging.services import send_task_registration_sms
+            
+            system_settings = SystemSettings.get_settings()
+            if system_settings.auto_sms_on_task_creation and customer:
+                # Get customer's primary phone number
+                primary_phone = customer.phone_numbers.first()
+                if primary_phone:
+                    sms_result = send_task_registration_sms(task, primary_phone.phone_number, request.user)
+                    response_data['sms_sent'] = sms_result.get('success', False)
+                    response_data['sms_phone'] = sms_result.get('phone')
+        except Exception as e:
+            # Don't fail task creation if SMS fails
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error sending task registration SMS: {e}")
+        
         headers = self.get_success_headers(response_data)
         return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
 

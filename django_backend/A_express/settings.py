@@ -152,6 +152,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "reports",
     "messaging",  # SMS messaging via Briq
+    "settings",  # System settings
     'django_extensions',
 ]
 

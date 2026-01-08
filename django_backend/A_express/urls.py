@@ -28,6 +28,7 @@ urlpatterns = [
     path('api/', include('common.urls')),
     path('api/', include('reports.urls')),
     path('api/messaging/', include('messaging.urls')),
+    path('api/system-settings/', include('settings.urls')),
 ]
 
 

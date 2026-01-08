@@ -103,3 +103,90 @@ class BriqClient:
 
 # Singleton instance for convenience
 briq_client = BriqClient()
+
+
+def send_task_registration_sms(task, phone_number, user):
+    """
+    Send SMS notification to customer when a new task is registered.
+    
+    Args:
+        task: Task instance that was just created
+        phone_number: Customer's phone number
+        user: User who created the task (for logging)
+    
+    Returns:
+        dict: {success: bool, phone: str, error: str (if failed)}
+    """
+    from django.utils import timezone
+    from messaging.models import MessageLog
+    from Eapp.models import TaskActivity
+    
+    # Format date as DD/MM/YYYY
+    date_str = timezone.now().strftime('%d/%m/%Y')
+    
+    # Build device name from brand and model
+    device_parts = []
+    if task.brand:
+        device_parts.append(str(task.brand))
+    if task.laptop_model:
+        device_parts.append(str(task.laptop_model))
+    device = ' '.join(device_parts) if device_parts else 'device'
+    
+    # Build the message (Swahili)
+    message = (
+        f"Habari {task.customer.name}, kifaa chako cha {device} kimepokelewa "
+        f"na kusajiliwa rasmi tarehe {date_str} (Job No.: {task.title}). "
+        f"Pindi utakapopokea meseji ya kukamilika au kutokamilika kwa huduma, "
+        f"chukua kifaa ndani ya siku 7; baada ya hapo, gharama ya uhifadhi "
+        f"TSH 3,000/siku itatozwa. Asante, A PLUS EXPRESS TECHNOLOGIES LTD."
+    )
+    
+    # Sanitize message: remove newlines (API provider constraint)
+    message = message.replace('\n', ' ').replace('\r', '').strip()
+    
+    # Create message log entry (pending)
+    message_log = MessageLog.objects.create(
+        task=task,
+        recipient_phone=phone_number,
+        message_content=message,
+        status='pending',
+        sent_by=user
+    )
+    
+    # Send SMS via Briq
+    result = briq_client.send_sms(
+        content=message,
+        recipients=[phone_number]
+    )
+    
+    # Update message log with result
+    if result.get('success'):
+        message_log.status = 'sent'
+        message_log.response_data = result.get('data')
+        message_log.save()
+        
+        # Log activity on the task
+        TaskActivity.objects.create(
+            task=task,
+            user=user,
+            type='sms_sent',
+            message=f"Task registration SMS sent to {phone_number}"
+        )
+        
+        logger.info(f"Task registration SMS sent to {phone_number} for task {task.title}")
+        return {
+            'success': True,
+            'phone': phone_number
+        }
+    else:
+        message_log.status = 'failed'
+        message_log.response_data = result
+        message_log.save()
+        
+        logger.error(f"Task registration SMS failed for {phone_number}: {result.get('error')}")
+        return {
+            'success': False,
+            'phone': phone_number,
+            'error': result.get('error', 'Unknown error')
+        }
+
