@@ -97,7 +97,7 @@ export function useNewTaskForm() {
     const { data: locations, isLoading: isLoadingLocations } = useLocations()
     const { data: customers, isLoading: isLoadingCustomers } = useCustomers({ query: customerSearch, page: customerPage })
     const { data: referrers, isLoading: isLoadingReferrers } = useReferrers(referrerSearch)
-    const { data: models, isLoading: isLoadingModels } = useModels({ query: modelSearch })
+    const { data: models, isLoading: isLoadingModels } = useModels({ query: modelSearch, brandId: formData.brand })
 
     // Filtered locations based on selected technician
     const [filteredLocations, setFilteredLocations] = useState(locations)
@@ -191,6 +191,9 @@ export function useNewTaskForm() {
             if (field === 'device_type' && value === 'Motherboard Only') {
                 newFormData.laptop_model = 'Motherboard'
             } else if (field === 'device_type' && prev.laptop_model === 'Motherboard') {
+                newFormData.laptop_model = ''
+            } else if (field === 'brand' && prev.brand !== value) {
+                // Clear model when brand changes
                 newFormData.laptop_model = ''
             }
             return newFormData

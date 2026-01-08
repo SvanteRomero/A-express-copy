@@ -135,7 +135,7 @@ export function CustomerDeviceSection({ form }: CustomerDeviceSectionProps) {
                             setModelSearch(value)
                         }}
                         placeholder="Search or create model..."
-                        disabled={formData.device_type === 'Motherboard Only'}
+                        disabled={formData.device_type === 'Motherboard Only' || !formData.brand}
                     />
                 </FormField>
             </div>

@@ -12,14 +12,15 @@ export function useBrands() {
     });
 }
 
-export function useModels({ query }: { query: string }) {
+export function useModels({ query, brandId }: { query: string; brandId?: string }) {
     const { data, isLoading, isError } = useQuery<Model[]>({
-        queryKey: ['models', { query }],
+        queryKey: ['models', { query, brandId }],
         queryFn: async () => {
-            const response = await searchModels({ search: query });
+            const response = await searchModels({ search: query, brand: brandId });
             // Handle both paginated (with .results) and non-paginated (direct array) responses
             return response.data.results || response.data;
         },
+        enabled: true, // Always enabled, even if brandId is undefined (returns all models or searched models)
     });
 
     return { data, isLoading, isError };

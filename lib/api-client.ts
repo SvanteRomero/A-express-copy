@@ -196,9 +196,10 @@ export const searchCustomers = (params: { search?: string; page?: number }) => {
 };
 
 // Models Search
-export const searchModels = (params: { search?: string }) => {
+export const searchModels = (params: { search?: string; brand?: string }) => {
   const urlParams = new URLSearchParams();
   if (params.search) urlParams.set('search', params.search);
+  if (params.brand) urlParams.set('brand', params.brand);
   return apiClient.get(`/models/?${urlParams.toString()}`);
 };
 
