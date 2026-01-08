@@ -6,6 +6,7 @@ import { transformTasksToCustomers } from "./utils";
 import { useTasks } from "@/hooks/use-tasks";
 import { getMessageTemplates, sendBulkSMS } from "@/lib/api-client";
 import { useComposeState } from "@/hooks/use-message-compose";
+import { useToast } from "@/hooks/use-toast";
 import {
     TemplateSelector,
     RecipientsList,
@@ -16,6 +17,7 @@ import {
 const ITEMS_PER_PAGE = 20;
 
 export function ComposeView() {
+    const { toast } = useToast();
     // Template & Message State
     const [selectedTemplate, setSelectedTemplate] = useState<string>("");
     const [customMessage, setCustomMessage] = useState("");
@@ -54,7 +56,10 @@ export function ComposeView() {
     }, [searchQuery]);
 
     // Derive template_filter from selected template
-    const currentTemplate = templates.find(t => t.id.toString() === selectedTemplate);
+    const currentTemplate = templates.find(t =>
+        (t.key && t.key === selectedTemplate) ||
+        (t.id && t.id.toString() === selectedTemplate)
+    );
 
     const templateFilter = useMemo(() => {
         if (!currentTemplate || useCustomMessage) return undefined;
@@ -79,7 +84,10 @@ export function ComposeView() {
                 setTemplates(data);
                 if (data.length > 0) {
                     const firstValid = data.find((t: MessageTemplate) => t.name !== "General (Custom)");
-                    if (firstValid) setSelectedTemplate(firstValid.id.toString());
+                    if (firstValid) {
+                        const val = firstValid.key || firstValid.id?.toString() || "";
+                        setSelectedTemplate(val);
+                    }
                 }
             })
             .catch(err => console.error("Failed to fetch templates:", err));
@@ -107,7 +115,10 @@ export function ComposeView() {
             setCustomMessage("");
             if (!selectedTemplate && templates.length > 0) {
                 const firstValid = templates.find(t => t.name !== "General (Custom)");
-                if (firstValid) setSelectedTemplate(firstValid.id.toString());
+                if (firstValid) {
+                    const val = firstValid.key || firstValid.id?.toString() || "";
+                    if (val) setSelectedTemplate(val);
+                }
             }
         }
     };
@@ -115,7 +126,11 @@ export function ComposeView() {
     const handlePreview = () => {
         if (!selectedCustomers.length) return;
         if (useCustomMessage && customMessage.includes('\n')) {
-            alert("Warning: SMS cannot contain line breaks. They will be removed.");
+            toast({
+                title: "Line breaks removed",
+                description: "SMS cannot contain line breaks. They have been automatically removed.",
+                variant: "default",
+            });
         }
         setPreviewModalOpen(true);
     };
@@ -137,27 +152,41 @@ export function ComposeView() {
 
         try {
             const payload = {
+
                 recipients: selectedCustomers.map(c => ({
                     task_id: c.taskId.toString(),
                     phone: c.selectedPhone
                 })),
                 message: useCustomMessage ? customMessage : undefined,
-                template_id: useCustomMessage ? undefined : Number(selectedTemplate)
+                template_key: (!useCustomMessage && currentTemplate?.is_default) ? currentTemplate.key : undefined,
+                template_id: (!useCustomMessage && !currentTemplate?.is_default) ? currentTemplate?.id : undefined
             };
 
             const data = await sendBulkSMS(payload);
 
             if (data.success) {
-                alert(`Success: ${data.summary.sent} sent, ${data.summary.failed} failed.`);
+                toast({
+                    title: "Messages Sent",
+                    description: `${data.summary.sent} messages sent successfully. ${data.summary.failed > 0 ? `${data.summary.failed} failed.` : ''}`,
+                    variant: "default",
+                });
                 clearSelections();
                 setCustomMessage("");
                 setSelectedTemplate("");
                 setUseCustomMessage(false);
             } else {
-                alert(`Error: ${data.error || 'Failed to send messages'}`);
+                toast({
+                    title: "Send Failed",
+                    description: data.error || 'Failed to send messages',
+                    variant: "destructive",
+                });
             }
         } catch (error) {
-            alert("An error occurred while sending messages.");
+            toast({
+                title: "Error",
+                description: "An unexpected error occurred while sending messages.",
+                variant: "destructive",
+            });
             console.error(error);
         } finally {
             setLoading(false);

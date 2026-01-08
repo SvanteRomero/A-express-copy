@@ -120,6 +120,12 @@ def send_task_registration_sms(task, phone_number, user):
     from django.utils import timezone
     from messaging.models import MessageLog
     from Eapp.models import TaskActivity
+    from settings.models import SystemSettings
+    
+    # Get system settings for company info
+    system_settings = SystemSettings.get_settings()
+    company_name = system_settings.company_name or 'A PLUS EXPRESS TECHNOLOGIES LTD'
+    company_phones = system_settings.company_phone_numbers or []
     
     # Format date as DD/MM/YYYY
     date_str = timezone.now().strftime('%d/%m/%Y')
@@ -132,13 +138,25 @@ def send_task_registration_sms(task, phone_number, user):
         device_parts.append(str(task.laptop_model))
     device = ' '.join(device_parts) if device_parts else 'device'
     
+    # Build company phone numbers string
+    contact_info = ''
+    if company_phones:
+        phones_str = ', '.join(company_phones)
+        contact_info = f" Wasiliana nasi: {phones_str}."
+    
+    # Build device notes section (in capital letters)
+    device_notes_section = ''
+    if task.device_notes:
+        device_notes_section = f" {task.device_notes.upper()}."
+    
     # Build the message (Swahili)
     message = (
         f"Habari {task.customer.name}, kifaa chako cha {device} kimepokelewa "
-        f"na kusajiliwa rasmi tarehe {date_str} (Job No.: {task.title}). "
+        f"na kusajiliwa rasmi tarehe {date_str} (Job No.: {task.title})."
+        f"{device_notes_section} "
         f"Pindi utakapopokea meseji ya kukamilika au kutokamilika kwa huduma, "
         f"chukua kifaa ndani ya siku 7; baada ya hapo, gharama ya uhifadhi "
-        f"TSH 3,000/siku itatozwa. Asante, A PLUS EXPRESS TECHNOLOGIES LTD."
+        f"TSH 3,000/siku itatozwa.{contact_info} Asante, {company_name}."
     )
     
     # Sanitize message: remove newlines (API provider constraint)
@@ -189,4 +207,96 @@ def send_task_registration_sms(task, phone_number, user):
             'phone': phone_number,
             'error': result.get('error', 'Unknown error')
         }
+
+
+# Default message templates (Hardcoded)
+DEFAULT_MESSAGE_TEMPLATES = [
+    {
+        'key': 'in_progress',
+        'name': 'Repair in Progress',
+        'content': (
+            "Habari {customer}, kifaa chako cha {device} kilisajiliwa kwenye mfumo wetu "
+            "(Job No.: {taskId}). Baada ya uchunguzi, tatizo ni {DESCRIPTION}, "
+            "na mafundi wanaendelea na matengenezo. Tunaomba uwe na subira, "
+            "na tutakutaarifu pindi kazi itakapokamilika.{contact_info} – {company_name}."
+        ),
+        'is_default': True
+    },
+    {
+        'key': 'ready_for_pickup',
+        'name': 'Ready for Pickup',
+        'content': (
+            "Habari {customer}, kifaa chako {device} (Job No.: {taskId}) {status}. "
+            "Tatizo: {DESCRIPTION}. Gharama: TSH {amount}. "
+            "Tafadhali chukua ndani ya siku 7.{contact_info} – {company_name}."
+        ),
+        'is_default': True
+    },
+    {
+        'key': 'debt_reminder',
+        'name': 'Remind Debt',
+        'content': (
+            "Habari {customer}, tafadhali lipia deni la TSH {outstanding_balance} "
+            "la kifaa {device} (Job No.: {taskId}).{contact_info} – {company_name}."
+        ),
+        'is_default': True
+    }
+]
+
+# Specific templates for dynamic resolution
+TEMPLATE_READY_SOLVED = (
+    "Habari {customer}, kifaa chako {device} imeyosajiliwa kwenye mfumo wetu (Job No.: {taskId}). "
+    "Kompyuta yako imefanyiwa kazi, IMEPONA na ipo tayari kuchukuliwa, na gharama yake ni TSH {amount}. "
+    "Unatakiwa kuichukua ndani ya siku 7 kuanzia leo; baada ya hapo, utatozwa gharama za uhifadhi TSH 3,000/siku. "
+    "Asante kwa kushirikiana,{contact_info} – {company_name}."
+)
+
+TEMPLATE_READY_NOT_SOLVED = (
+    "Habari {customer}, kifaa chako {device} imeyosajiliwa kwenye mfumo wetu (Job No.: {taskId}). "
+    "Kompyuta yako imefanyiwa kazi, HAIJAPONA na ipo tayari kuchukuliwa. "
+    "Unatakiwa kuichukua ndani ya siku 7 kuanzia leo; baada ya hapo, utatozwa gharama za uhifadhi TSH 3,000/siku. "
+    "Asante kwa kushirikiana,{contact_info} – {company_name}."
+)
+
+
+def get_message_templates():
+    """
+    Get all message templates (defaults + database).
+    """
+    from messaging.models import MessageTemplate
+    
+    # Start with defaults
+    templates = [t.copy() for t in DEFAULT_MESSAGE_TEMPLATES]
+    
+    # Add database templates
+    db_templates = MessageTemplate.objects.filter(is_active=True)
+    for t in db_templates:
+        templates.append({
+            'id': t.id,
+            'name': t.name,
+            'content': t.content,
+            'is_default': False
+        })
+        
+    return templates
+
+
+def get_template_by_key_or_id(key=None, template_id=None):
+    """
+    Get a template content by either its string key (default) or DB ID.
+    """
+    from messaging.models import MessageTemplate
+    
+    if key:
+        for t in DEFAULT_MESSAGE_TEMPLATES:
+            if t['key'] == key:
+                return t['content']
+    
+    if template_id:
+        try:
+            return MessageTemplate.objects.get(id=template_id).content
+        except MessageTemplate.DoesNotExist:
+            pass
+            
+    return None
 

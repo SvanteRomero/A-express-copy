@@ -57,11 +57,13 @@ export function TemplateManager() {
         setLoading(true);
         try {
             if (editingTemplate) {
-                // Update
-                await updateMessageTemplate(editingTemplate.id, {
-                    name: formData.name,
-                    content: formData.content
-                });
+                if (editingTemplate.id) {
+                    // Update
+                    await updateMessageTemplate(editingTemplate.id, {
+                        name: formData.name,
+                        content: formData.content
+                    });
+                }
             } else {
                 // Create
                 await createMessageTemplate({
@@ -106,15 +108,24 @@ export function TemplateManager() {
                         </TableHeader>
                         <TableBody>
                             {templates.map(template => (
-                                <TableRow key={template.id}>
-                                    <TableCell className="font-medium">{template.name}</TableCell>
+                                <TableRow key={template.key || template.id}>
+                                    <TableCell className="font-medium">
+                                        {template.name}
+                                        {template.is_default && (
+                                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                                Default
+                                            </span>
+                                        )}
+                                    </TableCell>
                                     <TableCell className="text-muted-foreground truncate max-w-[300px]">
                                         {template.content}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm" onClick={() => handleEdit(template)}>
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
+                                        {!template.is_default && (
+                                            <Button variant="ghost" size="sm" onClick={() => handleEdit(template)}>
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))}

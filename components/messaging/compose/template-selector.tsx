@@ -26,7 +26,10 @@ export function TemplateSelector({
     customMessage,
     onCustomMessageChange,
 }: TemplateSelectorProps) {
-    const currentTemplate = templates.find(t => t.id.toString() === selectedTemplate);
+    const currentTemplate = templates.find(t =>
+        (t.key && t.key === selectedTemplate) ||
+        (t.id && t.id.toString() === selectedTemplate)
+    );
 
     return (
         <Card>
@@ -45,9 +48,14 @@ export function TemplateSelector({
                             <SelectContent>
                                 {templates
                                     .filter(t => t.name !== "General (Custom)")
-                                    .map(t => (
-                                        <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
-                                    ))
+                                    .map(t => {
+                                        const value = t.key || t.id?.toString() || "";
+                                        return (
+                                            <SelectItem key={value} value={value}>
+                                                {t.name} {t.is_default && <span className="ml-2 text-xs text-muted-foreground">[Default]</span>}
+                                            </SelectItem>
+                                        );
+                                    })
                                 }
                             </SelectContent>
                         </Select>

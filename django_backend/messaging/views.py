@@ -97,6 +97,14 @@ class MessageTemplateViewSet(viewsets.ModelViewSet):
     serializer_class = MessageTemplateSerializer
     permission_classes = [IsAuthenticated]
 
+    def list(self, request, *args, **kwargs):
+        """
+        Return list of all templates (hardcoded defaults + database).
+        """
+        from .services import get_message_templates
+        templates = get_message_templates()
+        return Response(templates)
+
 
 from Eapp.pagination import StandardResultsSetPagination
 from django_filters import rest_framework as filters
@@ -146,18 +154,33 @@ def bulk_send_sms(request):
     
     manual_message = serializer.validated_data.get('message')
     template_id = serializer.validated_data.get('template_id')
+    template_key = serializer.validated_data.get('template_key')
     
     # Determine message content
     message_content = manual_message
-    if not message_content and template_id:
-        try:
-            template = MessageTemplate.objects.get(id=template_id)
-            message_content = template.content
-        except MessageTemplate.DoesNotExist:
+    
+    if not message_content:
+        from .services import get_template_by_key_or_id
+        content = get_template_by_key_or_id(key=template_key, template_id=template_id)
+        if content:
+            message_content = content
+        else:
             return Response({'error': 'Template not found'}, status=status.HTTP_404_NOT_FOUND)
             
     # Sanitize message: remove newlines (API provider constraint)
     message_content = message_content.replace('\n', ' ').replace('\r', '').strip()
+    
+    # Get company info for placeholders
+    from settings.models import SystemSettings
+    system_settings = SystemSettings.get_settings()
+    company_name = system_settings.company_name or 'A PLUS EXPRESS TECHNOLOGIES LTD'
+    company_phones = system_settings.company_phone_numbers or []
+    
+    # Build contact info string
+    contact_info_str = ''
+    if company_phones:
+        phones_str = ', '.join(company_phones)
+        contact_info_str = f" Wasiliana nasi: {phones_str}."
     
     # Fetch tasks
     tasks = Task.objects.filter(id__in=task_ids).select_related('customer')
@@ -178,34 +201,56 @@ def bulk_send_sms(request):
             continue
 
         # Resolve variables
+        # Dynamic template resolution per task
         final_message = message_content
         
-        if '{' in final_message:
-            customer_name = task.customer.name
-            final_message = final_message.replace('{customer}', customer_name)
-            final_message = final_message.replace('{device}', f"{task.brand or ''} {task.laptop_model or ''}".strip())
-            final_message = final_message.replace('{taskId}', str(task.title))
-            final_message = final_message.replace('{description}', task.description or '')
-            final_message = final_message.replace('{notes}', f"||| Maelezo: {task.device_notes}" if task.device_notes else '')
-            # Determine status text
-            status_lower = task.status.lower()
-            workshop_status = task.workshop_status
+        if template_key == 'ready_for_pickup':
+            from messaging.services import TEMPLATE_READY_SOLVED, TEMPLATE_READY_NOT_SOLVED
             
-            if workshop_status == 'Not Solved':
-                swahili_status = "TAYARI KUCHUKULIWA, HAIJAPONA"
-            elif workshop_status == 'Solved':
-                swahili_status = "TAYARI KUCHUKULIWA, IMEPONA"
-            elif 'ready' in status_lower or 'completed' in status_lower:
-                swahili_status = "TAYARI KUCHUKULIWA"
-            elif 'progress' in status_lower or 'diagnostic' in status_lower:
-                swahili_status = "INAREKEBISHWA"
-            elif 'picked' in status_lower:
-                swahili_status = "IMESHACHUKULIWA"
-            else:
-                swahili_status = task.status.upper()
-
-            final_message = final_message.replace('{status}', swahili_status)
-            final_message = final_message.replace('{amount}', str(task.total_cost))
+            # Use specific template based on workshop_status
+            if task.workshop_status == 'Solved':
+                final_message = TEMPLATE_READY_SOLVED
+            elif task.workshop_status == 'Not Solved':
+                final_message = TEMPLATE_READY_NOT_SOLVED
+            # Else fallback to default 'ready_for_pickup' content
+        
+        # Replace variables
+        final_message = final_message.replace('{customer}', task.customer.name)
+        final_message = final_message.replace('{device}', f"{task.brand or ''} {task.laptop_model or ''}".strip() or "Device")
+        final_message = final_message.replace('{taskId}', task.title)
+        
+        # Handle description
+        description = task.description or "Unknown Issue"
+        final_message = final_message.replace('{DESCRIPTION}', description.upper())
+        final_message = final_message.replace('{description}', description) # Support lowercase placeholder key too
+        
+        final_message = final_message.replace('{notes}', task.device_notes or '')
+        
+        # Swahili status translation
+        status_map = {
+            'Pending': 'Imepokelewa',
+            'In Progress': 'Inashughulikiwa',
+            'Ready for Pickup': 'Ipo Tayari',
+            'Picked Up': 'Imeshachukuliwa',
+            'Completed': 'Imekamilika',
+        }
+        swahili_status = status_map.get(task.status, task.status)
+        
+        final_message = final_message.replace('{status}', swahili_status)
+        
+        # Handle amount properly
+        amount_val = str(task.total_cost)
+        if hasattr(task, 'total_cost') and task.total_cost:
+            amount_val = "{:,.0f}".format(task.total_cost)
+        final_message = final_message.replace('{amount}', amount_val)
+        
+        # Handle outstanding balance for debt reminder
+        outstanding = task.total_cost - task.paid_amount
+        outstanding_str = "{:,.0f}".format(outstanding) if outstanding > 0 else "0"
+        final_message = final_message.replace('{outstanding_balance}', outstanding_str)
+        
+        final_message = final_message.replace('{company_name}', company_name)
+        final_message = final_message.replace('{contact_info}', contact_info_str)
 
         # Use specific phone number if provided, otherwise default fallback (shouldn't happen with new UI)
         if not phone_number:

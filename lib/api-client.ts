@@ -233,6 +233,8 @@ export const getAccountantDashboardStats = () => apiClient.get('/accountant-dash
 
 // System Settings
 export interface SystemSettings {
+  company_name: string;
+  company_phone_numbers: string[];
   auto_sms_on_task_creation: boolean;
   updated_at: string;
 }

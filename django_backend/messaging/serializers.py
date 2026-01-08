@@ -55,12 +55,16 @@ class BulkSendSMSSerializer(serializers.Serializer):
     )
     template_id = serializers.IntegerField(
         required=False,
-        help_text='ID of the template to use'
+        help_text='ID of the template to use (custom templates)'
+    )
+    template_key = serializers.CharField(
+        required=False,
+        help_text='Key of the hardcoded template to use (default templates)'
     )
 
     def validate(self, data):
-        if not data.get('message') and not data.get('template_id'):
-            raise serializers.ValidationError("Either 'message' or 'template_id' must be provided.")
+        if not data.get('message') and not data.get('template_id') and not data.get('template_key'):
+            raise serializers.ValidationError("Either 'message', 'template_id', or 'template_key' must be provided.")
         return data
 
 

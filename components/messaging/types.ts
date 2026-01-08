@@ -20,10 +20,12 @@ export interface Customer {
 }
 
 export interface MessageTemplate {
-    id: number;
+    id?: number;
+    key?: string;
     name: string;
     content: string;
-    is_active: boolean;
+    is_active?: boolean;
+    is_default?: boolean;
 }
 
 export interface MessageLog {
@@ -41,4 +43,5 @@ export interface BulkSendPayload {
     recipients: { task_id: number; phone: string }[];
     message?: string;
     template_id?: number;
+    template_key?: string;
 }

@@ -35,7 +35,10 @@ export function PreviewModal({
     loading,
     totalCount,
 }: PreviewModalProps) {
-    const templateToUse = templates.find(t => t.id.toString() === selectedTemplate);
+    const templateToUse = templates.find(t =>
+        (t.key && t.key === selectedTemplate) ||
+        (t.id && t.id.toString() === selectedTemplate)
+    );
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
