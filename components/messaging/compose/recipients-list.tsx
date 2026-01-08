@@ -67,7 +67,7 @@ export function RecipientsList({
                     />
                 </div>
 
-                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                <div className="space-y-2 pr-2">
                     {isLoading ? (
                         <div className="text-center py-8 text-muted-foreground">Loading recipients...</div>
                     ) : customers.length === 0 ? (
