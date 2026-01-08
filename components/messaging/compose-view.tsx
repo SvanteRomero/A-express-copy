@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { MessageTemplate, Customer } from "./types";
-import { transformTasksToCustomers } from "./utils";
-import { useTasks } from "@/hooks/use-tasks";
+import { MessageTemplate } from "./types";
 import { getMessageTemplates, sendBulkSMS } from "@/lib/api-client";
 import { useComposeState } from "@/hooks/use-message-compose";
 import { useToast } from "@/hooks/use-toast";
@@ -11,13 +9,13 @@ import {
     TemplateSelector,
     RecipientsList,
     PreviewModal,
-    PhoneSelectDialog,
 } from "./compose";
 
 const ITEMS_PER_PAGE = 20;
 
 export function ComposeView() {
     const { toast } = useToast();
+
     // Template & Message State
     const [selectedTemplate, setSelectedTemplate] = useState<string>("");
     const [customMessage, setCustomMessage] = useState("");
@@ -31,20 +29,7 @@ export function ComposeView() {
 
     // UI State
     const [loading, setLoading] = useState(false);
-    const [managementTarget, setManagementTarget] = useState<Customer | null>(null);
     const [previewModalOpen, setPreviewModalOpen] = useState(false);
-
-    // Selection State (via custom hook)
-    const {
-        selectedTaskIds,
-        selectedCustomersData,
-        selectedCustomers,
-        toggleCustomer,
-        clearSelections,
-        updateCustomerPhone,
-        updateSingleCustomerPhone,
-        getGroupedSelectedCustomers,
-    } = useComposeState();
 
     // Debounce search input
     useEffect(() => {
@@ -62,19 +47,41 @@ export function ComposeView() {
     );
 
     const templateFilter = useMemo(() => {
-        if (!currentTemplate || useCustomMessage) return undefined;
+        // Custom message mode: use broadcast to get all customers
+        if (useCustomMessage) return "broadcast";
+
+        if (!currentTemplate) return undefined;
+
         const name = currentTemplate.name.toLowerCase();
         if (name.includes("ready for pickup")) return "ready_for_pickup";
         if (name.includes("repair in progress")) return "repair_in_progress";
         if (name.includes("remind debt") || name.includes("deni")) return "debt_reminder";
-        return undefined;
+
+        // General/other templates: use broadcast mode
+        return "broadcast";
     }, [currentTemplate, useCustomMessage]);
 
-    // Fetch tasks with server-side pagination and filtering
-    const { data: tasksData, isLoading: tasksLoading } = useTasks({
-        page: currentPage,
+    // Use the compose state hook with data fetching
+    const {
+        customers,
+        isLoading: customersLoading,
+        totalCount,
+        totalPages,
+        selectedTaskIds,
+        toggleTask,
+        toggleAllTasksForCustomer,
+        isTaskSelected,
+        isCustomerFullySelected,
+        isCustomerPartiallySelected,
+        clearSelections,
+        updateCustomerPhone,
+        getCustomerPhone,
+        getSelectedForSending,
+        getSelectedTaskCount,
+    } = useComposeState({
+        templateFilter,
         search: debouncedSearch || undefined,
-        template_filter: templateFilter,
+        page: currentPage,
     });
 
     // Fetch Templates
@@ -99,15 +106,6 @@ export function ComposeView() {
         setCurrentPage(1);
     }, [selectedTemplate, useCustomMessage, clearSelections]);
 
-    // Transform tasks to customers
-    const displayedCustomers = useMemo(() => {
-        if (!tasksData?.results) return [];
-        return transformTasksToCustomers(tasksData.results, selectedTaskIds);
-    }, [tasksData, selectedTaskIds]);
-
-    const totalCount = tasksData?.count || 0;
-    const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
-
     // Handlers
     const handleToggleCustomMessage = (checked: boolean) => {
         setUseCustomMessage(checked);
@@ -124,7 +122,7 @@ export function ComposeView() {
     };
 
     const handlePreview = () => {
-        if (!selectedCustomers.length) return;
+        if (!getSelectedTaskCount()) return;
         if (useCustomMessage && customMessage.includes('\n')) {
             toast({
                 title: "Line breaks removed",
@@ -141,7 +139,8 @@ export function ComposeView() {
     };
 
     const handleSend = async (confirmed = false) => {
-        if (!selectedCustomers.length) return;
+        const selectedCount = getSelectedTaskCount();
+        if (!selectedCount) return;
 
         if (!confirmed) {
             handlePreview();
@@ -151,12 +150,21 @@ export function ComposeView() {
         setLoading(true);
 
         try {
-            const payload = {
+            const selectedData = getSelectedForSending();
 
-                recipients: selectedCustomers.map(c => ({
-                    task_id: c.taskId.toString(),
-                    phone: c.selectedPhone
-                })),
+            // Build recipients array - one entry per task
+            const recipients: { task_id: string; phone: string }[] = [];
+            for (const customer of selectedData) {
+                for (const task of customer.tasks) {
+                    recipients.push({
+                        task_id: task.taskId.toString(),
+                        phone: customer.phone,
+                    });
+                }
+            }
+
+            const payload = {
+                recipients,
                 message: useCustomMessage ? customMessage : undefined,
                 template_key: (!useCustomMessage && currentTemplate?.is_default) ? currentTemplate.key : undefined,
                 template_id: (!useCustomMessage && !currentTemplate?.is_default) ? currentTemplate?.id : undefined
@@ -193,12 +201,6 @@ export function ComposeView() {
         }
     };
 
-    const handlePhoneSelect = (taskId: number, phone: string) => {
-        if (selectedCustomersData.has(taskId)) {
-            updateSingleCustomerPhone(taskId, phone);
-        }
-    };
-
     const canSelect = !!selectedTemplate || useCustomMessage;
 
     return (
@@ -216,21 +218,27 @@ export function ComposeView() {
                     />
 
                     <RecipientsList
-                        customers={displayedCustomers}
+                        customers={customers}
                         selectedTaskIds={selectedTaskIds}
-                        selectedCount={selectedCustomers.length}
-                        onToggleCustomer={toggleCustomer}
+                        selectedCount={getSelectedTaskCount()}
+                        onToggleTask={toggleTask}
+                        onToggleAllForCustomer={toggleAllTasksForCustomer}
+                        isTaskSelected={isTaskSelected}
+                        isCustomerFullySelected={isCustomerFullySelected}
+                        isCustomerPartiallySelected={isCustomerPartiallySelected}
                         canSelect={canSelect}
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
-                        isLoading={tasksLoading}
+                        isLoading={customersLoading}
                         currentPage={currentPage}
                         totalPages={totalPages}
                         totalCount={totalCount}
                         onPageChange={setCurrentPage}
-                        onManagePhone={setManagementTarget}
                         onSendClick={() => handleSend(false)}
                         isSending={loading}
+                        getCustomerPhone={getCustomerPhone}
+                        onUpdateCustomerPhone={updateCustomerPhone}
+                        isBroadcastMode={templateFilter === "broadcast"}
                     />
                 </div>
             </div>
@@ -238,7 +246,7 @@ export function ComposeView() {
             <PreviewModal
                 open={previewModalOpen}
                 onOpenChange={setPreviewModalOpen}
-                groupedCustomers={getGroupedSelectedCustomers()}
+                selectedData={getSelectedForSending()}
                 templates={templates}
                 selectedTemplate={selectedTemplate}
                 useCustomMessage={useCustomMessage}
@@ -246,13 +254,7 @@ export function ComposeView() {
                 onUpdateCustomerPhone={updateCustomerPhone}
                 onConfirm={handleConfirmSend}
                 loading={loading}
-                totalCount={selectedCustomers.length}
-            />
-
-            <PhoneSelectDialog
-                customer={managementTarget}
-                onClose={() => setManagementTarget(null)}
-                onSelectPhone={handlePhoneSelect}
+                totalCount={getSelectedTaskCount()}
             />
         </div>
     );

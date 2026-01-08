@@ -8,16 +8,20 @@ import { TemplateManager } from "@/components/messaging/templates-view";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card";
 import { Users, Send, AlertCircle, Package } from "lucide-react";
 import { getDashboardStats } from "@/lib/api-client";
+import { useAuth } from "@/hooks/use-auth";
 
-// Mock permissions - In real app, this would come from AuthContext
-const userRole = "manager"; // 'manager' | 'front_desk'
+// ... existing imports
 
 export function MessagingDashboard() {
+    const { user } = useAuth();
     const [activeTab, setActiveTab] = useState("compose");
     const [readyForPickupCount, setReadyForPickupCount] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
 
+    const isManager = user?.role === "Manager";
+
     useEffect(() => {
+        // ... existing fetchStats
         const fetchStats = async () => {
             try {
                 const data = await getDashboardStats();
@@ -57,11 +61,11 @@ export function MessagingDashboard() {
             </div>
 
             <Tabs defaultValue="compose" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList>
-                    <TabsTrigger value="compose">Compose Message</TabsTrigger>
-                    <TabsTrigger value="history">Message History</TabsTrigger>
-                    {userRole === "manager" && (
-                        <TabsTrigger value="templates">Manage Templates</TabsTrigger>
+                <TabsList className={`grid w-full ${isManager ? 'grid-cols-3' : 'grid-cols-2'} bg-gray-100`}>
+                    <TabsTrigger value="compose" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Compose Message</TabsTrigger>
+                    <TabsTrigger value="history" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Message History</TabsTrigger>
+                    {isManager && (
+                        <TabsTrigger value="templates" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Manage Templates</TabsTrigger>
                     )}
                 </TabsList>
 
@@ -73,9 +77,11 @@ export function MessagingDashboard() {
                     <MessageHistory />
                 </TabsContent>
 
-                <TabsContent value="templates">
-                    <TemplateManager />
-                </TabsContent>
+                {isManager && (
+                    <TabsContent value="templates">
+                        <TemplateManager />
+                    </TabsContent>
+                )}
             </Tabs>
         </div>
     );

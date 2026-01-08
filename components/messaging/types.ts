@@ -45,3 +45,28 @@ export interface BulkSendPayload {
     template_id?: number;
     template_key?: string;
 }
+
+// Customer-centric messaging types
+export interface TaskForMessaging {
+    id: number;
+    taskId: number;
+    taskDisplayId: string;
+    device: string;
+    description: string;
+    deviceNotes: string;
+    status: string;
+    workshopStatus?: string;
+    amount?: string;
+    outstandingBalance?: string;
+    isDebt?: boolean;
+    createdAt?: string;
+}
+
+export interface CustomerForMessaging {
+    customerId: number;
+    name: string;
+    phoneNumbers: string[];
+    tasks: TaskForMessaging[];
+    // UI state
+    selectedPhone?: string;
+}

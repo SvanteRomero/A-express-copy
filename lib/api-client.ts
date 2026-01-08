@@ -187,12 +187,21 @@ export const rejectExpenditureRequest = (id: number) => apiClient.post(`/expendi
 export const getCustomerStats = () => apiClient.get('/customers/stats/');
 export const getCustomerMonthlyAcquisition = () => apiClient.get('/customers/monthly_acquisition/');
 
-// Customers Search (with pagination)
 export const searchCustomers = (params: { search?: string; page?: number }) => {
   const urlParams = new URLSearchParams();
   if (params.search) urlParams.set('search', params.search);
   if (params.page) urlParams.set('page', params.page.toString());
   return apiClient.get(`/customers/?${urlParams.toString()}`);
+};
+
+// Get customers for messaging compose view (grouped with their filtered tasks)
+export const getCustomersForMessaging = (params: { template_filter?: string; search?: string; page?: number }) => {
+  const urlParams = new URLSearchParams();
+  urlParams.set('page_size', '10'); // 10 customers per page
+  if (params.template_filter) urlParams.set('template_filter', params.template_filter);
+  if (params.search) urlParams.set('search', params.search);
+  if (params.page) urlParams.set('page', params.page.toString());
+  return apiClient.get(`/customers/for_messaging/?${urlParams.toString()}`).then(res => res.data);
 };
 
 // Models Search
@@ -223,6 +232,7 @@ export const sendCustomerSMS = (taskId: string, data: { phone_number: string; me
 export const getMessageTemplates = () => apiClient.get('/messaging/templates/').then(res => res.data);
 export const createMessageTemplate = (data: any) => apiClient.post('/messaging/templates/', data).then(res => res.data);
 export const updateMessageTemplate = (id: number, data: any) => apiClient.put(`/messaging/templates/${id}/`, data).then(res => res.data);
+export const deleteMessageTemplate = (id: number) => apiClient.delete(`/messaging/templates/${id}/`);
 export const sendBulkSMS = (data: any) => apiClient.post('/messaging/bulk-send/', data).then(res => res.data);
 export const getMessageHistory = (params: { page?: number; search?: string } = {}) =>
   apiClient.get('/messaging/history/', { params }).then(res => res.data);
