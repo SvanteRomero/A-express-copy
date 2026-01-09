@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { createContext, useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { login as apiLogin, checkAuth } from "@/lib/api-client"
 import { apiClient } from "@/lib/api-client"
 import axios from 'axios';
@@ -39,6 +40,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const router = useRouter()
 
     useEffect(() => {
         // Check authentication status using cookie-based auth
@@ -113,8 +115,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.error('Logout error:', error);
         }
 
-        // Redirect to home page
-        window.location.href = '/';
+        // Redirect to home page using Next.js router (soft navigation)
+        router.push('/');
     }
 
     const refreshAuth = async (): Promise<boolean> => {
