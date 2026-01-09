@@ -236,8 +236,9 @@ DEFAULT_MESSAGE_TEMPLATES = [
         'key': 'debt_reminder',
         'name': 'Remind Debt',
         'content': (
-            "Habari {customer}, tafadhali lipia deni la TSH {outstanding_balance} "
-            "la kifaa {device} (Job No.: {taskId}).{contact_info} – {company_name}."
+            "Habari {customer}, tunakumbusha kuwa unadaiwa deni la TSH {outstanding_balance} "
+            "kwa kazi ya {device} (Job No.: {taskId}). Tafadhali lipa mapema iwezekanavyo "
+            "ili kuepuka usumbufu.{contact_info} Asante kwa kushirikiana na {company_name}."
         ),
         'is_default': True
     }
@@ -299,4 +300,195 @@ def get_template_by_key_or_id(key=None, template_id=None):
             pass
             
     return None
+
+
+def build_template_message(task, template_key):
+    """
+    Build a message from a template key without sending it.
+    Used for preview functionality.
+    
+    Args:
+        task: Task instance
+        template_key: 'ready_for_pickup', 'in_progress', or 'debt_reminder'
+    
+    Returns:
+        str: The built message with all variables substituted
+    """
+    from settings.models import SystemSettings
+    
+    # Get system settings for company info
+    system_settings = SystemSettings.get_settings()
+    company_name = system_settings.company_name or 'A PLUS EXPRESS TECHNOLOGIES LTD'
+    company_phones = system_settings.company_phone_numbers or []
+    
+    # Build contact info string
+    contact_info = ''
+    if company_phones:
+        phones_str = ', '.join(company_phones)
+        contact_info = f" Wasiliana nasi: {phones_str}."
+    
+    # Build device name
+    device_parts = []
+    if task.brand:
+        device_parts.append(str(task.brand))
+    if task.laptop_model:
+        device_parts.append(str(task.laptop_model))
+    device = ' '.join(device_parts) if device_parts else 'kifaa'
+    
+    # Get customer name
+    customer_name = task.customer.name if task.customer else 'Mteja'
+    
+    # Select the appropriate template
+    if template_key == 'ready_for_pickup':
+        # Choose template based on workshop status
+        if task.workshop_status == 'Solved':
+            template = TEMPLATE_READY_SOLVED
+        else:
+            template = TEMPLATE_READY_NOT_SOLVED
+    elif template_key == 'in_progress':
+        template = get_template_by_key_or_id(key='in_progress')
+    elif template_key == 'debt_reminder':
+        template = get_template_by_key_or_id(key='debt_reminder')
+    else:
+        return None
+    
+    if not template:
+        return None
+    
+    # Format amounts
+    amount = task.total_cost or 0
+    amount_str = f"{amount:,.0f}/=" if amount else "0/="
+    
+    # Calculate outstanding balance (total_cost - paid_amount)
+    total_cost = task.total_cost or 0
+    paid_amount = task.paid_amount or 0
+    outstanding = max(0, total_cost - paid_amount)
+    outstanding_str = f"{outstanding:,.0f}/=" if outstanding else "0/="
+    
+    # Get description
+    description = (task.description or 'Hakuna').upper()
+    
+    # Substitute all variables
+    message = template.replace('{customer}', customer_name)
+    message = message.replace('{device}', device)
+    message = message.replace('{taskId}', task.title)
+    message = message.replace('{amount}', amount_str)
+    message = message.replace('{outstanding_balance}', outstanding_str)
+    message = message.replace('{DESCRIPTION}', description)
+    message = message.replace('{description}', task.description or 'Hakuna')
+    message = message.replace('{contact_info}', contact_info)
+    message = message.replace('{company_name}', company_name)
+    message = message.replace('{status}', task.status or '')
+    
+    # Sanitize: remove newlines
+    message = message.replace('\n', ' ').replace('\r', '').strip()
+    
+    return message
+
+def send_debt_reminder_sms(task, phone_number, user):
+    """
+    Send SMS reminder to customer about their outstanding debt.
+    
+    Args:
+        task: Task instance with outstanding balance
+        phone_number: Customer's phone number
+        user: User who initiated the reminder (for logging)
+    
+    Returns:
+        dict: {success: bool, phone: str, message: str, error: str (if failed)}
+    """
+    from messaging.models import MessageLog
+    from Eapp.models import TaskActivity
+    from settings.models import SystemSettings
+    
+    # Get system settings for company info
+    system_settings = SystemSettings.get_settings()
+    company_name = system_settings.company_name or 'A PLUS EXPRESS TECHNOLOGIES LTD'
+    company_phones = system_settings.company_phone_numbers or []
+    
+    # Get the debt reminder template
+    template = get_template_by_key_or_id(key='debt_reminder')
+    if not template:
+        return {
+            'success': False,
+            'error': 'Debt reminder template not found'
+        }
+    
+    # Build device name from brand and model
+    device_parts = []
+    if task.brand:
+        device_parts.append(str(task.brand))
+    if task.laptop_model:
+        device_parts.append(str(task.laptop_model))
+    device = ' '.join(device_parts) if device_parts else 'kifaa'
+    
+    # Format outstanding balance (computed from total_cost - paid_amount)
+    total_cost = task.total_cost or 0
+    paid_amount = task.paid_amount or 0
+    outstanding = max(0, total_cost - paid_amount)
+    outstanding_str = f"{outstanding:,.0f}/=" if outstanding else "0/="
+    
+    # Build contact info
+    contact_info = ''
+    if company_phones:
+        phones_str = ', '.join(company_phones)
+        contact_info = f" Wasiliana nasi: {phones_str}."
+    
+    # Build the message
+    message = template.replace('{customer}', task.customer.name or 'Mteja')
+    message = message.replace('{outstanding_balance}', outstanding_str)
+    message = message.replace('{device}', device)
+    message = message.replace('{taskId}', task.title)
+    message = message.replace('{contact_info}', contact_info)
+    message = message.replace('{company_name}', company_name)
+    
+    # Sanitize message: remove newlines (API provider constraint)
+    message = message.replace('\n', ' ').replace('\r', '').strip()
+    
+    # Create message log entry (pending)
+    message_log = MessageLog.objects.create(
+        task=task,
+        recipient_phone=phone_number,
+        message_content=message,
+        status='pending',
+        sent_by=user
+    )
+    
+    # Send SMS via Briq
+    result = briq_client.send_sms(
+        content=message,
+        recipients=[phone_number]
+    )
+    
+    # Update message log with result
+    if result.get('success'):
+        message_log.status = 'sent'
+        message_log.response_data = result.get('data')
+        message_log.save()
+        
+        # Log activity on the task
+        TaskActivity.objects.create(
+            task=task,
+            user=user,
+            type='sms_sent',
+            message=f"Debt reminder SMS sent to {phone_number}"
+        )
+        
+        logger.info(f"Debt reminder SMS sent to {phone_number} for task {task.title}")
+        return {
+            'success': True,
+            'phone': phone_number,
+            'message': message
+        }
+    else:
+        message_log.status = 'failed'
+        message_log.response_data = result
+        message_log.save()
+        
+        logger.error(f"Debt reminder SMS failed for {phone_number}: {result.get('error')}")
+        return {
+            'success': False,
+            'phone': phone_number,
+            'error': result.get('error', 'Unknown error')
+        }
 

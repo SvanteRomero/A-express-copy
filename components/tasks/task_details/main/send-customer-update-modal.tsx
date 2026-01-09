@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/core/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select"
 import { MessageSquare, Send, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { sendCustomerSMS } from "@/lib/api-client"
+import { sendCustomerSMS, previewTemplateMessage } from "@/lib/api-client"
 
 interface PhoneNumber {
     id: number
@@ -30,7 +30,6 @@ interface SendCustomerUpdateModalProps {
     phoneNumbers: PhoneNumber[]
     taskTitle: string
     taskStatus: string
-    // New props for Swahili templates
     brand?: string
     model?: string
     description?: string
@@ -39,57 +38,11 @@ interface SendCustomerUpdateModalProps {
     workshopStatus?: string
 }
 
-// Status translation map
-const STATUS_SWAHILI: Record<string, string> = {
-    "Ready for Pickup": "Tayari Kuchukuliwa",
-    "In Progress": "Inarekebishwa",
-    "Diagnostic": "Uchunguzi",
-    "Awaiting Parts": "Inasubiri Vipuri",
-    "Completed": "Imekamilika",
-    "Assigned - Not Accepted": "Haijakubaliwa",
-}
-
-// Build the template message
-function buildSwahiliTemplate(
-    templateId: string,
-    data: {
-        customerName: string
-        taskTitle: string
-        brand?: string
-        model?: string
-        description?: string
-        totalCost?: string
-        deviceNotes?: string
-        statusSwahili: string
-        workshopStatus?: string
-    }
-): string {
-    const deviceInfo = [data.brand, data.model].filter(Boolean).join(" ")
-    const cost = data.totalCost ? `${parseFloat(data.totalCost).toLocaleString()}/=` : "0/="
-    const notes = data.deviceNotes?.trim() || "Hakuna"
-    const description = data.description || "Hakuna"
-    const inquiry = "Kwa maelezo zaidi piga: 0745869216"
-
-    if (templateId === "ready_pickup") {
-        if (data.workshopStatus === "Not Solved") {
-            return `Habari ${data.customerName}, kifaa chako ${deviceInfo || "-"} (Kazi #${data.taskTitle}) kiko tayari kuchukuliwa. Kwa bahati mbaya, hatukuweza kutatua tatizo hilo. Tatizo: ${description}. Maelezo: ${notes}. Gharama: ${cost}. Tafadhali fika dukani uchukue kifaa chako. Asante kwa kuchagua A-Express.`
-        }
-        // Solved or default
-        return `Habari ${data.customerName}, kifaa chako ${deviceInfo || "-"} (Kazi #${data.taskTitle}) kimefanikiwa kurekebishwa na kiko tayari kuchukuliwa. Tatizo: ${description}. Maelezo: ${notes}. Gharama: ${cost}. Tafadhali fika dukani wakati wa saa za kazi uchukue kifaa chako. Asante kwa kuchagua A-Express.`
-    }
-
-    if (templateId === "repair_in_progress") {
-        return `Habari ${data.customerName}, kifaa chako ${deviceInfo || "-"} (Kazi #${data.taskTitle}) kimepokelewa na mafundi wetu wameanza kukifanyia kazi. Tatizo: ${description}. Maelezo: ${notes}. Gharama: ${cost}. Tutaujulisha kitakapokuwa tayari. Asante kwa kuvuta subira.`
-    }
-
-    return ""
-}
-
-// Message templates
+// Message templates - now map to backend template keys
 const MESSAGE_TEMPLATES = [
-    { id: "custom", label: "Custom Message" },
-    { id: "ready_pickup", label: "Tayari Kuchukuliwa (Ready for Pickup)" },
-    { id: "repair_in_progress", label: "Inarekebishwa (Repair In Progress)" },
+    { id: "custom", label: "Custom Message", backendKey: null },
+    { id: "ready_for_pickup", label: "Tayari Kuchukuliwa (Ready for Pickup)", backendKey: "ready_for_pickup" },
+    { id: "in_progress", label: "Inarekebishwa (Repair In Progress)", backendKey: "in_progress" },
 ]
 
 export function SendCustomerUpdateModal({
@@ -99,25 +52,19 @@ export function SendCustomerUpdateModal({
     customerName,
     phoneNumbers,
     taskTitle,
-    taskStatus,
-    brand,
-    model,
-    description,
-    totalCost,
-    deviceNotes,
-    workshopStatus,
 }: SendCustomerUpdateModalProps) {
     const [selectedPhone, setSelectedPhone] = useState<string>(phoneNumbers[0]?.phone_number || "")
     const [selectedTemplate, setSelectedTemplate] = useState<string>("custom")
     const [message, setMessage] = useState<string>("")
     const [isSending, setIsSending] = useState(false)
+    const [isLoadingPreview, setIsLoadingPreview] = useState(false)
     const { toast } = useToast()
 
     // Character count for SMS (160 chars per segment)
     const charCount = message.length
     const smsSegments = Math.ceil(charCount / 160) || 1
 
-    const handleTemplateChange = (templateId: string) => {
+    const handleTemplateChange = async (templateId: string) => {
         setSelectedTemplate(templateId)
 
         if (templateId === "custom") {
@@ -125,19 +72,37 @@ export function SendCustomerUpdateModal({
             return
         }
 
-        const statusSwahili = STATUS_SWAHILI[taskStatus] || taskStatus
-        const filledMessage = buildSwahiliTemplate(templateId, {
-            customerName,
-            taskTitle,
-            brand,
-            model,
-            description,
-            totalCost,
-            deviceNotes,
-            statusSwahili,
-            workshopStatus,
-        })
-        setMessage(filledMessage)
+        // Find the backend key for this template
+        const template = MESSAGE_TEMPLATES.find(t => t.id === templateId)
+        if (!template?.backendKey) {
+            setMessage("")
+            return
+        }
+
+        // Fetch preview from backend
+        setIsLoadingPreview(true)
+        try {
+            const result = await previewTemplateMessage(taskId, template.backendKey)
+            if (result.success && result.message) {
+                setMessage(result.message)
+            } else {
+                toast({
+                    title: "Preview Failed",
+                    description: result.error || "Could not generate message preview",
+                    variant: "destructive",
+                })
+                setMessage("")
+            }
+        } catch (error: any) {
+            toast({
+                title: "Preview Failed",
+                description: error?.response?.data?.error || "Could not generate message preview",
+                variant: "destructive",
+            })
+            setMessage("")
+        } finally {
+            setIsLoadingPreview(false)
+        }
     }
 
     const handleSend = async () => {
@@ -231,7 +196,7 @@ export function SendCustomerUpdateModal({
                     <div className="space-y-2">
                         <Label htmlFor="template">Message Template</Label>
                         <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
-                            <SelectTrigger id="template">
+                            <SelectTrigger id="template" disabled={isLoadingPreview}>
                                 <SelectValue placeholder="Select a template" />
                             </SelectTrigger>
                             <SelectContent>
@@ -252,14 +217,20 @@ export function SendCustomerUpdateModal({
                                 {charCount} characters ({smsSegments} SMS segment{smsSegments > 1 ? "s" : ""})
                             </span>
                         </div>
-                        <Textarea
-                            id="message"
-                            placeholder="Type your message here..."
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            rows={8}
-                            className="resize-none font-mono text-sm"
-                        />
+                        {isLoadingPreview ? (
+                            <div className="flex items-center justify-center h-[200px] border rounded-md bg-muted/50">
+                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                            </div>
+                        ) : (
+                            <Textarea
+                                id="message"
+                                placeholder="Type your message here or select a template..."
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
+                                rows={8}
+                                className="resize-none font-mono text-sm"
+                            />
+                        )}
                     </div>
                 </div>
 
@@ -270,7 +241,7 @@ export function SendCustomerUpdateModal({
                     <Button
                         className="bg-red-600 hover:bg-red-700 text-white"
                         onClick={handleSend}
-                        disabled={isSending || !message.trim()}
+                        disabled={isSending || isLoadingPreview || !message.trim()}
                     >
                         {isSending ? (
                             <>
@@ -289,3 +260,4 @@ export function SendCustomerUpdateModal({
         </Dialog>
     )
 }
+

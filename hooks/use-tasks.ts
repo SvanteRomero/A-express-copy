@@ -10,9 +10,12 @@ export function useTasks(filters?: {
   technician?: string
   search?: string
   page?: number
+  page_size?: number
   updated_at_after?: string
   debts?: boolean
   template_filter?: string
+  unpaid_tasks?: boolean
+  payment_status?: string
 }) {
   return useQuery<PaginatedTasks>({
     queryKey: ['tasks', filters],

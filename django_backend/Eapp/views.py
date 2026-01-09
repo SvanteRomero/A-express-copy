@@ -29,7 +29,7 @@ from .services import (
 
 class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
-        queryset = Task.objects.all()
+        queryset = Task.objects.all().order_by('-created_at')
 
         # Annotate total_cost and paid_amount
         queryset = queryset.annotate(

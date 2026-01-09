@@ -212,6 +212,14 @@ export const searchModels = (params: { search?: string; brand?: string }) => {
   return apiClient.get(`/models/?${urlParams.toString()}`);
 };
 
+// Tasks Search (for dropdowns - capped at 4 results)
+export const searchTasks = (params: { search?: string; page_size?: number }) => {
+  const urlParams = new URLSearchParams();
+  urlParams.set('page_size', (params.page_size || 4).toString());
+  if (params.search) urlParams.set('search', params.search);
+  return apiClient.get(`/tasks/?${urlParams.toString()}`);
+};
+
 // Payment Methods (with pagination handling)
 export const fetchPaymentMethods = async () => {
   const response = await apiClient.get('/payment-methods/');
@@ -234,6 +242,10 @@ export const createMessageTemplate = (data: any) => apiClient.post('/messaging/t
 export const updateMessageTemplate = (id: number, data: any) => apiClient.put(`/messaging/templates/${id}/`, data).then(res => res.data);
 export const deleteMessageTemplate = (id: number) => apiClient.delete(`/messaging/templates/${id}/`);
 export const sendBulkSMS = (data: any) => apiClient.post('/messaging/bulk-send/', data).then(res => res.data);
+export const sendDebtReminder = (taskId: number, phoneNumber?: string) =>
+  apiClient.post(`/messaging/tasks/${taskId}/send-debt-reminder/`, phoneNumber ? { phone_number: phoneNumber } : {}).then(res => res.data);
+export const previewTemplateMessage = (taskId: string, templateKey: string) =>
+  apiClient.post(`/messaging/tasks/${taskId}/preview-message/`, { template_key: templateKey }).then(res => res.data);
 export const getMessageHistory = (params: { page?: number; search?: string } = {}) =>
   apiClient.get('/messaging/history/', { params }).then(res => res.data);
 // Dashboard Stats

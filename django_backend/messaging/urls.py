@@ -10,5 +10,9 @@ router.register(r'history', views.MessageLogViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('tasks/<int:task_id>/send-sms/', views.send_customer_sms, name='send-customer-sms'),
+    path('tasks/<int:task_id>/send-debt-reminder/', views.send_debt_reminder, name='send-debt-reminder'),
+    path('tasks/<int:task_id>/preview-message/', views.preview_template_message, name='preview-template-message'),
     path('bulk-send/', views.bulk_send_sms, name='bulk-send-sms'),
 ]
+
+

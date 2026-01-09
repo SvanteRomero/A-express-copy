@@ -3,19 +3,17 @@
 import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronsUpDown } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { useAuth } from '@/hooks/use-auth';
-import { createExpenditureRequest, createAndApproveExpenditureRequest, getTasks, getPaymentCategories, getPaymentMethods } from '@/lib/api-client';
+import { createExpenditureRequest, createAndApproveExpenditureRequest, getPaymentCategories, getPaymentMethods } from '@/lib/api-client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/feedback/dialog";
 import { Button } from "@/components/ui/core/button";
 import { Textarea } from "@/components/ui/core/textarea";
 import { Label } from "@/components/ui/core/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select";
 import { useToast } from '@/hooks/use-toast';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/layout/popover";
 import { CurrencyInput } from "@/components/ui/core/currency-input";
+import { SimpleCombobox } from "@/components/ui/core/combobox";
+import { useTasksSearch } from '@/hooks/use-tasks-search';
 
 interface AddExpenditureDialogProps {
   isOpen: boolean;
@@ -31,13 +29,22 @@ export function AddExpenditureDialog({ isOpen, onClose, mode = 'expenditure', ta
   const { toast } = useToast();
   const { register, handleSubmit, control, watch, formState: { errors }, setValue, reset } = useForm();
 
-  const [openTaskCombobox, setOpenTaskCombobox] = useState(false)
+  const [taskSearch, setTaskSearch] = useState("")
 
-  const { data: tasksData } = useQuery({ queryKey: ['tasks'], queryFn: () => getTasks({ limit: 1000 }) });
+  // Use the new search hook - only fetches when user types or when pre-filling
+  const { data: tasksData, isLoading: isLoadingTasks } = useTasksSearch({
+    query: taskSearch,
+    enabled: isOpen
+  });
+
   const { data: categories } = useQuery({ queryKey: ['paymentCategories'], queryFn: getPaymentCategories });
   const { data: methods } = useQuery({ queryKey: ['paymentMethods'], queryFn: getPaymentMethods });
 
-  const taskOptions = tasksData?.data.results.map((task: any) => ({ label: task.title, value: String(task.id) })) || [];
+  // Map search results to options
+  const taskOptions = [
+    { label: "None", value: "null" },
+    ...(tasksData?.results.map((task: any) => ({ label: task.title, value: String(task.id) })) || [])
+  ];
 
   useEffect(() => {
     if (isOpen) {
@@ -45,9 +52,12 @@ export function AddExpenditureDialog({ isOpen, onClose, mode = 'expenditure', ta
         setValue('task', taskId);
         setValue('description', `Refund for task: ${taskTitle}`);
         setValue('cost_type', 'Subtractive');
+        // Pre-fill the search input with the task title so it shows up correctly
+        if (taskTitle) setTaskSearch(taskTitle);
       }
     } else {
       reset();
+      setTaskSearch(""); // Reset search on close
     }
   }, [isOpen, mode, taskId, taskTitle, setValue, reset]);
 
@@ -112,64 +122,14 @@ export function AddExpenditureDialog({ isOpen, onClose, mode = 'expenditure', ta
               name="task"
               control={control}
               render={({ field }) => (
-                <Popover open={openTaskCombobox} onOpenChange={setOpenTaskCombobox}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openTaskCombobox}
-                      className="w-full justify-between"
-                      disabled={isRefundMode}
-                    >
-                      {field.value
-                        ? taskOptions.find((task: { label: string; value: string; }) => task.value === field.value)?.label
-                        : "Select task..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput placeholder="Search tasks..." />
-                      <CommandList>
-                        <CommandEmpty>No task found.</CommandEmpty>
-                        <CommandGroup>
-                          <CommandItem
-                            key="null-task"
-                            value="null"
-                            onSelect={() => {
-                              field.onChange('null');
-                              setOpenTaskCombobox(false);
-                            }}
-                          >
-                            <Check className={cn("mr-2 h-4 w-4", !field.value ? "opacity-100" : "opacity-0")} />
-                            None
-                          </CommandItem>
-                          {taskOptions.map((task: { label: string; value: string; }) => (
-                            <CommandItem
-                              key={task.value}
-                              value={task.label}
-                              onSelect={(currentValue) => {
-                                const selectedTask = taskOptions.find((opt: { label: string; value: string; }) => opt.label.toLowerCase() === currentValue.toLowerCase());
-                                if (selectedTask) {
-                                  field.onChange(selectedTask.value === field.value ? 'null' : selectedTask.value);
-                                }
-                                setOpenTaskCombobox(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  field.value === task.value ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {task.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <SimpleCombobox
+                  options={taskOptions}
+                  value={taskSearch}
+                  placeholder="Search tasks..."
+                  onInputChange={(val) => setTaskSearch(val)}
+                  onChange={(val) => field.onChange(val)}
+                  disabled={isRefundMode}
+                />
               )}
             />
           </div>

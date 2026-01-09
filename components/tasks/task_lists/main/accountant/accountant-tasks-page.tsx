@@ -9,13 +9,20 @@ import { useTasks } from "@/hooks/use-tasks";
 import { useTechnicians } from "@/hooks/use-users";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/core/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function AccountantTasksPage() {
   const { user } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
 
-  const { data: tasks, isLoading, isError, error } = useTasks();
+  const { data: tasksData, isLoading, isError, error } = useTasks({
+    unpaid_tasks: true,
+    page,
+    page_size: 15,
+  });
   const { data: technicians } = useTechnicians();
 
   const addTaskPaymentMutation = useMutation({
@@ -56,7 +63,11 @@ export default function AccountantTasksPage() {
     )
   }
 
-  const unpaidTasks = tasks?.results?.filter(task => task.payment_status !== "Fully Paid" && task.status !== "Picked Up") || [];
+  const tasks = tasksData?.results || [];
+  const totalCount = tasksData?.count || 0;
+  const totalPages = Math.ceil(totalCount / 15);
+  const hasNext = !!tasksData?.next;
+  const hasPrevious = !!tasksData?.previous;
 
   return (
     <div className="flex-1 space-y-6 p-6">
@@ -66,17 +77,49 @@ export default function AccountantTasksPage() {
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Accountant Tasks</h1>
           <p className="text-gray-600 mt-2">Tasks with outstanding payments.</p>
         </div>
+        <div className="text-sm text-gray-500">
+          {totalCount} total task{totalCount !== 1 ? 's' : ''}
+        </div>
       </div>
 
       {/* Main Content */}
       <TasksDisplay
-        tasks={unpaidTasks}
+        tasks={tasks}
         technicians={technicians || []}
         onRowClick={handleRowClick}
         showActions={true}
         onAddPayment={handleAddPayment}
         isAccountantView={true}
       />
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t pt-4">
+          <div className="text-sm text-gray-500">
+            Page {page} of {totalPages}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => p - 1)}
+              disabled={!hasPrevious}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => p + 1)}
+              disabled={!hasNext}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

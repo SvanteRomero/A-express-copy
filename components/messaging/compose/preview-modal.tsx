@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Phone, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { MessageTemplate, TaskForMessaging } from "../types";
 import { replaceTemplateVariables } from "../utils";
-import { StatusBadge, WorkshopStatusBadge } from "@/components/tasks/task_utils/task-badges";
+import { WorkshopStatusBadge } from "@/components/tasks/task_utils/task-badges";
 
 interface SelectedCustomerData {
     customerId: number;

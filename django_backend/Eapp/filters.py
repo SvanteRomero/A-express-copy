@@ -16,6 +16,9 @@ class TaskFilter(django_filters.FilterSet):
     
     # Search by customer name, phone, task title
     search = django_filters.CharFilter(method='search_filter')
+    
+    # For accountant tasks page: filter unpaid tasks
+    unpaid_tasks = django_filters.BooleanFilter(method='filter_unpaid_tasks')
 
     class Meta:
         model = Task
@@ -26,6 +29,7 @@ class TaskFilter(django_filters.FilterSet):
             'is_debt': ['exact'],
             'workshop_technician': ['exact'],
             'workshop_status': ['exact', 'in'],
+            'payment_status': ['exact'],
         }
 
     def filter_status(self, queryset, name, value):
@@ -58,6 +62,19 @@ class TaskFilter(django_filters.FilterSet):
             Q(customer__phone_numbers__phone_number__icontains=value) |
             Q(title__icontains=value)
         ).distinct()
+    
+    def filter_unpaid_tasks(self, queryset, name, value):
+        """
+        Filter tasks that have outstanding payments and are not picked up.
+        Uses the payment_status field which is kept in sync by the model.
+        """
+        if value:
+            return queryset.exclude(
+                payment_status='Fully Paid'
+            ).exclude(
+                status='Picked Up'
+            )
+        return queryset
 
 
 class PaymentFilter(django_filters.FilterSet):

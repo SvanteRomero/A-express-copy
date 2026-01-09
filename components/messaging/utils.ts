@@ -51,7 +51,7 @@ export function transformTasksToCustomers(
             const customer = task.customer_details || {};
             const deviceName = `${task.laptop_model_details?.name || ''} ${task.brand || ''}`.trim();
             const phoneNumbersList = customer.phone_numbers?.map((p: any) => p.phone_number) || [];
-            const initialPhone = phoneNumbersList[0] || customer.phone_number_1 || '';
+            const initialPhone = phoneNumbersList[0] || '';
 
             return {
                 id: task.id.toString(),

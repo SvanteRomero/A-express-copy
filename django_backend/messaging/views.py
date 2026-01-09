@@ -6,8 +6,10 @@ from django.shortcuts import get_object_or_404
 
 from Eapp.models import Task, TaskActivity
 from .models import MessageLog
-from .services import briq_client
+from .services import briq_client, send_debt_reminder_sms, build_template_message
 from .serializers import SendSMSSerializer
+
+
 
 
 @api_view(['POST'])
@@ -81,6 +83,110 @@ def send_customer_sms(request, task_id):
             'error': result.get('error', 'Failed to send SMS'),
             'details': result
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_debt_reminder(request, task_id):
+    """
+    Send a debt reminder SMS to the customer for a specific task.
+    Uses the backend debt_reminder template with server-side variable substitution.
+    
+    POST /api/messaging/tasks/{task_id}/send-debt-reminder/
+    Body (optional): { "phone_number": "255..." }
+    """
+    # Get the task
+    task = get_object_or_404(Task, id=task_id)
+    
+    # Verify the task has an outstanding balance (is a debt)
+    if not task.outstanding_balance or task.outstanding_balance <= 0:
+        return Response({
+            'success': False,
+            'error': 'This task has no outstanding balance'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Get phone number from request or use customer's primary phone
+    phone_number = request.data.get('phone_number')
+    if not phone_number:
+        # Try to get the customer's primary phone
+        customer = task.customer
+        if customer and customer.phone_numbers.exists():
+            phone_number = customer.phone_numbers.first().phone_number
+    
+    if not phone_number:
+        return Response({
+            'success': False,
+            'error': 'No phone number provided and customer has no phone on file'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Send the debt reminder using the service function
+    result = send_debt_reminder_sms(task, phone_number, request.user)
+    
+    if result.get('success'):
+        return Response({
+            'success': True,
+            'message': 'Debt reminder sent successfully',
+            'data': {
+                'recipient': result.get('phone'),
+                'sms_content': result.get('message')
+            }
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response({
+            'success': False,
+            'error': result.get('error', 'Failed to send debt reminder')
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def preview_template_message(request, task_id):
+    """
+    Preview a message template without sending.
+    Returns the fully built message that will be sent.
+    
+    POST /api/messaging/tasks/{task_id}/preview-message/
+    Body: { "template_key": "ready_for_pickup" | "in_progress" | "debt_reminder" }
+    """
+    # Get the task
+    task = get_object_or_404(Task, id=task_id)
+    
+    # Get template key from request
+    template_key = request.data.get('template_key')
+    if not template_key:
+        return Response({
+            'success': False,
+            'error': 'template_key is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    valid_keys = ['ready_for_pickup', 'in_progress', 'debt_reminder']
+    if template_key not in valid_keys:
+        return Response({
+            'success': False,
+            'error': f'Invalid template_key. Must be one of: {", ".join(valid_keys)}'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Build the message preview
+    message = build_template_message(task, template_key)
+    
+    if not message:
+        return Response({
+            'success': False,
+            'error': 'Failed to build message from template'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    # Get customer's primary phone for preview
+    phone = None
+    if task.customer and task.customer.phone_numbers.exists():
+        phone = task.customer.phone_numbers.first().phone_number
+    
+    return Response({
+        'success': True,
+        'message': message,
+        'phone': phone,
+        'customer_name': task.customer.name if task.customer else None,
+        'template_key': template_key
+    }, status=status.HTTP_200_OK)
 
 
 # --- New Bulk Messaging Views ---
