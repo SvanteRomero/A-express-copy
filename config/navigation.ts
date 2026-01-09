@@ -1,11 +1,9 @@
 import {
     Building2,
-    Calendar,
     CreditCard,
     FileText,
     Home,
     Settings,
-    User,
     Users,
     Wrench,
     ClipboardList,
@@ -71,12 +69,7 @@ export const navigationItems: Record<UserRole, NavigationItem[]> = {
             title: "Reports",
             url: "/dashboard/reports",
             icon: FileText,
-        },
-        {
-            title: "Profile",
-            url: "/dashboard/profile",
-            icon: User,
-        },
+        }
     ],
     Manager: [
         {
@@ -128,12 +121,7 @@ export const navigationItems: Record<UserRole, NavigationItem[]> = {
             title: "Reports",
             url: "/dashboard/reports",
             icon: FileText,
-        },
-        {
-            title: "Profile",
-            url: "/dashboard/profile",
-            icon: User,
-        },
+        }
     ],
     Technician: [
         {
@@ -150,12 +138,7 @@ export const navigationItems: Record<UserRole, NavigationItem[]> = {
             title: "History",
             url: "/dashboard/technician/history",
             icon: FileText,
-        },
-        {
-            title: "Profile",
-            url: "/dashboard/profile",
-            icon: User,
-        },
+        }
     ],
     "Front Desk": [
         {
@@ -177,12 +160,7 @@ export const navigationItems: Record<UserRole, NavigationItem[]> = {
             title: "History",
             url: "/dashboard/front-desk/history",
             icon: FileText,
-        },
-        {
-            title: "Profile",
-            url: "/dashboard/profile",
-            icon: User,
-        },
+        }
     ],
     Accountant: [
         {
@@ -210,10 +188,5 @@ export const navigationItems: Record<UserRole, NavigationItem[]> = {
             url: "/dashboard/payments",
             icon: CreditCard,
         },
-        {
-            title: "Profile",
-            url: "/dashboard/profile",
-            icon: User,
-        },
-    ],
+    ]
 }
