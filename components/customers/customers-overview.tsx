@@ -11,6 +11,7 @@ import { Customer } from "@/components/customers/types";
 import { useCustomers } from "@/hooks/use-customers";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Spinner, ListSkeleton, TableSkeleton } from "@/components/ui/core/loaders";
 
 export function CustomersOverview() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,7 +80,7 @@ export function CustomersOverview() {
           <CardContent>
             {isLoadingMonthlyData ? (
               <div className="flex items-center justify-center h-[300px]">
-                <p>Loading...</p>
+                <Spinner size="lg" className="text-muted-foreground" />
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
@@ -120,7 +121,7 @@ export function CustomersOverview() {
             {isMobile ? (
               <div className="space-y-4">
                 {isLoading ? (
-                  <div className="text-center py-4">Loading...</div>
+                  <ListSkeleton items={3} />
                 ) : isError ? (
                   <div className="text-center text-red-500 py-4">Error fetching customers.</div>
                 ) : customers && customers.length > 0 ? (
@@ -182,7 +183,9 @@ export function CustomersOverview() {
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center">Loading...</TableCell>
+                      <TableCell colSpan={7} className="p-0">
+                        <TableSkeleton rows={3} columns={7} className="border-0" />
+                      </TableCell>
                     </TableRow>
                   ) : isError ? (
                     <TableRow>

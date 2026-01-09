@@ -19,6 +19,7 @@ import {
 import { useTasks, useUpdateTask } from "@/hooks/use-tasks";
 import { useTechnicians } from "@/hooks/use-users";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { PageSkeleton } from "@/components/ui/core/loaders";
 
 type Tab = 'pending' | 'completed';
 
@@ -85,13 +86,7 @@ export function ManagerTasksPage() {
   const isLoading = isLoadingPending || isLoadingCompleted;
 
   if (isLoading) {
-    return (
-      <div className="flex-1 space-y-6 p-6">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-        </div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   return (

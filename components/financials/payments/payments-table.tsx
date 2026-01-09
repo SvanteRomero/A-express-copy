@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/core/button"
 import { Badge } from "@/components/ui/core/badge"
 import { cn } from "@/lib/utils"
+import { ListSkeleton, TableSkeleton } from "@/components/ui/core/loaders"
 
 interface Payment {
     id: any;
@@ -43,7 +44,7 @@ export function PaymentsTable({
         return (
             <div className="space-y-4">
                 {isLoading ? (
-                    <div className="text-center py-4">Loading...</div>
+                    <ListSkeleton items={3} />
                 ) : payments?.map((payment: Payment) => (
                     <Card key={payment.id}>
                         <CardHeader className="p-4 pb-2">
@@ -102,7 +103,9 @@ export function PaymentsTable({
                 <TableBody>
                     {isLoading ? (
                         <TableRow>
-                            <TableCell colSpan={5} className="h-24 text-center">Loading...</TableCell>
+                            <TableCell colSpan={5} className="h-24 p-0">
+                                <TableSkeleton rows={3} columns={5} className="border-0" />
+                            </TableCell>
                         </TableRow>
                     ) : payments?.map((payment: Payment) => (
                         <TableRow key={payment.id}>

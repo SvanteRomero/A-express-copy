@@ -11,6 +11,7 @@ import {
 } from "lucide-react"
 import { getAccountantDashboardStats } from "@/lib/api-client"
 import { Button } from "@/components/ui/core/button"
+import { DashboardSkeleton } from "@/components/ui/core/loaders"
 import Link from "next/link"
 
 interface DashboardStats {
@@ -38,7 +39,7 @@ export default function AccountantDashboard() {
   }, []);
 
   if (isLoading) {
-    return <div>Loading...</div>
+    return <DashboardSkeleton />
   }
 
   return (

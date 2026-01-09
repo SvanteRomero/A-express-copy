@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout
 import { TrendingUp, TrendingDown } from "lucide-react"
 import useSWR from 'swr'
 import { apiClient } from "@/lib/api-client"
+import { CardGridSkeleton } from "@/components/ui/core/loaders"
 
 const fetcher = (url: string) => apiClient.get(url).then(res => res.data)
 
@@ -16,7 +17,7 @@ export function RevenueOverview({ variant = 'all' }: RevenueOverviewProps) {
   const { data, error } = useSWR('/revenue-overview/', fetcher)
 
   if (error) return <div>Failed to load revenue data</div>
-  if (!data) return <div>Loading...</div>
+  if (!data) return <CardGridSkeleton cards={2} columns={2} />
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

@@ -6,6 +6,7 @@ import { StatusBadge, UrgencyBadge, WorkshopStatusBadge } from "@/components/tas
 import { useAuth } from "@/hooks/use-auth"
 import { Laptop } from "lucide-react"
 import { useInWorkshopTasks } from "@/hooks/use-tasks"
+import { TaskListSkeleton } from "@/components/ui/core/loaders"
 
 
 
@@ -16,19 +17,7 @@ export function InWorkshopTasksList() {
   const filteredTasks = tasks?.filter(task => task.workshop_status === 'In Workshop' && task.status === 'In Progress');
 
   if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>In Workshop Tasks</CardTitle>
-          <CardDescription>Tasks that are currently in the workshop.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <TaskListSkeleton />;
   }
 
   if (isError) {

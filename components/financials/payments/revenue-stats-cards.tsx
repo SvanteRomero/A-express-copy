@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { TrendingUp, TrendingDown } from "lucide-react"
+import { CardGridSkeleton } from "@/components/ui/core/loaders"
 
 interface RevenueData {
     opening_balance?: number;
@@ -33,11 +34,7 @@ export function RevenueStatsCards({
     }
 
     if (isLoading || !revenueData) {
-        return (
-            <div className='grid gap-4 md:grid-cols-3 lg:grid-cols-3'>
-                <div>Loading...</div>
-            </div>
-        );
+        return <CardGridSkeleton cards={3} columns={3} />;
     }
 
     return (

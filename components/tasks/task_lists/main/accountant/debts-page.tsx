@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/feedback/alert-dialog";
 import { Loader2 } from "lucide-react";
+import { PageSkeleton, TableSkeleton } from "@/components/ui/core/loaders";
 
 const DebtsPage = () => {
   const { data: tasksData, isLoading, error } = useTasks({ debts: true });
@@ -143,7 +144,17 @@ const DebtsPage = () => {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <PageSkeleton>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <div className="h-8 w-32 bg-muted animate-pulse rounded" />
+            <div className="h-4 w-64 bg-muted animate-pulse rounded" />
+          </div>
+          <TableSkeleton rows={5} columns={6} />
+        </div>
+      </PageSkeleton>
+    );
   }
 
   if (error) {

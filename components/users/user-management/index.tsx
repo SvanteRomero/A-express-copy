@@ -11,7 +11,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/feedback/dialog"
-import { UserPlus, Search, MapPin, Loader2 } from "lucide-react"
+import { UserPlus, Search, MapPin } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { useUserManagement } from "@/hooks/use-user-management"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -21,6 +21,7 @@ import { UserTable } from "./user-table"
 import { UserMobileList } from "./user-mobile-list"
 import { AddUserDialog } from "./add-user-dialog"
 import { EditUserDialog } from "./edit-user-dialog"
+import { Spinner } from "@/components/ui/core/loaders"
 
 export function UserManagement() {
     const { users, isLoading, createUser, updateUser, deleteUser, toggleUserStatus } = useUserManagement()
@@ -112,7 +113,7 @@ export function UserManagement() {
     if (isLoading && users.length === 0) {
         return (
             <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin" />
+                <Spinner size="lg" />
                 <span className="ml-2">Loading users...</span>
             </div>
         )

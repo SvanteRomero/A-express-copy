@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format } from 'date-fns';
 import { Check, X } from 'lucide-react';
+import { TableSkeleton } from "@/components/ui/core/loaders";
 
 export function ExpenditureRequestsList() {
   const queryClient = useQueryClient();
@@ -80,9 +81,7 @@ export function ExpenditureRequestsList() {
   return (
     <div className='rounded-md border'>
       {isLoading ? (
-        <div className="h-24 flex items-center justify-center text-center">
-          Loading...
-        </div>
+        <TableSkeleton rows={5} columns={7} />
       ) : requests?.results && requests.results.length > 0 ? (
         isMobile ? (
           <div className="space-y-4 p-4">

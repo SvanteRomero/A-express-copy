@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs";
 import { useTask } from "@/hooks/use-tasks";
 import { TaskActivityLog } from "@/components/tasks/task_details/main/task-activity-log";
+import { PageSkeleton } from "@/components/ui/core/loaders";
 
 interface TaskDetailsPageProps {
   taskId: string;
@@ -19,7 +20,7 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
   const { data: taskData, isLoading, isError, error } = useTask(taskId);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <PageSkeleton />;
   }
 
   if (isError) {
@@ -27,7 +28,7 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
   }
 
   if (!taskData) {
-    return <div>Loading task details...</div>;
+    return <PageSkeleton />;
   }
 
   return (

@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/core/button"
 import { Wrench, Clock, CheckCircle, AlertCircle } from "lucide-react"
 import { getTechnicianDashboardStats } from "@/lib/api-client"
+import { DashboardSkeleton } from "@/components/ui/core/loaders"
 
 interface DashboardStats {
   assigned_count: number;
@@ -36,7 +37,7 @@ export function TechnicianDashboard() {
   }, []);
 
   if (isLoading) {
-    return <div>Loading...</div>
+    return <DashboardSkeleton />
   }
 
   return (
