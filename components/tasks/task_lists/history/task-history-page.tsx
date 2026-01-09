@@ -78,11 +78,6 @@ export function TaskHistoryPage({
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">{title}</h1>
           <p className="text-gray-600 mt-2">{description}</p>
         </div>
-        {showDateFilter && (
-          <Button onClick={() => setShowAll(!showAll)}>
-            {showAll ? "Show Last 2 Weeks" : "Show All"}
-          </Button>
-        )}
       </div>
 
       <TasksDisplay
