@@ -25,6 +25,7 @@ interface TaskActionsProps {
     isAccountantView?: boolean
     isCompletedTab?: boolean
     showActions?: boolean
+    approvingTaskId?: string | null
 }
 
 export function TaskActions({
@@ -45,7 +46,8 @@ export function TaskActions({
     isHistoryView,
     isAccountantView,
     isCompletedTab,
-    showActions
+    showActions,
+    approvingTaskId
 }: TaskActionsProps) {
     const [rejectionNotes, setRejectionNotes] = useState("")
     const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
@@ -114,14 +116,16 @@ export function TaskActions({
     }
 
     if (isFrontDeskCompletedView) {
+        const isApproving = approvingTaskId === task.title;
         return (
             <div className="flex gap-2 w-full justify-end" onClick={stopProp}>
                 <Button
                     size="sm"
-                    className="bg-green-600 hover:bg-green-700 text-white flex-1 sm:flex-none"
+                    className="bg-green-600 hover:bg-green-700 text-white flex-1 sm:flex-none disabled:opacity-50"
                     onClick={() => onApprove?.(task.title)}
+                    disabled={isApproving || !!approvingTaskId}
                 >
-                    Approve
+                    {isApproving ? "Approving..." : "Approve"}
                 </Button>
                 <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
                     <DialogTrigger asChild>

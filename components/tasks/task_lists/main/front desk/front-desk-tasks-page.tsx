@@ -44,29 +44,68 @@ export function FrontDeskTasksPage() {
   const { data: technicians } = useTechnicians();
   const updateTaskMutation = useUpdateTask();
   const { toast } = useToast();
+  const [approvingTaskId, setApprovingTaskId] = useState<string | null>(null);
 
   const handleRowClick = useCallback((task: any) => {
     router.push(`/dashboard/tasks/${task.title}`);
   }, [router]);
 
-  const handleApprove = useCallback(async (task: any) => {
+  const handleApprove = useCallback(async (taskTitle: string) => {
     if (user) {
+      // Prevent double-clicks
+      if (approvingTaskId) return;
+
+      setApprovingTaskId(taskTitle);
+
+      // Find the task from the completed tasks data
+      const task = completedTasksData?.results?.find((t: any) => t.title === taskTitle);
+
       const updates: any = {
         status: "Ready for Pickup",
         approved_by: user.id,
         approved_at: new Date().toISOString(),
       };
 
-      if (!task.workshop_status) {
+      if (!task?.workshop_status) {
         updates.workshop_status = 'Solved';
       }
 
-      updateTaskMutation.mutate({
-        id: task.title,
-        updates,
-      });
+      try {
+        const result = await updateTaskMutation.mutateAsync({
+          id: taskTitle,
+          updates,
+        });
+
+        // Show toast based on SMS result
+        if (result.sms_sent) {
+          toast({
+            title: "Task Approved",
+            description: `Customer notified via SMS to ${result.sms_phone}`,
+          });
+        } else if (result.sms_phone === null) {
+          toast({
+            title: "Task Approved",
+            description: "Customer notification skipped - no phone number on file",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Task Approved",
+            description: "Task approved but SMS notification failed",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to approve task",
+          variant: "destructive",
+        });
+      } finally {
+        setApprovingTaskId(null);
+      }
     }
-  }, [updateTaskMutation, user]);
+  }, [updateTaskMutation, user, completedTasksData, toast, approvingTaskId]);
 
   const handleReject = useCallback(async (taskTitle: string, notes: string) => {
     updateTaskMutation.mutate({ id: taskTitle, updates: { status: "In Progress", qc_notes: notes, workshop_status: null } });
@@ -151,6 +190,7 @@ export function FrontDeskTasksPage() {
             onApprove={handleApprove}
             onReject={handleReject}
             isFrontDeskCompletedView={true}
+            approvingTaskId={approvingTaskId}
           />
           <div className="flex justify-end space-x-2 mt-4">
             <Button onClick={() => handlePageChange('completed', 'previous')} disabled={!completedTasksData?.previous}>Previous</Button>

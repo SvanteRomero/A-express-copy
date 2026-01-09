@@ -492,3 +492,77 @@ def send_debt_reminder_sms(task, phone_number, user):
             'error': result.get('error', 'Unknown error')
         }
 
+
+def send_ready_for_pickup_sms(task, phone_number, user):
+    """
+    Send SMS notification to customer when their task is approved and ready for pickup.
+    Uses the ready_for_pickup template which selects Solved/Not Solved variant
+    based on workshop_status.
+    
+    Args:
+        task: Task instance that was approved
+        phone_number: Customer's phone number
+        user: User who approved the task (for logging)
+    
+    Returns:
+        dict: {success: bool, phone: str, message: str, error: str (if failed)}
+    """
+    from messaging.models import MessageLog
+    from Eapp.models import TaskActivity
+    
+    # Build the message using the template (handles Solved/Not Solved automatically)
+    message = build_template_message(task, 'ready_for_pickup')
+    
+    if not message:
+        return {
+            'success': False,
+            'error': 'Failed to build ready for pickup message from template'
+        }
+    
+    # Create message log entry (pending)
+    message_log = MessageLog.objects.create(
+        task=task,
+        recipient_phone=phone_number,
+        message_content=message,
+        status='pending',
+        sent_by=user
+    )
+    
+    # Send SMS via Briq
+    result = briq_client.send_sms(
+        content=message,
+        recipients=[phone_number]
+    )
+    
+    # Update message log with result
+    if result.get('success'):
+        message_log.status = 'sent'
+        message_log.response_data = result.get('data')
+        message_log.save()
+        
+        # Log activity on the task
+        TaskActivity.objects.create(
+            task=task,
+            user=user,
+            type='sms_sent',
+            message=f"Ready for pickup SMS sent to {phone_number}"
+        )
+        
+        logger.info(f"Ready for pickup SMS sent to {phone_number} for task {task.title}")
+        return {
+            'success': True,
+            'phone': phone_number,
+            'message': message
+        }
+    else:
+        message_log.status = 'failed'
+        message_log.response_data = result
+        message_log.save()
+        
+        logger.error(f"Ready for pickup SMS failed for {phone_number}: {result.get('error')}")
+        return {
+            'success': False,
+            'phone': phone_number,
+            'error': result.get('error', 'Unknown error')
+        }
+

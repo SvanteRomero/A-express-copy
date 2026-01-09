@@ -25,6 +25,7 @@ interface TaskCardProps {
     isHistoryView?: boolean
     isCompletedTab?: boolean
     showActions?: boolean
+    approvingTaskId?: string | null
 }
 
 export function TaskCard({

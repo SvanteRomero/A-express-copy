@@ -26,6 +26,7 @@ interface TaskTableRowProps {
     isHistoryView?: boolean
     isCompletedTab?: boolean
     showActions?: boolean
+    approvingTaskId?: string | null
 }
 
 export function TaskTableRow({
