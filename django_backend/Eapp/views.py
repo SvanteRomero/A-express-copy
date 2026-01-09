@@ -301,10 +301,10 @@ class TaskViewSet(viewsets.ModelViewSet):
         tasks = self.get_queryset().filter(is_debt=True)
         page = self.paginate_queryset(tasks)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            serializer = TaskListSerializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(tasks, many=True)
+        serializer = TaskListSerializer(tasks, many=True)
         return Response(serializer.data)
 
 
