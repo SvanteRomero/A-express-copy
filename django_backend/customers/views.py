@@ -37,16 +37,22 @@ class CustomerViewSet(viewsets.ModelViewSet):
         from django.db.models.functions import TruncMonth
         from django.utils import timezone
         import calendar
+        import datetime
 
         # Get the last 12 months
         today = timezone.now()
-        months = [(today - timezone.timedelta(days=30 * i)).strftime('%Y-%m-01') for i in range(12)]
+        months = [(today - datetime.timedelta(days=30 * i)).strftime('%Y-%m-01') for i in range(12)]
         months.reverse()
+
+        # Fix for naive datetime warning: Create a timezone-aware datetime for the start date
+        start_date_str = months[0]
+        start_date_naive = datetime.datetime.strptime(start_date_str, '%Y-%m-%d')
+        start_date = timezone.make_aware(start_date_naive)
 
         # Query to get monthly customer counts
         acquisition_data = (
             Customer.objects
-            .filter(created_at__gte=months[0])
+            .filter(created_at__gte=start_date)
             .annotate(month=TruncMonth('created_at'))
             .values('month')
             .annotate(customers=Count('id'))
@@ -59,7 +65,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
         # Format the data for the chart
         chart_data = []
         for i in range(12):
-            month_date = today - timezone.timedelta(days=30 * i)
+            month_date = today - datetime.timedelta(days=30 * i)
             month_abbr = calendar.month_abbr[month_date.month]
             chart_data.append({
                 'month': month_abbr,

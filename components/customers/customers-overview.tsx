@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/core/badge";
 import { Button } from "@/components/ui/core/button";
 import { Input } from "@/components/ui/core/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table";
-import { Users, TrendingUp, Search, Plus, Edit, Trash2 } from "lucide-react";
+import { Users, TrendingUp, Search, Edit } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { EditCustomerDialog } from "./edit-customer-dialog";
 import { Customer } from "@/components/customers/types";
@@ -103,10 +103,6 @@ export function CustomersOverview() {
                 <CardTitle>Customer Management</CardTitle>
                 <CardDescription>Manage your customer database</CardDescription>
               </div>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Customer
-              </Button>
             </div>
             <div className="flex items-center space-x-2">
               <div className="relative flex-1 max-w-sm">
@@ -142,7 +138,12 @@ export function CustomersOverview() {
                       <CardContent className="p-4 pt-0 space-y-2">
                         <div className="text-sm">
                           <span className="text-gray-500">Contact: </span>
-                          {customer.phone_numbers?.[0]?.phone_number ?? 'N/A'}
+                          <span>{customer.phone_numbers?.[0]?.phone_number ?? 'N/A'}</span>
+                          {customer.phone_numbers && customer.phone_numbers.length > 1 && (
+                            <Badge variant="outline" className="ml-2 text-xs">
+                              +{customer.phone_numbers.length - 1} more
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex justify-between items-center text-sm">
                           <div>Tasks: <span className="font-medium">{customer.tasks_count}</span></div>
@@ -157,9 +158,6 @@ export function CustomersOverview() {
                           handleEditClick(customer);
                         }}>
                           <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost">
-                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </CardFooter>
                     </Card>
@@ -195,7 +193,14 @@ export function CustomersOverview() {
                       <TableRow key={customer.id}>
                         <TableCell className="font-medium">{`CUST${customer.id.toString().padStart(3, '0')}`}</TableCell>
                         <TableCell>{customer.name}</TableCell>
-                        <TableCell>{customer.phone_numbers?.[0]?.phone_number ?? 'N/A'}</TableCell>
+                        <TableCell>
+                          <span>{customer.phone_numbers?.[0]?.phone_number ?? 'N/A'}</span>
+                          {customer.phone_numbers && customer.phone_numbers.length > 1 && (
+                            <Badge variant="outline" className="ml-2 text-xs">
+                              +{customer.phone_numbers.length - 1} more
+                            </Badge>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="secondary">{customer.customer_type}</Badge>
                         </TableCell>
@@ -207,9 +212,6 @@ export function CustomersOverview() {
                           <div className="flex items-center space-x-2">
                             <Button variant="ghost" size="sm" onClick={() => handleEditClick(customer)}>
                               <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>
