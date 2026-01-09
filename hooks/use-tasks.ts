@@ -1,9 +1,28 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getTasks, getTask, createTask, updateTask as apiUpdateTask, createCostBreakdown, getDebts } from '@/lib/api-client'
-import { getTaskStatusOptions, getTaskUrgencyOptions } from '@/lib/tasks-api'
+import { getTasks, getTask, createTask, updateTask as apiUpdateTask, createCostBreakdown, getDebts, apiClient } from '@/lib/api-client'
 import { Task, PaginatedTasks } from '@/components/tasks/types'
+
+export const getTaskStatusOptions = async () => {
+  try {
+    const response = await apiClient.get('/tasks/status-options/');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching task status options:', error);
+    throw error;
+  }
+};
+
+export const getTaskUrgencyOptions = async () => {
+  try {
+    const response = await apiClient.get('/tasks/urgency-options/');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching task urgency options:', error);
+    throw error;
+  }
+};
 
 export function useTasks(filters?: {
   status?: string

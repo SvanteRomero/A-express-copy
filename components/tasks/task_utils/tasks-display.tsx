@@ -5,7 +5,7 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components
 import { Button } from "@/components/ui/core/button"
 import { ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle } from "lucide-react"
 import { TaskFilters } from "./task-filters"
-import { getTaskStatusOptions } from "@/lib/tasks-api"
+import { getTaskStatusOptions } from "@/hooks/use-tasks"
 import { useIsMobile } from "@/hooks/use-mobile"
 import AddPaymentDialog from "../add-payment-dialog"
 import { useTaskFiltering } from "@/hooks/use-task-filtering"
