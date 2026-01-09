@@ -566,3 +566,118 @@ def send_ready_for_pickup_sms(task, phone_number, user):
             'error': result.get('error', 'Unknown error')
         }
 
+
+# Templates for Picked Up SMS
+TEMPLATE_PICKED_UP_THANK_YOU = (
+    "Habari {customer}, tunakushukuru kwa kuchukua kompyuta yako {device} "
+    "(Job No.: {taskId}). Tunafurahi kufanya kazi na wewe. Karibu sana! – {company_name}"
+)
+
+TEMPLATE_PICKED_UP_DEBT = (
+    "Habari {customer}, tunakumbusha kuwa unadaiwa deni la TSH {outstanding_balance} "
+    "kwa kazi ya {device} (Job No.: {taskId}). Tafadhali lipa mapema iwezekanavyo "
+    "ili kuepuka usumbufu. Asante kwa kushirikiana na {company_name}"
+)
+
+
+def send_picked_up_sms(task, phone_number, user):
+    """
+    Send SMS notification to customer when their task is picked up.
+    Uses thank you template for normal pickups, debt reminder for debt pickups.
+    
+    Args:
+        task: Task instance that was picked up
+        phone_number: Customer's phone number
+        user: User who processed the pickup (for logging)
+    
+    Returns:
+        dict: {success: bool, phone: str, message: str, error: str (if failed)}
+    """
+    from messaging.models import MessageLog
+    from Eapp.models import TaskActivity
+    from settings.models import SystemSettings
+    
+    # Get system settings for company info
+    system_settings = SystemSettings.get_settings()
+    company_name = system_settings.company_name or 'A PLUS EXPRESS TECHNOLOGIES LTD'
+    
+    # Build device name
+    device_parts = []
+    if task.brand:
+        device_parts.append(str(task.brand))
+    if task.laptop_model:
+        device_parts.append(str(task.laptop_model))
+    device = ' '.join(device_parts) if device_parts else 'kifaa'
+    
+    # Get customer name
+    customer_name = task.customer.name if task.customer else 'Mteja'
+    
+    # Select template based on is_debt flag
+    if task.is_debt:
+        template = TEMPLATE_PICKED_UP_DEBT
+        # Calculate outstanding balance
+        total_cost = task.total_cost or 0
+        paid_amount = task.paid_amount or 0
+        outstanding = max(0, total_cost - paid_amount)
+        outstanding_str = f"{outstanding:,.0f}"
+    else:
+        template = TEMPLATE_PICKED_UP_THANK_YOU
+        outstanding_str = "0"
+    
+    # Build message
+    message = template.replace('{customer}', customer_name)
+    message = message.replace('{device}', device)
+    message = message.replace('{taskId}', task.title)
+    message = message.replace('{outstanding_balance}', outstanding_str)
+    message = message.replace('{company_name}', company_name)
+    
+    # Sanitize: remove newlines
+    message = message.replace('\n', ' ').replace('\r', '').strip()
+    
+    # Create message log entry (pending)
+    message_log = MessageLog.objects.create(
+        task=task,
+        recipient_phone=phone_number,
+        message_content=message,
+        status='pending',
+        sent_by=user
+    )
+    
+    # Send SMS via Briq
+    result = briq_client.send_sms(
+        content=message,
+        recipients=[phone_number]
+    )
+    
+    # Update message log with result
+    if result.get('success'):
+        message_log.status = 'sent'
+        message_log.response_data = result.get('data')
+        message_log.save()
+        
+        # Log activity on the task
+        activity_msg = "Debt reminder SMS sent" if task.is_debt else "Thank you SMS sent"
+        TaskActivity.objects.create(
+            task=task,
+            user=user,
+            type='sms_sent',
+            message=f"{activity_msg} to {phone_number}"
+        )
+        
+        logger.info(f"Picked up SMS sent to {phone_number} for task {task.title}")
+        return {
+            'success': True,
+            'phone': phone_number,
+            'message': message
+        }
+    else:
+        message_log.status = 'failed'
+        message_log.response_data = result
+        message_log.save()
+        
+        logger.error(f"Picked up SMS failed for {phone_number}: {result.get('error')}")
+        return {
+            'success': False,
+            'phone': phone_number,
+            'error': result.get('error', 'Unknown error')
+        }

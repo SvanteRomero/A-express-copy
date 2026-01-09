@@ -26,6 +26,7 @@ interface TaskCardProps {
     isCompletedTab?: boolean
     showActions?: boolean
     approvingTaskId?: string | null
+    pickingUpTaskId?: string | null
 }
 
 export function TaskCard({

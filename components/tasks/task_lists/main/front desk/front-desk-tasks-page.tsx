@@ -111,6 +111,8 @@ export function FrontDeskTasksPage() {
     updateTaskMutation.mutate({ id: taskTitle, updates: { status: "In Progress", qc_notes: notes, workshop_status: null } });
   }, [updateTaskMutation]);
 
+  const [pickingUpTaskId, setPickingUpTaskId] = useState<string | null>(null);
+
   const handlePickedUp = useCallback(async (task: any) => {
     if (task.payment_status !== 'Fully Paid' && !task.is_debt) {
       toast({
@@ -121,16 +123,52 @@ export function FrontDeskTasksPage() {
       return;
     }
     if (user) {
-      updateTaskMutation.mutate({
-        id: task.title,
-        updates: {
-          status: "Picked Up",
-          date_out: new Date().toISOString(),
-          sent_out_by: user.id,
-        },
-      });
+      // Prevent double-clicks
+      if (pickingUpTaskId) return;
+
+      setPickingUpTaskId(task.title);
+
+      try {
+        const result = await updateTaskMutation.mutateAsync({
+          id: task.title,
+          updates: {
+            status: "Picked Up",
+            date_out: new Date().toISOString(),
+            sent_out_by: user.id,
+          },
+        });
+
+        // Show toast based on SMS result
+        if (result.sms_sent) {
+          const messageType = task.is_debt ? "Debt reminder" : "Thank you message";
+          toast({
+            title: "Picked Up",
+            description: `${messageType} sent via SMS to ${result.sms_phone}`,
+          });
+        } else if (result.sms_phone === null) {
+          toast({
+            title: "Picked Up",
+            description: "Customer notification skipped - no phone number on file",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Picked Up",
+            description: "Task picked up but SMS notification failed",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to mark task as picked up",
+          variant: "destructive",
+        });
+      } finally {
+        setPickingUpTaskId(null);
+      }
     }
-  }, [updateTaskMutation, user, toast]);
+  }, [updateTaskMutation, user, toast, pickingUpTaskId]);
 
   const handleNotifyCustomer = useCallback((taskTitle: string, customerName: string) => {
     alert(`Notifying ${customerName} for task ${taskTitle}`);
@@ -206,6 +244,7 @@ export function FrontDeskTasksPage() {
             isPickupView={true}
             onPickedUp={handlePickedUp}
             onNotifyCustomer={handleNotifyCustomer}
+            pickingUpTaskId={pickingUpTaskId}
           />
           <div className="flex justify-end space-x-2 mt-4">
             <Button onClick={() => handlePageChange('pickup', 'previous')} disabled={!pickupTasksData?.previous}>Previous</Button>

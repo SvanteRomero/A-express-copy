@@ -249,6 +249,23 @@ class TaskViewSet(viewsets.ModelViewSet):
                 logger = logging.getLogger(__name__)
                 logger.error(f"Error sending ready for pickup SMS: {e}")
 
+        # Send SMS notification when picked up (thank you or debt reminder)
+        if data.get('status') == 'Picked Up':
+            response_data['sms_sent'] = False
+            response_data['sms_phone'] = None
+            try:
+                from messaging.services import send_picked_up_sms
+                customer = updated_task.customer
+                if customer and customer.phone_numbers.exists():
+                    primary_phone = customer.phone_numbers.first()
+                    sms_result = send_picked_up_sms(updated_task, primary_phone.phone_number, user)
+                    response_data['sms_sent'] = sms_result.get('success', False)
+                    response_data['sms_phone'] = sms_result.get('phone')
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error sending picked up SMS: {e}")
+
         return Response(response_data)
 
     def _create_update_activities(self, task, data, user, original_task):

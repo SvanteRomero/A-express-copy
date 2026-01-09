@@ -34,6 +34,7 @@ interface TasksDisplayProps {
   onAddPayment?: (taskId: string, amount: number, paymentMethodId: number) => void
   onRemindDebt?: (taskId: string) => void
   approvingTaskId?: string | null
+  pickingUpTaskId?: string | null
 }
 
 export function TasksDisplay({
@@ -57,7 +58,8 @@ export function TasksDisplay({
   isAccountantView,
   onAddPayment,
   onRemindDebt,
-  approvingTaskId
+  approvingTaskId,
+  pickingUpTaskId
 }: TasksDisplayProps) {
   const isMobile = useIsMobile()
   const [statusOptions, setStatusOptions] = useState<string[]>([])
@@ -151,6 +153,7 @@ export function TasksDisplay({
               isHistoryView={isHistoryView}
               isCompletedTab={isCompletedTab}
               approvingTaskId={approvingTaskId}
+              pickingUpTaskId={pickingUpTaskId}
             />
           ))}
           {filteredAndSortedTasks.length === 0 && (
@@ -223,6 +226,7 @@ export function TasksDisplay({
                   isHistoryView={isHistoryView}
                   isCompletedTab={isCompletedTab}
                   approvingTaskId={approvingTaskId}
+                  pickingUpTaskId={pickingUpTaskId}
                 />
               ))}
             </TableBody>

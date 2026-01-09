@@ -27,6 +27,7 @@ interface TaskTableRowProps {
     isCompletedTab?: boolean
     showActions?: boolean
     approvingTaskId?: string | null
+    pickingUpTaskId?: string | null
 }
 
 export function TaskTableRow({

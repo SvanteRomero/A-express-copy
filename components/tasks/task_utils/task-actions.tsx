@@ -26,6 +26,7 @@ interface TaskActionsProps {
     isCompletedTab?: boolean
     showActions?: boolean
     approvingTaskId?: string | null
+    pickingUpTaskId?: string | null
 }
 
 export function TaskActions({
@@ -47,7 +48,8 @@ export function TaskActions({
     isAccountantView,
     isCompletedTab,
     showActions,
-    approvingTaskId
+    approvingTaskId,
+    pickingUpTaskId
 }: TaskActionsProps) {
     const [rejectionNotes, setRejectionNotes] = useState("")
     const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
@@ -74,17 +76,19 @@ export function TaskActions({
     }
 
     if (isPickupView) {
+        const isPickingUp = pickingUpTaskId === task.title;
+        const isPaymentBlocked = task.payment_status !== 'Fully Paid' && !task.is_debt;
         return (
             <div className="flex gap-2 w-full justify-end" onClick={stopProp}>
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                         <Button
                             size="sm"
-                            className="bg-blue-600 hover:bg-blue-700 text-white flex-1 sm:flex-none"
-                            disabled={task.payment_status !== 'Fully Paid' && !task.is_debt}
+                            className="bg-blue-600 hover:bg-blue-700 text-white flex-1 sm:flex-none disabled:opacity-50"
+                            disabled={isPaymentBlocked || isPickingUp || !!pickingUpTaskId}
                         >
                             <CheckCircle className="h-3 w-3 mr-1" />
-                            Picked Up
+                            {isPickingUp ? "Processing..." : "Picked Up"}
                         </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -102,15 +106,6 @@ export function TaskActions({
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
-                <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 sm:flex-none"
-                    onClick={() => onNotifyCustomer?.(task.title, task.customer_details?.name)}
-                >
-                    <MessageSquare className="h-3 w-3 mr-1" />
-                    Notify
-                </Button>
             </div>
         )
     }
