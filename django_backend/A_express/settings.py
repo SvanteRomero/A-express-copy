@@ -154,6 +154,7 @@ INSTALLED_APPS = [
     "messaging",  # SMS messaging via Briq
     "settings",  # System settings
     'django_extensions',
+    'django_apscheduler',  # Background task scheduling
 ]
 
 MIDDLEWARE = [
@@ -371,4 +372,10 @@ AXES_VERBOSE = False  # Don't log to console in production
 # Get your API key from: https://briq.tz/login
 BRIQ_API_KEY = os.environ.get('BRIQ_API_KEY', '')
 BRIQ_SENDER_ID = os.environ.get('BRIQ_SENDER_ID', 'A-EXPRESS')
+
+# =============================================================================
+# APScheduler Configuration
+# =============================================================================
+APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
+APSCHEDULER_RUN_NOW_TIMEOUT = 25  # Seconds
 

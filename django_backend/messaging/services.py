@@ -19,6 +19,7 @@ __all__ = [
     'send_debt_reminder_sms',
     'send_ready_for_pickup_sms',
     'send_picked_up_sms',
+    'send_pickup_reminder_sms',
     'build_template_message',
 ]
 
@@ -150,3 +151,33 @@ def build_template_message(task, template_key):
     """
     builder = MessageBuilder(task)
     return builder.build_template_message(template_key)
+
+
+def send_pickup_reminder_sms(task, phone_number):
+    """
+    Send automated pickup reminder SMS to customer.
+    Called by the scheduler - no user context needed.
+    
+    Args:
+        task: Task instance that is ready for pickup
+        phone_number: Customer's phone number
+    
+    Returns:
+        dict: {success: bool, phone: str, message: str, error: str (if failed)}
+    """
+    builder = MessageBuilder(task)
+    message = builder.build_pickup_reminder_message()
+    
+    if not message:
+        return {
+            'success': False,
+            'error': 'Failed to build pickup reminder message'
+        }
+    
+    return send_sms_with_logging(
+        task=task,
+        phone_number=phone_number,
+        message=message,
+        user=None,  # Automated - no user context
+        activity_message=f"Automated pickup reminder SMS sent to {phone_number}"
+    )

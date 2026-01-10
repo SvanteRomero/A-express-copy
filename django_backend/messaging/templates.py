@@ -65,6 +65,15 @@ TEMPLATE_PICKED_UP_DEBT = (
     "ili kuepuka usumbufu. Asante kwa kushirikiana na {company_name}"
 )
 
+# Pickup Reminder template (for tasks ready but not picked up)
+TEMPLATE_PICKUP_REMINDER = (
+    "Habari {customer}, tunakukumbusha kuwa kifaa chako {device} "
+    "(Job No.: {taskId}) kipo tayari kuchukuliwa. "
+    "Umebakiwa na saa {hours_remaining} kabla ya muda wa siku 7 kumalizika; "
+    "baada ya hapo, gharama ya uhifadhi TSH 3,000/siku itatozwa."
+    "{contact_info} – {company_name}."
+)
+
 
 def get_message_templates():
     """

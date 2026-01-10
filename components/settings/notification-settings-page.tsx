@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/core/button"
 import { Switch } from "@/components/ui/core/switch"
 import { Label } from "@/components/ui/core/label"
-import { Bell, MessageSquare, Save, ArrowLeft, Loader2 } from "lucide-react"
+import { Input } from "@/components/ui/core/input"
+import { Bell, MessageSquare, Save, ArrowLeft, Loader2, Clock } from "lucide-react"
 import { getSystemSettings, updateSystemSettings } from "@/lib/api-client"
 import { toast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
@@ -15,6 +16,8 @@ export function NotificationSettingsPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
     const [autoSmsOnTaskCreation, setAutoSmsOnTaskCreation] = useState(true)
+    const [autoPickupRemindersEnabled, setAutoPickupRemindersEnabled] = useState(false)
+    const [pickupReminderHours, setPickupReminderHours] = useState(24)
     const [lastUpdated, setLastUpdated] = useState<string | null>(null)
 
     useEffect(() => {
@@ -22,6 +25,8 @@ export function NotificationSettingsPage() {
             try {
                 const settings = await getSystemSettings()
                 setAutoSmsOnTaskCreation(settings.auto_sms_on_task_creation)
+                setAutoPickupRemindersEnabled(settings.auto_pickup_reminders_enabled)
+                setPickupReminderHours(settings.pickup_reminder_hours)
                 setLastUpdated(settings.updated_at)
             } catch (error) {
                 console.error("Failed to fetch settings:", error)
@@ -42,6 +47,8 @@ export function NotificationSettingsPage() {
         try {
             const updated = await updateSystemSettings({
                 auto_sms_on_task_creation: autoSmsOnTaskCreation,
+                auto_pickup_reminders_enabled: autoPickupRemindersEnabled,
+                pickup_reminder_hours: pickupReminderHours,
             })
             setLastUpdated(updated.updated_at)
             toast({
@@ -133,6 +140,46 @@ export function NotificationSettingsPage() {
                             checked={autoSmsOnTaskCreation}
                             onCheckedChange={setAutoSmsOnTaskCreation}
                         />
+                    </div>
+
+                    {/* Auto Pickup Reminders */}
+                    <div className="p-4 bg-gray-50 rounded-lg space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <Label className="text-base font-medium text-gray-900">
+                                    Automatic Pickup Reminders
+                                </Label>
+                                <p className="text-sm text-gray-600">
+                                    Automatically send reminder SMS to customers whose tasks are ready
+                                    for pickup but haven&apos;t been collected yet.
+                                </p>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Reminds customers of the 7-day pickup deadline and storage fees.
+                                </p>
+                            </div>
+                            <Switch
+                                checked={autoPickupRemindersEnabled}
+                                onCheckedChange={setAutoPickupRemindersEnabled}
+                            />
+                        </div>
+
+                        {autoPickupRemindersEnabled && (
+                            <div className="flex items-center gap-3 pt-3 border-t border-gray-200">
+                                <Clock className="h-5 w-5 text-gray-500" />
+                                <Label className="text-sm text-gray-700">
+                                    Send reminder every
+                                </Label>
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    max={168}
+                                    value={pickupReminderHours}
+                                    onChange={(e) => setPickupReminderHours(parseInt(e.target.value) || 24)}
+                                    className="w-20 text-center"
+                                />
+                                <span className="text-sm text-gray-700">hours</span>
+                            </div>
+                        )}
                     </div>
 
                     {lastUpdated && (

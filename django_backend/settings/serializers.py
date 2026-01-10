@@ -9,6 +9,8 @@ class SystemSettingsSerializer(serializers.ModelSerializer):
             'company_name',
             'company_phone_numbers',
             'auto_sms_on_task_creation',
+            'auto_pickup_reminders_enabled',
+            'pickup_reminder_hours',
             'updated_at'
         ]
         read_only_fields = ['updated_at']

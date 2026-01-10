@@ -13,6 +13,7 @@ from messaging.templates import (
     TEMPLATE_READY_NOT_SOLVED,
     TEMPLATE_PICKED_UP_THANK_YOU,
     TEMPLATE_PICKED_UP_DEBT,
+    TEMPLATE_PICKUP_REMINDER,
 )
 
 logger = logging.getLogger(__name__)
@@ -76,6 +77,24 @@ class MessageBuilder:
         outstanding = max(0, total_cost - paid_amount)
         if include_suffix:
             return f"{outstanding:,.0f}/=" if outstanding else "0/="
+    
+    def get_hours_remaining(self) -> str:
+        """Calculate hours remaining until 7-day deadline from when task was approved."""
+        approved_at = self.task.approved_at
+        if not approved_at:
+            return "N/A"
+        
+        # 7-day deadline in hours
+        deadline_hours = 7 * 24  # 168 hours
+        
+        # Hours elapsed since ready
+        now = timezone.now()
+        hours_elapsed = (now - approved_at).total_seconds() / 3600
+        
+        # Hours remaining (minimum 0)
+        hours_remaining = max(0, deadline_hours - hours_elapsed)
+        
+        return str(int(hours_remaining))
         return f"{outstanding:,.0f}"
     
     def get_description(self, uppercase: bool = False) -> str:
@@ -95,6 +114,7 @@ class MessageBuilder:
         message = message.replace('{contact_info}', self.get_contact_info())
         message = message.replace('{company_name}', self.company_name)
         message = message.replace('{status}', self.task.status or '')
+        message = message.replace('{hours_remaining}', self.get_hours_remaining())
         return message
     
     @staticmethod
@@ -143,6 +163,10 @@ class MessageBuilder:
         else:
             template = TEMPLATE_PICKED_UP_THANK_YOU
         return self.sanitize(self.substitute_variables(template))
+    
+    def build_pickup_reminder_message(self) -> str:
+        """Build pickup reminder SMS for tasks that are ready but not picked up."""
+        return self.sanitize(self.substitute_variables(TEMPLATE_PICKUP_REMINDER))
     
     def build_template_message(self, template_key: str) -> str:
         """

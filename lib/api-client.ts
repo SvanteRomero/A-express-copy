@@ -258,6 +258,8 @@ export interface SystemSettings {
   company_name: string;
   company_phone_numbers: string[];
   auto_sms_on_task_creation: boolean;
+  auto_pickup_reminders_enabled: boolean;
+  pickup_reminder_hours: number;
   updated_at: string;
 }
 export const getSystemSettings = () => apiClient.get<SystemSettings>('/system-settings/').then(res => res.data);

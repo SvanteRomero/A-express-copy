@@ -1,7 +1,7 @@
 "use client"
 
 import { useAuth } from "@/hooks/use-auth"
-import { AdminSettingsPage } from "@/components/settings/admin-settings-page"
+import { SettingsOverview } from "@/components/settings/settings-overview"
 
 export default function AdminSettings() {
   const { user } = useAuth()
@@ -10,6 +10,6 @@ export default function AdminSettings() {
     return null
   }
 
-  return <AdminSettingsPage />
+  return <SettingsOverview />
 }
 

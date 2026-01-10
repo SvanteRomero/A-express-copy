@@ -24,6 +24,16 @@ class SystemSettings(models.Model):
         help_text='Automatically send SMS to customer when a new task is created'
     )
     
+    # Pickup Reminder Settings
+    auto_pickup_reminders_enabled = models.BooleanField(
+        default=False,
+        help_text='Automatically send SMS reminders for tasks ready for pickup'
+    )
+    pickup_reminder_hours = models.PositiveIntegerField(
+        default=24,
+        help_text='Hours between pickup reminder messages'
+    )
+    
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
