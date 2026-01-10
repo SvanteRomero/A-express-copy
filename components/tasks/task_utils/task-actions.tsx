@@ -185,15 +185,17 @@ export function TaskActions({
     if (isCompletedTab) {
         return (
             <div className="flex gap-2 w-full justify-end" onClick={stopProp}>
-                <Button
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white flex-1 sm:flex-none"
-                    onClick={() => {
-                        // Add notification logic here in the future
-                    }}
-                >
-                    Notify Customer
-                </Button>
+                {task.status !== 'Completed' && (
+                    <Button
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white flex-1 sm:flex-none"
+                        onClick={() => {
+                            // Add notification logic here in the future
+                        }}
+                    >
+                        Notify Customer
+                    </Button>
+                )}
                 {isHistoryView && task.status === 'Picked Up' && new Date(task.updated_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
                     <Button
                         size="sm"
