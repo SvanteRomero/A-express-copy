@@ -204,7 +204,8 @@ export function useNewTaskForm() {
     const handlePhoneNumberChange = useCallback((index: number, value: string) => {
         setFormData(prev => {
             const newPhoneNumbers = [...prev.customer_phone_numbers]
-            newPhoneNumbers[index] = { phone_number: value }
+            // Preserve the id if it exists (for existing customers) so the backend updates rather than deletes/recreates
+            newPhoneNumbers[index] = { ...newPhoneNumbers[index], phone_number: value }
             return { ...prev, customer_phone_numbers: newPhoneNumbers }
         })
         setErrors(prev => ({ ...prev, [`customer_phone_${index}`]: undefined }))

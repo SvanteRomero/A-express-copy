@@ -77,6 +77,7 @@ class MessageBuilder:
         outstanding = max(0, total_cost - paid_amount)
         if include_suffix:
             return f"{outstanding:,.0f}/=" if outstanding else "0/="
+        return f"{outstanding:,.0f}"
     
     def get_hours_remaining(self) -> str:
         """Calculate hours remaining until 7-day deadline from when task was approved."""
@@ -95,7 +96,6 @@ class MessageBuilder:
         hours_remaining = max(0, deadline_hours - hours_elapsed)
         
         return str(int(hours_remaining))
-        return f"{outstanding:,.0f}"
     
     def get_description(self, uppercase: bool = False) -> str:
         """Get task description with optional uppercase."""
