@@ -13,7 +13,17 @@ class MessagingConfig(AppConfig):
         is_runserver = 'runserver' in sys.argv
         is_main_process = os.environ.get('RUN_MAIN') == 'true'
         
-        if is_runserver and is_main_process:
+        # Check for production WSGI servers (Gunicorn, uWSGI)
+        is_gunicorn = 'gunicorn' in sys.argv[0] if sys.argv else False
+        is_uwsgi = 'uwsgi' in sys.argv[0] if sys.argv else False
+        
+        # Allow explicit scheduler start via environment variable for other WSGI servers
+        force_scheduler = os.environ.get('DJANGO_START_SCHEDULER') == 'true'
+        
+        # Start scheduler in dev (runserver) or in production (gunicorn/uwsgi/env var)
+        should_start = (is_runserver and is_main_process) or is_gunicorn or is_uwsgi or force_scheduler
+        
+        if should_start:
             # Use timer to defer startup until after Django is fully initialized
             import threading
             timer = threading.Timer(2.0, self._start_scheduler)
