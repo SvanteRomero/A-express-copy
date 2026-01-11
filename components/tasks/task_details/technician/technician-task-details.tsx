@@ -45,9 +45,9 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
-import { updateTask, addTaskActivity } from "@/lib/api-client"
+import { addTaskActivity } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
-import { useTask } from "@/hooks/use-tasks";
+import { useTask, useUpdateTask } from "@/hooks/use-tasks";
 import { useWorkshopLocations } from "@/hooks/use-locations";
 import { useWorkshopTechnicians } from "@/hooks/use-users";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -73,12 +73,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   const [selectedWorkshopLocation, setSelectedWorkshopLocation] = useState<string | undefined>(undefined)
   const [selectedWorkshopTechnician, setSelectedWorkshopTechnician] = useState<string | undefined>(undefined)
 
-  const updateTaskMutation = useMutation({
-    mutationFn: (data: any) => updateTask(taskId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-    },
-  });
+  const updateTaskMutation = useUpdateTask();
 
   const addTaskActivityMutation = useMutation({
     mutationFn: (data: any) => addTaskActivity(taskId, data),
@@ -88,7 +83,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   });
 
   const handleStatusChange = async (newStatus: string) => {
-    updateTaskMutation.mutate({ status: newStatus });
+    updateTaskMutation.mutate({ id: taskId, updates: { status: newStatus } });
   }
 
   const handleAddNote = async () => {
@@ -111,8 +106,11 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
       return
     }
     updateTaskMutation.mutate({
-      workshop_location: selectedWorkshopLocation,
-      workshop_technician: selectedWorkshopTechnician,
+      id: taskId,
+      updates: {
+        workshop_location: selectedWorkshopLocation,
+        workshop_technician: selectedWorkshopTechnician,
+      }
     });
     setIsSendToWorkshopDialogOpen(false)
     toast({
@@ -122,7 +120,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   }
 
   const handleWorkshopStatusChange = async (newStatus: string) => {
-    updateTaskMutation.mutate({ workshop_status: newStatus });
+    updateTaskMutation.mutate({ id: taskId, updates: { workshop_status: newStatus } });
     toast({
       title: "Success",
       description: `Task marked as ${newStatus}.`,

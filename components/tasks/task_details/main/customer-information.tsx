@@ -7,9 +7,8 @@ import { Input } from "@/components/ui/core/input"
 import { Label } from "@/components/ui/core/label"
 import { User, Phone, Pencil, Save, X } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
-import { updateTask } from "@/lib/api-client"
-import { useTask } from "@/hooks/use-tasks"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useTask, useUpdateTask } from "@/hooks/use-tasks"
+import { useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 
 interface CustomerInformationProps {
@@ -40,32 +39,36 @@ export default function CustomerInformation({ taskId }: CustomerInformationProps
     }
   }, [taskData])
 
-  const updateTaskMutation = useMutation({
-    mutationFn: (updates: { [key: string]: any }) => updateTask(taskId, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["task", taskId] })
-      setIsEditing(false)
-      toast({
-        title: "Changes Saved",
-        description: "Customer information updated successfully.",
-      })
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to save changes.",
-        variant: "destructive",
-      })
-    },
-  })
+  const updateTaskMutation = useUpdateTask()
 
   const handleSave = () => {
-    updateTaskMutation.mutate({
-      customer: {
-        name: editedName,
-        phone_numbers_write: editedPhoneNumbers,
+    updateTaskMutation.mutate(
+      {
+        id: taskId,
+        updates: {
+          customer: {
+            name: editedName,
+            phone_numbers_write: editedPhoneNumbers,
+          },
+        },
       },
-    })
+      {
+        onSuccess: () => {
+          setIsEditing(false)
+          toast({
+            title: "Changes Saved",
+            description: "Customer information updated successfully.",
+          })
+        },
+        onError: () => {
+          toast({
+            title: "Error",
+            description: "Failed to save changes.",
+            variant: "destructive",
+          })
+        },
+      }
+    )
   }
 
   const handleCancel = () => {

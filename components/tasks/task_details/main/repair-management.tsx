@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/core/button"
 import { Label } from "@/components/ui/core/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select"
 import { useAuth } from "@/hooks/use-auth"
-import { updateTask, addTaskActivity } from "@/lib/api-client"
-import { useTask, useTaskStatusOptions, useTaskUrgencyOptions } from "@/hooks/use-tasks"
+import { addTaskActivity } from "@/lib/api-client"
+import { useTask, useTaskStatusOptions, useTaskUrgencyOptions, useUpdateTask } from "@/hooks/use-tasks"
 import { useTechnicians } from "@/hooks/use-users"
 import { useLocations } from "@/hooks/use-locations"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useMemo, useState } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/core/badge"
@@ -46,12 +46,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
     }
   }, [taskData])
 
-  const updateTaskMutation = useMutation({
-    mutationFn: (updates: { [key: string]: any }) => updateTask(taskId, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["task", taskId] })
-    },
-  })
+  const updateTaskMutation = useUpdateTask()
 
   const handleRepairManagementSave = () => {
     if (!taskData) return
@@ -80,7 +75,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
     }
 
     if (Object.keys(changes).length > 0) {
-      updateTaskMutation.mutate(changes, {
+      updateTaskMutation.mutate({ id: taskId, updates: changes }, {
         onSuccess: () => {
           toast({ title: "Changes Saved", description: "Repair management details have been updated." })
           if (activityMessages.length > 0) {

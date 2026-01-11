@@ -55,10 +55,15 @@ export function useCreateTask() {
 export function useUpdateTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string, updates: Partial<Task> }) => apiUpdateTask(id, updates).then(res => res.data),
+    mutationFn: ({ id, updates }: { id: string, updates: Record<string, any> }) => apiUpdateTask(id, updates).then(res => res.data),
     onSuccess: (data, variables) => {
+      // Invalidate all task-related queries for consistent UI updates
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['inProgressTasks'] });
+      queryClient.invalidateQueries({ queryKey: ['completedTasks'] });
+      queryClient.invalidateQueries({ queryKey: ['inWorkshopTasks'] });
+      queryClient.invalidateQueries({ queryKey: ['technicianHistoryTasks'] });
     },
   });
 }

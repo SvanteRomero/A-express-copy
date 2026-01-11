@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/core/button"
 import { ArrowLeft, AlertTriangle, CheckCircle, MessageSquare } from "lucide-react"
 import { StatusBadge, UrgencyBadge, PaymentStatusBadge, WorkshopStatusBadge } from "@/components/tasks/task_utils/task-badges"
 import { useAuth } from "@/hooks/use-auth"
-import { updateTask, addTaskActivity } from "@/lib/api-client"
-import { useTask } from "@/hooks/use-tasks"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { addTaskActivity } from "@/lib/api-client"
+import { useTask, useUpdateTask } from "@/hooks/use-tasks"
+import { useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { SendCustomerUpdateModal } from "@/components/tasks/task_details/main/send-customer-update-modal"
@@ -24,16 +24,11 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
   const { toast } = useToast()
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
 
-  const updateTaskMutation = useMutation({
-    mutationFn: (updates: { [key: string]: any }) => updateTask(taskId, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["task", taskId] })
-    },
-  })
+  const updateTaskMutation = useUpdateTask()
 
   const handleMarkAsDebt = () => {
     updateTaskMutation.mutate(
-      { is_debt: true },
+      { id: taskId, updates: { is_debt: true } },
       {
         onSuccess: () => {
           toast({ title: "Task Marked as Debt", description: `Task ${taskData?.title} has been marked as debt.` })
@@ -52,7 +47,7 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
       })
       return
     }
-    updateTaskMutation.mutate({ status: "Picked Up" })
+    updateTaskMutation.mutate({ id: taskId, updates: { status: "Picked Up" } })
   }
 
 

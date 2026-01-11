@@ -1,3 +1,5 @@
+import os
+import sys
 from django.apps import AppConfig
 
 
@@ -6,16 +8,22 @@ class MessagingConfig(AppConfig):
     name = 'messaging'
 
     def ready(self):
-        """Start the APScheduler when Django starts."""
-        import os
-        # Only run scheduler in the main process (not in migrations, shell, etc.)
-        # and only in the main runserver process (not the reloader)
-        if os.environ.get('RUN_MAIN') == 'true':
-            self._start_scheduler()
+        """Schedule the APScheduler to start after Django is fully loaded."""
+        # Skip scheduler in migrations, shell, tests, or other management commands
+        is_runserver = 'runserver' in sys.argv
+        is_main_process = os.environ.get('RUN_MAIN') == 'true'
+        
+        if is_runserver and is_main_process:
+            # Use timer to defer startup until after Django is fully initialized
+            import threading
+            timer = threading.Timer(2.0, self._start_scheduler)
+            timer.daemon = True
+            timer.start()
 
     def _start_scheduler(self):
         """Initialize and start the background scheduler."""
         import logging
+        import atexit
         from apscheduler.schedulers.background import BackgroundScheduler
         from apscheduler.triggers.interval import IntervalTrigger
         from django_apscheduler.jobstores import DjangoJobStore
@@ -37,6 +45,9 @@ class MessagingConfig(AppConfig):
                 replace_existing=True,
                 max_instances=1,
             )
+            
+            # Shut down the scheduler when exiting the app
+            atexit.register(lambda: scheduler.shutdown(wait=False))
             
             scheduler.start()
             logger.info("APScheduler started - Pickup reminder job scheduled to run every hour")

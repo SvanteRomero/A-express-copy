@@ -73,6 +73,8 @@ export interface Task {
     original_technician_details?: UserResponse | null;
     referred_by: string;
     referred_by_details: Referrer;
+    workshop_location?: number | null;
+    workshop_technician?: number | null;
 }
 
 export interface TaskActivity {
