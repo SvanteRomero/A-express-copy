@@ -94,7 +94,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             'device_type', 'device_notes',
             'estimated_cost', 'total_cost', 'paid_amount', 'payment_status',
             'current_location', 'date_in', 'approved_at', 'approved_by',
-            'paid_date', 'next_payment_date', 'date_out', 'negotiated_by', 'negotiated_by_details',
+            'date_out', 'negotiated_by', 'negotiated_by_details',
             'activities', 'payments', 'outstanding_balance', 'is_referred', 'is_debt', 'referred_by', 'referred_by_details',
             'workshop_status', 'workshop_location', 'workshop_technician', 'original_technician_snapshot', 'original_location_snapshot', 'original_technician', 'original_technician_details',
             'workshop_location_details', 'workshop_technician_details', 'original_technician_snapshot_details', 'approved_by_details',

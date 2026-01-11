@@ -213,8 +213,6 @@ class Task(models.Model):
             self.payment_status = self.PaymentStatus.PARTIALLY_PAID
         elif self.paid_amount >= self.total_cost:
             self.payment_status = self.PaymentStatus.FULLY_PAID
-            if not self.paid_date:
-                self.paid_date = timezone.now().date()
 
 
 class TaskActivity(models.Model):
