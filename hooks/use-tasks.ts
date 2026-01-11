@@ -56,8 +56,67 @@ export function useUpdateTask() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, updates }: { id: string, updates: Record<string, any> }) => apiUpdateTask(id, updates).then(res => res.data),
-    onSuccess: (data, variables) => {
-      // Invalidate all task-related queries for consistent UI updates
+    onMutate: async ({ id, updates }) => {
+      // Cancel any outgoing refetches to avoid overwriting our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['inProgressTasks'] });
+      await queryClient.cancelQueries({ queryKey: ['completedTasks'] });
+      await queryClient.cancelQueries({ queryKey: ['task', id] });
+
+      // Snapshot the previous values
+      const previousInProgressTasks = queryClient.getQueriesData({ queryKey: ['inProgressTasks'] });
+      const previousCompletedTasks = queryClient.getQueriesData({ queryKey: ['completedTasks'] });
+      const previousTask = queryClient.getQueryData(['task', id]);
+
+      // Optimistically update the single task
+      if (previousTask) {
+        queryClient.setQueryData(['task', id], (old: any) => ({ ...old, ...updates }));
+      }
+
+      // If status is being changed, optimistically update the lists
+      if (updates.status) {
+        // Remove from in-progress lists if status is changing away from "In Progress"
+        queryClient.setQueriesData({ queryKey: ['inProgressTasks'] }, (old: Task[] | undefined) => {
+          if (!old) return old;
+          if (updates.status !== 'In Progress') {
+            return old.filter(task => task.title !== id);
+          }
+          return old;
+        });
+
+        // Add to completed lists if status is changing to "Completed"
+        if (updates.status === 'Completed') {
+          queryClient.setQueriesData({ queryKey: ['completedTasks'] }, (old: Task[] | undefined) => {
+            if (!old) return old;
+            const taskToAdd = previousTask as Task;
+            if (taskToAdd && !old.some(t => t.title === id)) {
+              return [{ ...taskToAdd, ...updates }, ...old];
+            }
+            return old;
+          });
+        }
+      }
+
+      // Return context with previous values for rollback
+      return { previousInProgressTasks, previousCompletedTasks, previousTask };
+    },
+    onError: (err, variables, context) => {
+      // Rollback to previous state on error
+      if (context?.previousInProgressTasks) {
+        context.previousInProgressTasks.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      if (context?.previousCompletedTasks) {
+        context.previousCompletedTasks.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      if (context?.previousTask) {
+        queryClient.setQueryData(['task', variables.id], context.previousTask);
+      }
+    },
+    onSettled: (data, error, variables) => {
+      // Always refetch after error or success to ensure we have the correct data
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['inProgressTasks'] });

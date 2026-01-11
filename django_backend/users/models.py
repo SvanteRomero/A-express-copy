@@ -76,10 +76,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.first_name
     
     def get_profile_picture_url(self):
-        """Return the URL for the user's profile picture or a default"""
+        """Return the URL for the user's profile picture or None"""
         if self.profile_picture and hasattr(self.profile_picture, 'url'):
             return self.profile_picture.url
-        return '/api/media/profile_pictures/default.png'
+        return None
     
     def save(self, *args, **kwargs):
         # Update last_login if password is being set (during login)
