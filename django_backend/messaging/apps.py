@@ -38,29 +38,50 @@ class MessagingConfig(AppConfig):
         from apscheduler.triggers.interval import IntervalTrigger
         from django_apscheduler.jobstores import DjangoJobStore
         from django.conf import settings
+        from django.db import IntegrityError
         from messaging.jobs import send_pickup_reminders
         
         logger = logging.getLogger(__name__)
+        logger.warning("=== APScheduler: Starting scheduler initialization ===")
         
         try:
             scheduler = BackgroundScheduler(timezone=settings.TIME_ZONE)
             scheduler.add_jobstore(DjangoJobStore(), 'default')
             
-            # Add pickup reminder job - runs every hour
-            scheduler.add_job(
-                send_pickup_reminders,
-                trigger=IntervalTrigger(hours=1),
-                id='send_pickup_reminders',
-                name='Send Pickup Reminders',
-                replace_existing=True,
-                max_instances=1,
-            )
+            # Start scheduler FIRST before adding jobs
+            scheduler.start()
+            logger.warning("APScheduler: Scheduler started successfully")
+            
+            # Now add/update the job - handle duplicate key gracefully
+            job_id = 'send_pickup_reminders'
+            try:
+                # Try to remove existing job first to avoid duplicate key error
+                existing_job = scheduler.get_job(job_id)
+                if existing_job:
+                    scheduler.remove_job(job_id)
+                    logger.warning(f"APScheduler: Removed existing job '{job_id}'")
+                
+                # Add the job fresh
+                scheduler.add_job(
+                    send_pickup_reminders,
+                    trigger=IntervalTrigger(hours=1),
+                    id=job_id,
+                    name='Send Pickup Reminders',
+                    replace_existing=True,
+                    max_instances=1,
+                )
+                logger.warning(f"APScheduler: Job '{job_id}' scheduled to run every hour")
+                
+            except IntegrityError as e:
+                # Job already exists in DB - this is fine, scheduler will pick it up
+                logger.warning(f"APScheduler: Job '{job_id}' already exists in database, will use existing schedule")
+            except Exception as job_error:
+                logger.exception(f"APScheduler: Error adding job: {job_error}")
             
             # Shut down the scheduler when exiting the app
             atexit.register(lambda: scheduler.shutdown(wait=False))
             
-            scheduler.start()
-            logger.info("APScheduler started - Pickup reminder job scheduled to run every hour")
+            logger.warning("=== APScheduler: Initialization complete ===")
             
         except Exception as e:
             logger.exception(f"Failed to start APScheduler: {e}")
