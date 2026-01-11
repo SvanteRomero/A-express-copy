@@ -70,12 +70,14 @@ def send_pickup_reminders():
             
             if hours_since_contact >= reminder_hours:
                 # Get customer phone
-                if not task.customer or not task.customer.phone_numbers:
+                if not task.customer or not task.customer.phone_numbers.exists():
                     logger.warning(f"Task {task.title}: No phone number, skipping")
                     continue
                 
-                # Use primary phone number
-                phone_number = task.customer.phone_numbers[0]
+                # Use primary phone number (decrypt since stored encrypted in PostgreSQL)
+                from common.encryption import decrypt_value
+                primary_phone = task.customer.phone_numbers.first()
+                phone_number = decrypt_value(primary_phone.phone_number)
                 
                 # Send reminder
                 result = send_pickup_reminder_sms(task, phone_number)

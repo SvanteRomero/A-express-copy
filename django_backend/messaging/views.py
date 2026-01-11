@@ -111,7 +111,9 @@ def send_debt_reminder(request, task_id):
         # Try to get the customer's primary phone
         customer = task.customer
         if customer and customer.phone_numbers.exists():
-            phone_number = customer.phone_numbers.first().phone_number
+            from common.encryption import decrypt_value
+            encrypted_phone = customer.phone_numbers.first().phone_number
+            phone_number = decrypt_value(encrypted_phone)
     
     if not phone_number:
         return Response({
@@ -178,7 +180,9 @@ def preview_template_message(request, task_id):
     # Get customer's primary phone for preview
     phone = None
     if task.customer and task.customer.phone_numbers.exists():
-        phone = task.customer.phone_numbers.first().phone_number
+        from common.encryption import decrypt_value
+        encrypted_phone = task.customer.phone_numbers.first().phone_number
+        phone = decrypt_value(encrypted_phone)
     
     return Response({
         'success': True,

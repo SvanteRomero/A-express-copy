@@ -156,6 +156,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         try:
             from settings.models import SystemSettings
             from messaging.services import send_task_registration_sms
+            from common.encryption import decrypt_value
             
             system_settings = SystemSettings.get_settings()
             if system_settings.auto_sms_on_task_creation and customer:
@@ -165,7 +166,9 @@ class TaskViewSet(viewsets.ModelViewSet):
                 # Get customer's primary phone number
                 primary_phone = customer.phone_numbers.first()
                 if primary_phone:
-                    sms_result = send_task_registration_sms(task, primary_phone.phone_number, request.user)
+                    # Decrypt phone number (encrypted in PostgreSQL production)
+                    phone_number = decrypt_value(primary_phone.phone_number)
+                    sms_result = send_task_registration_sms(task, phone_number, request.user)
                     response_data['sms_sent'] = sms_result.get('success', False)
                     response_data['sms_phone'] = sms_result.get('phone')
         except Exception as e:
@@ -241,6 +244,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             response_data['sms_phone'] = None
             try:
                 from messaging.services import send_ready_for_pickup_sms
+                from common.encryption import decrypt_value
                 # Refresh task and customer to ensure phone_numbers are loaded
                 updated_task.refresh_from_db()
                 customer = updated_task.customer
@@ -248,7 +252,9 @@ class TaskViewSet(viewsets.ModelViewSet):
                     customer.refresh_from_db()
                     if customer.phone_numbers.exists():
                         primary_phone = customer.phone_numbers.first()
-                        sms_result = send_ready_for_pickup_sms(updated_task, primary_phone.phone_number, user)
+                        # Decrypt phone number (encrypted in PostgreSQL production)
+                        phone_number = decrypt_value(primary_phone.phone_number)
+                        sms_result = send_ready_for_pickup_sms(updated_task, phone_number, user)
                         response_data['sms_sent'] = sms_result.get('success', False)
                         response_data['sms_phone'] = sms_result.get('phone')
             except Exception as e:
@@ -262,6 +268,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             response_data['sms_phone'] = None
             try:
                 from messaging.services import send_picked_up_sms
+                from common.encryption import decrypt_value
                 # Refresh task and customer to ensure phone_numbers are loaded
                 updated_task.refresh_from_db()
                 customer = updated_task.customer
@@ -269,7 +276,9 @@ class TaskViewSet(viewsets.ModelViewSet):
                     customer.refresh_from_db()
                     if customer.phone_numbers.exists():
                         primary_phone = customer.phone_numbers.first()
-                        sms_result = send_picked_up_sms(updated_task, primary_phone.phone_number, user)
+                        # Decrypt phone number (encrypted in PostgreSQL production)
+                        phone_number = decrypt_value(primary_phone.phone_number)
+                        sms_result = send_picked_up_sms(updated_task, phone_number, user)
                         response_data['sms_sent'] = sms_result.get('success', False)
                         response_data['sms_phone'] = sms_result.get('phone')
             except Exception as e:
