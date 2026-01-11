@@ -241,12 +241,16 @@ class TaskViewSet(viewsets.ModelViewSet):
             response_data['sms_phone'] = None
             try:
                 from messaging.services import send_ready_for_pickup_sms
+                # Refresh task and customer to ensure phone_numbers are loaded
+                updated_task.refresh_from_db()
                 customer = updated_task.customer
-                if customer and customer.phone_numbers.exists():
-                    primary_phone = customer.phone_numbers.first()
-                    sms_result = send_ready_for_pickup_sms(updated_task, primary_phone.phone_number, user)
-                    response_data['sms_sent'] = sms_result.get('success', False)
-                    response_data['sms_phone'] = sms_result.get('phone')
+                if customer:
+                    customer.refresh_from_db()
+                    if customer.phone_numbers.exists():
+                        primary_phone = customer.phone_numbers.first()
+                        sms_result = send_ready_for_pickup_sms(updated_task, primary_phone.phone_number, user)
+                        response_data['sms_sent'] = sms_result.get('success', False)
+                        response_data['sms_phone'] = sms_result.get('phone')
             except Exception as e:
                 import logging
                 logger = logging.getLogger(__name__)
@@ -258,12 +262,16 @@ class TaskViewSet(viewsets.ModelViewSet):
             response_data['sms_phone'] = None
             try:
                 from messaging.services import send_picked_up_sms
+                # Refresh task and customer to ensure phone_numbers are loaded
+                updated_task.refresh_from_db()
                 customer = updated_task.customer
-                if customer and customer.phone_numbers.exists():
-                    primary_phone = customer.phone_numbers.first()
-                    sms_result = send_picked_up_sms(updated_task, primary_phone.phone_number, user)
-                    response_data['sms_sent'] = sms_result.get('success', False)
-                    response_data['sms_phone'] = sms_result.get('phone')
+                if customer:
+                    customer.refresh_from_db()
+                    if customer.phone_numbers.exists():
+                        primary_phone = customer.phone_numbers.first()
+                        sms_result = send_picked_up_sms(updated_task, primary_phone.phone_number, user)
+                        response_data['sms_sent'] = sms_result.get('success', False)
+                        response_data['sms_phone'] = sms_result.get('phone')
             except Exception as e:
                 import logging
                 logger = logging.getLogger(__name__)
