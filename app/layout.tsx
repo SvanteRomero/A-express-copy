@@ -22,9 +22,11 @@ export default function RootLayout({
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
-        // Reduce unnecessary refetches during navigation
-        staleTime: 1000 * 10, // 10 seconds
+        // Increase staleTime to prevent refetches from overwriting optimistic updates
+        // during tab switches in production (where network is slower)
+        staleTime: 1000 * 30, // 30 seconds (was 10 seconds)
         refetchOnWindowFocus: false,
+        refetchOnMount: 'always', // Always check cache first, only refetch if stale
       },
     },
   }))
