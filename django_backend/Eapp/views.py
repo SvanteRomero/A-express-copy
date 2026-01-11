@@ -159,6 +159,9 @@ class TaskViewSet(viewsets.ModelViewSet):
             
             system_settings = SystemSettings.get_settings()
             if system_settings.auto_sms_on_task_creation and customer:
+                # Refresh customer from database to ensure phone_numbers relationship is loaded
+                # (fixes caching issue where newly created phone numbers aren't visible)
+                customer.refresh_from_db()
                 # Get customer's primary phone number
                 primary_phone = customer.phone_numbers.first()
                 if primary_phone:
