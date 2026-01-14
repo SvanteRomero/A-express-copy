@@ -9,7 +9,10 @@ import { addTaskActivity } from "@/lib/api-client"
 import { useTask, useUpdateTask } from "@/hooks/use-tasks"
 import { useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
-import { useToast } from "@/hooks/use-toast"
+import {
+  showTaskMarkedAsDebtToast,
+  showPaymentRequiredToast,
+} from "@/components/notifications/toast"
 import { SendCustomerUpdateModal } from "@/components/tasks/task_details/main/send-customer-update-modal"
 
 interface TaskHeaderProps {
@@ -21,7 +24,6 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { data: taskData, isLoading, isError, error } = useTask(taskId)
-  const { toast } = useToast()
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
 
   const updateTaskMutation = useUpdateTask()
@@ -31,7 +33,7 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
       { id: taskId, updates: { is_debt: true } },
       {
         onSuccess: () => {
-          toast({ title: "Task Marked as Debt", description: `Task ${taskData?.title} has been marked as debt.` })
+          showTaskMarkedAsDebtToast(taskData?.title || taskId)
           addTaskActivity(taskId, { type: 'note', message: `Task marked as debt by ${user?.username}` })
         },
       }
@@ -40,11 +42,7 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
 
   const handleMarkAsPickedUp = () => {
     if (taskData?.payment_status !== "Fully Paid" && !taskData?.is_debt) {
-      toast({
-        title: "Payment Required",
-        description: "This task cannot be marked as picked up until it is fully paid. Please contact the manager for assistance.",
-        variant: "destructive",
-      })
+      showPaymentRequiredToast()
       return
     }
     updateTaskMutation.mutate({ id: taskId, updates: { status: "Picked Up" } })

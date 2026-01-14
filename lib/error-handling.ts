@@ -1,4 +1,4 @@
-import { toast } from '@/hooks/use-toast'
+import { showErrorToast } from '@/components/notifications/toast'
 
 interface ApiError {
     response?: {
@@ -54,11 +54,7 @@ export function handleApiError(error: ApiError, fallbackMessage: string = 'An un
         description = error.message
     }
 
-    toast({
-        title,
-        description,
-        variant: 'destructive',
-    })
+    showErrorToast(title, description)
 
     return error.response?.data
 }

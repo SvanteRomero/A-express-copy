@@ -8,7 +8,11 @@ import { Label } from "@/components/ui/core/label"
 import { Input } from "@/components/ui/core/input"
 import { Bell, MessageSquare, Save, ArrowLeft, Loader2, Clock } from "lucide-react"
 import { getSystemSettings, updateSystemSettings } from "@/lib/api-client"
-import { toast } from "@/hooks/use-toast"
+import {
+    showSettingsSavedToast,
+    showSettingsLoadErrorToast,
+    showSettingsSaveErrorToast,
+} from "@/components/notifications/toast"
 import { useRouter } from "next/navigation"
 
 export function NotificationSettingsPage() {
@@ -30,11 +34,7 @@ export function NotificationSettingsPage() {
                 setLastUpdated(settings.updated_at)
             } catch (error) {
                 console.error("Failed to fetch settings:", error)
-                toast({
-                    title: "Error",
-                    description: "Failed to load notification settings",
-                    variant: "destructive",
-                })
+                showSettingsLoadErrorToast()
             } finally {
                 setIsLoading(false)
             }
@@ -51,18 +51,10 @@ export function NotificationSettingsPage() {
                 pickup_reminder_hours: pickupReminderHours,
             })
             setLastUpdated(updated.updated_at)
-            toast({
-                title: "Settings Saved",
-                description: "Notification settings have been updated successfully.",
-                className: "bg-green-600 text-white border-green-600",
-            })
+            showSettingsSavedToast()
         } catch (error) {
             console.error("Failed to save settings:", error)
-            toast({
-                title: "Error",
-                description: "Failed to save notification settings",
-                variant: "destructive",
-            })
+            showSettingsSaveErrorToast()
         } finally {
             setIsSaving(false)
         }

@@ -10,7 +10,10 @@ import { Button } from "@/components/ui/core/button";
 import { Textarea } from "@/components/ui/core/textarea";
 import { Label } from "@/components/ui/core/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select";
-import { useToast } from '@/hooks/use-toast';
+import {
+  showExpenditureRequestCreatedToast,
+  showExpenditureRequestErrorToast,
+} from '@/components/notifications/toast';
 import { CurrencyInput } from "@/components/ui/core/currency-input";
 import { SimpleCombobox } from "@/components/ui/core/combobox";
 import { useTasksSearch } from '@/hooks/use-tasks-search';
@@ -26,7 +29,6 @@ interface AddExpenditureDialogProps {
 export function AddExpenditureDialog({ isOpen, onClose, mode = 'expenditure', taskId, taskTitle }: AddExpenditureDialogProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const { register, handleSubmit, control, watch, formState: { errors }, setValue, reset } = useForm();
 
   const [taskSearch, setTaskSearch] = useState("")
@@ -62,17 +64,18 @@ export function AddExpenditureDialog({ isOpen, onClose, mode = 'expenditure', ta
   }, [isOpen, mode, taskId, taskTitle, setValue, reset]);
 
   const isManager = user?.role === 'Manager';
+  const isRefund = mode === 'refund';
 
   const mutation = useMutation({
     mutationFn: isManager ? createAndApproveExpenditureRequest : createExpenditureRequest,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenditureRequests'] });
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-      toast({ title: "Success", description: `${mode === 'refund' ? 'Refund' : 'Expenditure'} request ${isManager ? 'created and approved' : 'created'} successfully.` });
+      showExpenditureRequestCreatedToast(isRefund, isManager);
       onClose();
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.response?.data?.detail || `Failed to create ${mode === 'refund' ? 'refund' : 'expenditure'} request.`, variant: "destructive" });
+      showExpenditureRequestErrorToast(isRefund, error.response?.data?.detail);
     },
   });
 

@@ -11,7 +11,7 @@ import { useTechnicians } from "@/hooks/use-users"
 import { useLocations } from "@/hooks/use-locations"
 import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useMemo, useState } from "react"
-import { useToast } from "@/hooks/use-toast"
+import { showRepairManagementSavedToast } from "@/components/notifications/toast"
 import { Badge } from "@/components/ui/core/badge"
 
 interface RepairManagementProps {
@@ -26,7 +26,6 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
   const { data: locations } = useLocations()
   const { data: statusOptions } = useTaskStatusOptions()
   const { data: urgencyOptions } = useTaskUrgencyOptions()
-  const { toast } = useToast()
 
   const [repairManagementData, setRepairManagementData] = useState({
     assigned_to: "",
@@ -77,7 +76,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
     if (Object.keys(changes).length > 0) {
       updateTaskMutation.mutate({ id: taskId, updates: changes }, {
         onSuccess: () => {
-          toast({ title: "Changes Saved", description: "Repair management details have been updated." })
+          showRepairManagementSavedToast()
           if (activityMessages.length > 0) {
             const message = activityMessages.join(", ")
             addTaskActivity(taskId, { message: `Repair management updated: ${message}` })

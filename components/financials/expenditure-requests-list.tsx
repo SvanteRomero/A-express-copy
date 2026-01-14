@@ -7,7 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout
 import { Button } from "@/components/ui/core/button";
 import { Badge } from "@/components/ui/core/badge";
 import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/hooks/use-toast';
+import {
+  showExpenditureApprovedToast,
+  showExpenditureApprovalErrorToast,
+  showExpenditureRejectedToast,
+  showExpenditureRejectionErrorToast,
+} from '@/components/notifications/toast';
 import { useState } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format } from 'date-fns';
@@ -17,7 +22,6 @@ import { TableSkeleton } from "@/components/ui/core/loaders";
 export function ExpenditureRequestsList() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { toast } = useToast();
   const isMobile = useIsMobile();
 
   const [page, setPage] = useState(1);
@@ -36,10 +40,10 @@ export function ExpenditureRequestsList() {
       if (data.data.task_title) {
         queryClient.invalidateQueries({ queryKey: ['task', data.data.task_title] });
       }
-      toast({ title: "Success", description: "Expenditure request approved." });
+      showExpenditureApprovedToast();
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.response?.data?.detail || "Failed to approve request.", variant: "destructive" });
+      showExpenditureApprovalErrorToast(error.response?.data?.detail);
     },
   });
 
@@ -47,10 +51,10 @@ export function ExpenditureRequestsList() {
     mutationFn: rejectExpenditureRequest,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenditureRequests'] });
-      toast({ title: "Success", description: "Expenditure request rejected." });
+      showExpenditureRejectedToast();
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.response?.data?.detail || "Failed to reject request.", variant: "destructive" });
+      showExpenditureRejectionErrorToast(error.response?.data?.detail);
     },
   });
 

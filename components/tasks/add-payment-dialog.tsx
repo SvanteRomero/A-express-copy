@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/core/select';
 import { useState, useEffect } from 'react';
-import { toast } from '@/hooks/use-toast';
+import { showInvalidPaymentAmountToast } from '@/components/notifications/toast';
 
 interface AddPaymentDialogProps {
   isOpen: boolean;
@@ -48,11 +48,7 @@ export default function AddPaymentDialog({
 
   const handleSubmit = () => {
     if (amount > outstandingBalance) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid Amount',
-        description: 'Payment amount cannot be greater than the outstanding balance.',
-      });
+      showInvalidPaymentAmountToast();
       return;
     }
     if (paymentMethodId) {

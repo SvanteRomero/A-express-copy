@@ -5,7 +5,13 @@ import { TasksDisplay } from "../../../task_utils/tasks-display";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addTaskPayment, sendDebtReminder, previewTemplateMessage } from "@/lib/api-client";
-import { toast } from "@/hooks/use-toast";
+import {
+  showPaymentAddedToast,
+  showReminderSentToast,
+  showReminderFailedToast,
+  showNoPhoneToast,
+  showTaskNotFoundToast,
+} from "@/components/notifications/toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,30 +41,20 @@ const DebtsPage = () => {
       addTaskPayment(taskId, { amount, method: methodId, date: new Date().toISOString().split('T')[0] }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      toast({
-        title: "Payment Added",
-        description: "The payment has been added successfully.",
-      });
+      showPaymentAddedToast();
     },
   });
 
   const sendReminderMutation = useMutation({
     mutationFn: (taskId: number) => sendDebtReminder(taskId),
     onSuccess: (data) => {
-      toast({
-        title: "Reminder Sent",
-        description: `Debt reminder SMS sent to ${data.data?.recipient || 'customer'}.`,
-      });
+      showReminderSentToast(data.data?.recipient);
       setReminderDialogOpen(false);
       setSelectedTask(null);
       setPreviewMessage("");
     },
     onError: (error: any) => {
-      toast({
-        title: "Failed to Send",
-        description: error?.response?.data?.error || "Failed to send debt reminder SMS.",
-        variant: "destructive",
-      });
+      showReminderFailedToast(error?.response?.data?.error);
     },
   });
 
@@ -74,11 +70,7 @@ const DebtsPage = () => {
     // Find the task by title (taskId is actually the task title/display ID)
     const task = tasksData?.results?.find((t: any) => t.title === taskId);
     if (!task) {
-      toast({
-        title: "Error",
-        description: "Could not find task details.",
-        variant: "destructive",
-      });
+      showTaskNotFoundToast();
       return;
     }
 
@@ -88,11 +80,7 @@ const DebtsPage = () => {
     const primaryPhone = phoneNumbers[0] || '';
 
     if (!primaryPhone) {
-      toast({
-        title: "No Phone Number",
-        description: "This customer does not have a phone number on file.",
-        variant: "destructive",
-      });
+      showNoPhoneToast();
       return;
     }
 

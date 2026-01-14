@@ -7,7 +7,11 @@ import { createTask } from '@/lib/api-client'
 import { useAuth } from '@/hooks/use-auth'
 import { useNotifications } from '@/lib/notification-context'
 import { handleApiError } from '@/lib/error-handling'
-import { toast } from '@/hooks/use-toast'
+import {
+    showTaskCreatedToast,
+    showCustomerCreatedToast,
+    showTaskCreatedWithSmsToast,
+} from '@/components/notifications/toast'
 import { useTechnicians, useManagers, useWorkshopTechnicians } from '@/hooks/use-users'
 import { useBrands, useModels } from '@/hooks/use-brands-models'
 import { useLocations } from '@/hooks/use-locations'
@@ -289,25 +293,14 @@ export function useNewTaskForm() {
             const response = await createTask(taskData)
 
             if (response.data.customer_created) {
-                toast({
-                    title: 'Customer Created',
-                    description: `Customer ${formData.customer_name} has been added to the database.`,
-                })
+                showCustomerCreatedToast(formData.customer_name)
             }
 
-            toast({
-                title: 'Task Created!',
-                description: 'The new task has been added to the system.',
-                className: "bg-green-600 text-white border-green-600",
-            })
+            showTaskCreatedToast()
 
             // Show SMS notification toast if SMS was sent
             if (response.data.sms_sent) {
-                toast({
-                    title: 'Customer Notified',
-                    description: `Registration SMS sent to ${response.data.sms_phone}`,
-                    className: "bg-blue-600 text-white border-blue-600",
-                })
+                showTaskCreatedWithSmsToast(response.data.sms_phone)
             }
 
             addNotification({

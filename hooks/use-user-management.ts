@@ -10,7 +10,7 @@ import {
   updateUser as apiUpdateUser,
 } from "@/lib/api-client"
 
-import { toast } from "@/hooks/use-toast"
+import { showGreenSuccessToast } from "@/components/notifications/toast"
 import { useNotifications } from "@/lib/notification-context"
 import { handleApiError } from "@/lib/error-handling"
 
@@ -73,11 +73,7 @@ export function useUserManagement() {
     try {
       await registerUser(userData)
 
-      toast({
-        title: "Success",
-        description: "User created successfully",
-        className: "bg-green-600 text-white border-green-600",
-      })
+      showGreenSuccessToast("Success", "User created successfully")
 
       addNotification({
         title: "New Team Member",
@@ -104,11 +100,7 @@ export function useUserManagement() {
     try {
       await apiUpdateUser(userId, userData);
 
-      toast({
-        title: "Success",
-        description: "User updated successfully",
-        className: "bg-green-600 text-white border-green-600",
-      })
+      showGreenSuccessToast("Success", "User updated successfully")
 
       // Reload users list
       await loadUsers()
@@ -128,11 +120,7 @@ export function useUserManagement() {
     try {
       await apiDeleteUser(userId)
 
-      toast({
-        title: "Success",
-        description: "User deleted successfully",
-        className: "bg-green-600 text-white border-green-600",
-      })
+      showGreenSuccessToast("Success", "User deleted successfully")
 
       addNotification({
         title: "Team Member Removed",
@@ -161,11 +149,7 @@ export function useUserManagement() {
         ? await activateUser(userId)
         : await deactivateUser(userId)
 
-      toast({
-        title: "Success",
-        description: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
-        className: "bg-green-600 text-white border-green-600",
-      })
+      showGreenSuccessToast("Success", `User ${isActive ? 'activated' : 'deactivated'} successfully`)
 
       // Only notify on deactivation as it's a significant security/access event
       if (!isActive) {

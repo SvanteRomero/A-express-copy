@@ -1,13 +1,19 @@
 'use client';
 
-import { useState,useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/core/button";
 import { Plus } from "lucide-react";
 import { TasksDisplay } from "@/components/tasks/task_utils/tasks-display";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs";
 import { useTasks, useUpdateTask } from "@/hooks/use-tasks";
-import { useToast } from "@/hooks/use-toast";
+import {
+  showTaskApprovedToast,
+  showTaskApprovalErrorToast,
+  showTaskPickedUpToast,
+  showPickupErrorToast,
+  showPaymentRequiredToast,
+} from "@/components/notifications/toast";
 import { useTechnicians } from "@/hooks/use-users";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -43,7 +49,6 @@ export function FrontDeskTasksPage() {
 
   const { data: technicians } = useTechnicians();
   const updateTaskMutation = useUpdateTask();
-  const { toast } = useToast();
   const [approvingTaskId, setApprovingTaskId] = useState<string | null>(null);
 
   const handleRowClick = useCallback((task: any) => {
@@ -77,35 +82,14 @@ export function FrontDeskTasksPage() {
         });
 
         // Show toast based on SMS result
-        if (result.sms_sent) {
-          toast({
-            title: "Task Approved",
-            description: `Customer notified via SMS to ${result.sms_phone}`,
-          });
-        } else if (result.sms_phone === null) {
-          toast({
-            title: "Task Approved",
-            description: "Customer notification skipped - no phone number on file",
-            variant: "default",
-          });
-        } else {
-          toast({
-            title: "Task Approved",
-            description: "Task approved but SMS notification failed",
-            variant: "destructive",
-          });
-        }
+        showTaskApprovedToast(result);
       } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to approve task",
-          variant: "destructive",
-        });
+        showTaskApprovalErrorToast();
       } finally {
         setApprovingTaskId(null);
       }
     }
-  }, [updateTaskMutation, user, completedTasksData, toast, approvingTaskId]);
+  }, [updateTaskMutation, user, completedTasksData, approvingTaskId]);
 
   const handleReject = useCallback(async (taskTitle: string, notes: string) => {
     updateTaskMutation.mutate({ id: taskTitle, updates: { status: "In Progress", qc_notes: notes, workshop_status: null } });
@@ -115,11 +99,7 @@ export function FrontDeskTasksPage() {
 
   const handlePickedUp = useCallback(async (task: any) => {
     if (task.payment_status !== 'Fully Paid' && !task.is_debt) {
-      toast({
-        title: "Payment Required",
-        description: "This task cannot be marked as picked up until it is fully paid. Please contact the manager for assistance.",
-        variant: "destructive",
-      });
+      showPaymentRequiredToast();
       return;
     }
     if (user) {
@@ -139,36 +119,14 @@ export function FrontDeskTasksPage() {
         });
 
         // Show toast based on SMS result
-        if (result.sms_sent) {
-          const messageType = task.is_debt ? "Debt reminder" : "Thank you message";
-          toast({
-            title: "Picked Up",
-            description: `${messageType} sent via SMS to ${result.sms_phone}`,
-          });
-        } else if (result.sms_phone === null) {
-          toast({
-            title: "Picked Up",
-            description: "Customer notification skipped - no phone number on file",
-            variant: "default",
-          });
-        } else {
-          toast({
-            title: "Picked Up",
-            description: "Task picked up but SMS notification failed",
-            variant: "destructive",
-          });
-        }
+        showTaskPickedUpToast(result, task.is_debt);
       } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to mark task as picked up",
-          variant: "destructive",
-        });
+        showPickupErrorToast();
       } finally {
         setPickingUpTaskId(null);
       }
     }
-  }, [updateTaskMutation, user, toast, pickingUpTaskId]);
+  }, [updateTaskMutation, user, pickingUpTaskId]);
 
   const handleNotifyCustomer = useCallback((taskTitle: string, customerName: string) => {
     alert(`Notifying ${customerName} for task ${taskTitle}`);
