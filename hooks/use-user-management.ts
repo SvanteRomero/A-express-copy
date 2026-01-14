@@ -97,7 +97,7 @@ export function useUserManagement() {
     }
   }
 
-  const updateUser = async (userId: number, userData: Partial<User>) => {
+  const updateUser = async (userId: number, userData: Partial<User> & { password?: string }) => {
     setIsLoading(true)
     setError(null)
 

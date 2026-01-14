@@ -102,6 +102,17 @@ export function EditUserDialog({ isOpen, onOpenChange, editingUser, setEditingUs
                                 </div>
                             )}
                         </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-password">New Password (leave blank to keep current)</Label>
+                            <Input
+                                id="edit-password"
+                                type="password"
+                                placeholder="Min. 8 characters"
+                                value={editingUser.password || ""}
+                                onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
+                            />
+                        </div>
                     </div>
                 )}
 

@@ -87,14 +87,20 @@ export function UserManagement() {
     const handleUpdateUser = async () => {
         if (!editingUser) return
 
-        const success = await updateUser(editingUser.id, {
+        const updateData: any = {
             first_name: editingUser.first_name,
             last_name: editingUser.last_name,
             email: editingUser.email,
             phone: editingUser.phone,
             role: editingUser.role,
             is_workshop: editingUser.is_workshop,
-        })
+        }
+
+        if (editingUser.password) {
+            updateData.password = editingUser.password
+        }
+
+        const success = await updateUser(editingUser.id, updateData)
 
         if (success) {
             setIsEditOpen(false)

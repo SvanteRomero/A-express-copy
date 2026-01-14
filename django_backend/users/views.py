@@ -57,6 +57,14 @@ class UserViewSet(viewsets.ModelViewSet):
         if user.is_superuser and not request.user.is_superuser:
             return Response({"error": "Only superusers can update other superusers."}, status=status.HTTP_403_FORBIDDEN)
         
+        # Handle password update if provided
+        password = request.data.get('password')
+        if password:
+            if len(password) < 8:
+                 return Response({"error": "Password must be at least 8 characters long."}, status=status.HTTP_400_BAD_REQUEST)
+            user.set_password(password)
+            user.save()
+
         serializer = self.get_serializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
