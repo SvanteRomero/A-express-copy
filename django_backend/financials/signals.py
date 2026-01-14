@@ -14,7 +14,7 @@ def update_task_on_payment_change(sender, instance, **kwargs):
             # Clear is_debt if fully paid
             if task.is_debt and task.payment_status == task.PaymentStatus.FULLY_PAID:
                 task.is_debt = False
-            task.save(update_fields=['paid_amount', 'payment_status', 'paid_date', 'is_debt'])
+            task.save(update_fields=['paid_amount', 'payment_status', 'is_debt'])
     except Task.DoesNotExist:
         pass # Task was deleted, do nothing.
 
@@ -25,6 +25,6 @@ def update_task_on_cost_breakdown_change(sender, instance, **kwargs):
             task = instance.task
             task.total_cost = task._calculate_total_cost()
             task.update_payment_status()
-            task.save(update_fields=['total_cost', 'payment_status', 'paid_date'])
+            task.save(update_fields=['total_cost', 'payment_status'])
     except Task.DoesNotExist:
         pass # Task was deleted, do nothing.

@@ -302,11 +302,6 @@ def update_task_payment_statuses():
             task.payment_status = 'Partially Paid'
         elif total_payments >= task.total_cost:
             task.payment_status = 'Fully Paid'
-            if not task.paid_date:
-                # Use the date of the last payment as paid_date
-                last_payment = task.payments.order_by('-date').first()
-                if last_payment:
-                    task.paid_date = last_payment.date
         
         task.save()
         tasks_updated += 1
