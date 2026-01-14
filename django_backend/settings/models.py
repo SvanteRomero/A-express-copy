@@ -34,6 +34,20 @@ class SystemSettings(models.Model):
         help_text='Hours between pickup reminder messages'
     )
     
+    # Debt Reminder Settings
+    auto_debt_reminders_enabled = models.BooleanField(
+        default=False,
+        help_text='Automatically send SMS reminders for tasks with outstanding debts'
+    )
+    debt_reminder_hours = models.PositiveIntegerField(
+        default=72,  # Every 3 days
+        help_text='Hours between debt reminder messages'
+    )
+    debt_reminder_max_days = models.PositiveIntegerField(
+        default=30,
+        help_text='Stop sending reminders after this many days since pickup'
+    )
+    
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

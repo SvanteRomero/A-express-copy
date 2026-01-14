@@ -78,6 +78,30 @@ class MessagingConfig(AppConfig):
             except Exception as job_error:
                 logger.exception(f"APScheduler: Error adding job: {job_error}")
             
+            # --- Debt Reminders Job ---
+            from messaging.jobs import send_debt_reminders
+            job_id_debt = 'send_debt_reminders'
+            try:
+                existing_job = scheduler.get_job(job_id_debt)
+                if existing_job:
+                    scheduler.remove_job(job_id_debt)
+                    logger.warning(f"APScheduler: Removed existing job '{job_id_debt}'")
+                
+                scheduler.add_job(
+                    send_debt_reminders,
+                    trigger=IntervalTrigger(hours=1),
+                    id=job_id_debt,
+                    name='Send Debt Reminders',
+                    replace_existing=True,
+                    max_instances=1,
+                )
+                logger.warning(f"APScheduler: Job '{job_id_debt}' scheduled to run every hour")
+                
+            except IntegrityError as e:
+                logger.warning(f"APScheduler: Job '{job_id_debt}' already exists in database, will use existing schedule")
+            except Exception as job_error:
+                logger.exception(f"APScheduler: Error adding debt reminder job: {job_error}")
+            
             # Shut down the scheduler when exiting the app
             atexit.register(lambda: scheduler.shutdown(wait=False))
             

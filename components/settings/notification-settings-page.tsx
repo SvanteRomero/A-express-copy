@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/core/button"
 import { Switch } from "@/components/ui/core/switch"
 import { Label } from "@/components/ui/core/label"
 import { Input } from "@/components/ui/core/input"
-import { Bell, MessageSquare, Save, ArrowLeft, Loader2, Clock } from "lucide-react"
+import { Bell, MessageSquare, Save, ArrowLeft, Loader2, Clock, AlertCircle } from "lucide-react"
 import { getSystemSettings, updateSystemSettings } from "@/lib/api-client"
 import {
     showSettingsSavedToast,
@@ -22,6 +22,10 @@ export function NotificationSettingsPage() {
     const [autoSmsOnTaskCreation, setAutoSmsOnTaskCreation] = useState(true)
     const [autoPickupRemindersEnabled, setAutoPickupRemindersEnabled] = useState(false)
     const [pickupReminderHours, setPickupReminderHours] = useState(24)
+    // Debt reminder states
+    const [autoDebtRemindersEnabled, setAutoDebtRemindersEnabled] = useState(false)
+    const [debtReminderHours, setDebtReminderHours] = useState(72)
+    const [debtReminderMaxDays, setDebtReminderMaxDays] = useState(30)
     const [lastUpdated, setLastUpdated] = useState<string | null>(null)
 
     useEffect(() => {
@@ -31,6 +35,9 @@ export function NotificationSettingsPage() {
                 setAutoSmsOnTaskCreation(settings.auto_sms_on_task_creation)
                 setAutoPickupRemindersEnabled(settings.auto_pickup_reminders_enabled)
                 setPickupReminderHours(settings.pickup_reminder_hours)
+                setAutoDebtRemindersEnabled(settings.auto_debt_reminders_enabled)
+                setDebtReminderHours(settings.debt_reminder_hours)
+                setDebtReminderMaxDays(settings.debt_reminder_max_days)
                 setLastUpdated(settings.updated_at)
             } catch (error) {
                 console.error("Failed to fetch settings:", error)
@@ -49,6 +56,9 @@ export function NotificationSettingsPage() {
                 auto_sms_on_task_creation: autoSmsOnTaskCreation,
                 auto_pickup_reminders_enabled: autoPickupRemindersEnabled,
                 pickup_reminder_hours: pickupReminderHours,
+                auto_debt_reminders_enabled: autoDebtRemindersEnabled,
+                debt_reminder_hours: debtReminderHours,
+                debt_reminder_max_days: debtReminderMaxDays,
             })
             setLastUpdated(updated.updated_at)
             showSettingsSavedToast()
@@ -170,6 +180,64 @@ export function NotificationSettingsPage() {
                                     className="w-20 text-center"
                                 />
                                 <span className="text-sm text-gray-700">hours</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Auto Debt Reminders */}
+                    <div className="p-4 bg-amber-50 rounded-lg space-y-4 border border-amber-200">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <Label className="text-base font-medium text-gray-900 flex items-center gap-2">
+                                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                                    Automatic Debt Reminders
+                                </Label>
+                                <p className="text-sm text-gray-600">
+                                    Automatically send reminder SMS to customers who have outstanding
+                                    debts (picked up devices without full payment).
+                                </p>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Reminds customers of their outstanding balance.
+                                </p>
+                            </div>
+                            <Switch
+                                checked={autoDebtRemindersEnabled}
+                                onCheckedChange={setAutoDebtRemindersEnabled}
+                            />
+                        </div>
+
+                        {autoDebtRemindersEnabled && (
+                            <div className="space-y-3 pt-3 border-t border-amber-200">
+                                <div className="flex items-center gap-3">
+                                    <Clock className="h-5 w-5 text-gray-500" />
+                                    <Label className="text-sm text-gray-700">
+                                        Send reminder every
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        max={720}
+                                        value={debtReminderHours}
+                                        onChange={(e) => setDebtReminderHours(parseInt(e.target.value) || 72)}
+                                        className="w-20 text-center"
+                                    />
+                                    <span className="text-sm text-gray-700">hours</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <AlertCircle className="h-5 w-5 text-gray-500" />
+                                    <Label className="text-sm text-gray-700">
+                                        Stop reminders after
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        max={365}
+                                        value={debtReminderMaxDays}
+                                        onChange={(e) => setDebtReminderMaxDays(parseInt(e.target.value) || 30)}
+                                        className="w-20 text-center"
+                                    />
+                                    <span className="text-sm text-gray-700">days since pickup</span>
+                                </div>
                             </div>
                         )}
                     </div>

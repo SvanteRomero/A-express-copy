@@ -260,6 +260,9 @@ export interface SystemSettings {
   auto_sms_on_task_creation: boolean;
   auto_pickup_reminders_enabled: boolean;
   pickup_reminder_hours: number;
+  auto_debt_reminders_enabled: boolean;
+  debt_reminder_hours: number;
+  debt_reminder_max_days: number;
   updated_at: string;
 }
 export const getSystemSettings = () => apiClient.get<SystemSettings>('/system-settings/').then(res => res.data);
