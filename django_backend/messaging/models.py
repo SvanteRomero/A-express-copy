@@ -69,3 +69,39 @@ class MessageTemplate(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.get_category_display()})"
+
+
+class SchedulerNotification(models.Model):
+    """
+    Stores scheduler job results for frontend notification display.
+    Used for polling-based real-time notifications.
+    """
+    JOB_TYPES = [
+        ('pickup_reminder', 'Pickup Reminders'),
+        ('debt_reminder', 'Debt Reminders'),
+    ]
+    
+    job_type = models.CharField(max_length=50, choices=JOB_TYPES)
+    tasks_found = models.PositiveIntegerField(default=0)
+    messages_sent = models.PositiveIntegerField(default=0)
+    messages_failed = models.PositiveIntegerField(default=0)
+    failure_details = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='List of {task_id, task_title, error} objects'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    acknowledged_by = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name='acknowledged_scheduler_notifications',
+        help_text='Users who have seen this notification'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Scheduler Notification'
+        verbose_name_plural = 'Scheduler Notifications'
+    
+    def __str__(self):
+        return f"{self.get_job_type_display()} - {self.messages_sent}/{self.tasks_found} sent at {self.created_at}"

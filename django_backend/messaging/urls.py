@@ -13,6 +13,8 @@ urlpatterns = [
     path('tasks/<int:task_id>/send-debt-reminder/', views.send_debt_reminder, name='send-debt-reminder'),
     path('tasks/<int:task_id>/preview-message/', views.preview_template_message, name='preview-template-message'),
     path('bulk-send/', views.bulk_send_sms, name='bulk-send-sms'),
+    path('scheduler-notifications/', views.get_scheduler_notifications, name='scheduler-notifications'),
+    path('scheduler-notifications/<int:pk>/acknowledge/', views.acknowledge_scheduler_notification, name='acknowledge-scheduler-notification'),
 ]
 
 

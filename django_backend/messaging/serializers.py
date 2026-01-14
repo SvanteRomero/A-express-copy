@@ -85,3 +85,15 @@ class MessageLogSerializer(serializers.ModelSerializer):
         except AttributeError:
             pass
         return "Unknown"
+
+
+class SchedulerNotificationSerializer(serializers.ModelSerializer):
+    """Serializer for scheduler notification polling."""
+    class Meta:
+        from .models import SchedulerNotification
+        model = SchedulerNotification
+        fields = [
+            'id', 'job_type', 'tasks_found', 'messages_sent',
+            'messages_failed', 'failure_details', 'created_at'
+        ]
+        read_only_fields = fields
