@@ -32,7 +32,7 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
       {
         onSuccess: () => {
           toast({ title: "Task Marked as Debt", description: `Task ${taskData?.title} has been marked as debt.` })
-          addTaskActivity(taskId, { message: `Task marked as debt by ${user?.username}` })
+          addTaskActivity(taskId, { type: 'note', message: `Task marked as debt by ${user?.username}` })
         },
       }
     )
@@ -93,7 +93,7 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
           </div>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          {isManager && taskData.payment_status !== "Fully Paid" && (
+          {isManager && taskData.payment_status !== "Fully Paid" && !taskData.is_debt && (
             <Button className="bg-yellow-500 hover:bg-yellow-600 text-white" onClick={handleMarkAsDebt}>
               <AlertTriangle className="h-4 w-4 mr-2" />
               Mark as Debt
