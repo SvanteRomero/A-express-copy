@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/core/button"
 import { Input } from "@/components/ui/core/input"
 import { Label } from "@/components/ui/core/label"
@@ -13,6 +14,7 @@ import {
     DialogTitle,
 } from "@/components/ui/feedback/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select"
+import { Eye, EyeOff } from "lucide-react"
 
 interface AddUserDialogProps {
     isOpen: boolean
@@ -24,6 +26,8 @@ interface AddUserDialogProps {
 }
 
 export function AddUserDialog({ isOpen, onOpenChange, newUser, setNewUser, onAddUser, isLoading }: AddUserDialogProps) {
+    const [showPassword, setShowPassword] = useState(false)
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl">
@@ -118,13 +122,27 @@ export function AddUserDialog({ isOpen, onOpenChange, newUser, setNewUser, onAdd
 
                     <div className="grid gap-2">
                         <Label htmlFor="password">Password *</Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            value={newUser.password}
-                            onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                            placeholder="Enter password"
-                        />
+                        <div className="relative">
+                            <Input
+                                id="password"
+                                type={showPassword ? "text" : "password"}
+                                value={newUser.password}
+                                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                                placeholder="Enter password"
+                                className="pr-10"
+                            />
+                            <button
+                                type="button"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? (
+                                    <EyeOff className="h-4 w-4" />
+                                ) : (
+                                    <Eye className="h-4 w-4" />
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <DialogFooter>
