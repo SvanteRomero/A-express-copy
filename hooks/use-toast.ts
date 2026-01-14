@@ -139,6 +139,13 @@ type Toast = Omit<ToasterToast, "id">
 function toast({ ...props }: Toast) {
   const id = genId()
 
+  try {
+    const audio = new Audio("/notification.wav")
+    audio.play().catch((error) => console.error("Failed to play notification sound:", error))
+  } catch (error) {
+    console.error("Audio initialization failed:", error)
+  }
+
   const update = (props: ToasterToast) =>
     dispatch({
       type: "UPDATE_TOAST",
