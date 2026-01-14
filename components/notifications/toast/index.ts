@@ -103,3 +103,11 @@ export {
     showExpenditureRequestCreatedToast,
     showExpenditureRequestErrorToast,
 } from './financials-toasts';
+
+// Re-export scheduler toasts
+export {
+    showSchedulerSuccessToast,
+    showSchedulerPartialFailureToast,
+    showSchedulerNoTasksToast,
+    showSchedulerNotificationToast,
+} from './scheduler-toasts';

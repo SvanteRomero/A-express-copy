@@ -268,3 +268,17 @@ export interface SystemSettings {
 export const getSystemSettings = () => apiClient.get<SystemSettings>('/system-settings/').then(res => res.data);
 export const updateSystemSettings = (data: Partial<SystemSettings>) => apiClient.patch<SystemSettings>('/system-settings/', data).then(res => res.data);
 
+// Scheduler Notifications (for polling)
+export interface SchedulerNotification {
+  id: number;
+  job_type: 'pickup_reminder' | 'debt_reminder';
+  tasks_found: number;
+  messages_sent: number;
+  messages_failed: number;
+  failure_details: Array<{ task_id: string; task_title: string; error: string }>;
+  created_at: string;
+}
+export const getSchedulerNotifications = () =>
+  apiClient.get<SchedulerNotification[]>('/messaging/scheduler-notifications/').then(res => res.data);
+export const acknowledgeSchedulerNotification = (id: number) =>
+  apiClient.post(`/messaging/scheduler-notifications/${id}/acknowledge/`);

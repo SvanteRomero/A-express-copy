@@ -414,3 +414,46 @@ def bulk_send_sms(request):
         },
         'errors': errors
     })
+
+
+# --- Scheduler Notification Endpoints ---
+from .models import SchedulerNotification
+from .serializers import SchedulerNotificationSerializer
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_scheduler_notifications(request):
+    """
+    Get unacknowledged scheduler notifications for current user.
+    Only returns notifications for managers and front_desk users.
+    
+    GET /api/messaging/scheduler-notifications/
+    """
+    # Only for managers and front desk
+    allowed_roles = ['manager', 'front_desk']
+    user_role = getattr(request.user, 'role', None)
+    
+    if user_role not in allowed_roles:
+        return Response([])
+    
+    # Get notifications not yet acknowledged by this user
+    notifications = SchedulerNotification.objects.exclude(
+        acknowledged_by=request.user
+    ).order_by('-created_at')[:10]
+    
+    serializer = SchedulerNotificationSerializer(notifications, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def acknowledge_scheduler_notification(request, pk):
+    """
+    Mark a scheduler notification as acknowledged by current user.
+    
+    POST /api/messaging/scheduler-notifications/{id}/acknowledge/
+    """
+    notification = get_object_or_404(SchedulerNotification, pk=pk)
+    notification.acknowledged_by.add(request.user)
+    return Response({'status': 'acknowledged'})
