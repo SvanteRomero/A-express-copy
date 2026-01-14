@@ -117,11 +117,22 @@ class ExpenditureRequest(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     cost_type = models.CharField(max_length=20, choices=CostBreakdown.CostType.choices, default=CostBreakdown.CostType.INCLUSIVE)
 
-    requester = models.ForeignKey(User, on_delete=models.PROTECT, related_name='expenditure_requests_made')
+    requester = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='expenditure_requests_made')
     approver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='expenditure_requests_approved')
+    
+    # Snapshot fields to preserve names if users are deleted
+    requester_name = models.CharField(max_length=150, blank=True, null=True)
+    approver_name = models.CharField(max_length=150, blank=True, null=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if self.requester and not self.requester_name:
+            self.requester_name = self.requester.get_full_name() or self.requester.username
+        if self.approver and not self.approver_name:
+            self.approver_name = self.approver.get_full_name() or self.approver.username
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'Expenditure request for {self.amount} by {self.requester.username}'

@@ -90,6 +90,10 @@ class ExpenditureRequestSerializer(serializers.ModelSerializer):
     )
     category = PaymentCategorySerializer(read_only=True)
     payment_method = PaymentMethodSerializer(read_only=True)
+    
+    # Expose snapshot names
+    requester_name = serializers.CharField(read_only=True)
+    approver_name = serializers.CharField(read_only=True)
 
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=PaymentCategory.objects.all(), source="category", write_only=True
@@ -111,7 +115,9 @@ class ExpenditureRequestSerializer(serializers.ModelSerializer):
             "status",
             "cost_type",
             "requester",
+            "requester_name",
             "approver",
+            "approver_name",
             "created_at",
             "updated_at",
             "category_id",
@@ -120,7 +126,9 @@ class ExpenditureRequestSerializer(serializers.ModelSerializer):
         read_only_fields = (
             "status",
             "requester",
+            "requester_name",
             "approver",
+            "approver_name",
             "created_at",
             "updated_at",
         )

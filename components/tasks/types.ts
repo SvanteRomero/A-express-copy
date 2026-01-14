@@ -102,8 +102,11 @@ export interface ExpenditureRequest {
     task: number | null;
     task_title: string | null;
     status: string;
-    requester: { username: string };
+    category_name?: string;
+    requester: { username: string } | null;
+    requester_name: string | null;
     approver: { username: string } | null;
+    approver_name: string | null;
 }
 
 export interface PaymentCategory {
