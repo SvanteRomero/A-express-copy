@@ -44,6 +44,7 @@ def send_pickup_reminders():
     logger.info(f"Found {ready_tasks.count()} tasks ready for pickup")
     
     reminders_sent = 0
+    failures = []  # Track failures for notification
     
     for task in ready_tasks:
         try:
@@ -86,6 +87,11 @@ def send_pickup_reminders():
                     reminders_sent += 1
                     logger.info(f"Sent reminder for task {task.title} to {phone_number}")
                 else:
+                    failures.append({
+                        'task_id': task.title,
+                        'task_title': task.title,
+                        'error': result.get('error', 'Unknown error')
+                    })
                     logger.error(f"Failed to send reminder for task {task.title}: {result.get('error')}")
             else:
                 logger.debug(
@@ -97,6 +103,22 @@ def send_pickup_reminders():
             logger.exception(f"Error processing task {task.title}: {e}")
     
     logger.info(f"Pickup reminder job completed: {reminders_sent} reminders sent")
+    
+    # Create notification for frontend polling
+    from messaging.models import SchedulerNotification
+    SchedulerNotification.objects.create(
+        job_type='pickup_reminder',
+        tasks_found=ready_tasks.count(),
+        messages_sent=reminders_sent,
+        messages_failed=len(failures),
+        failure_details=failures,
+    )
+    
+    # Cleanup: Delete notifications older than 7 days
+    cleanup_cutoff = now - timezone.timedelta(days=7)
+    deleted_count, _ = SchedulerNotification.objects.filter(created_at__lt=cleanup_cutoff).delete()
+    if deleted_count:
+        logger.info(f"Cleaned up {deleted_count} old scheduler notifications")
 
 
 def send_debt_reminders():
@@ -138,6 +160,7 @@ def send_debt_reminders():
     logger.info(f"Found {debt_tasks.count()} debt tasks within {max_days} day window")
     
     reminders_sent = 0
+    failures = []  # Track failures for notification
     
     for task in debt_tasks:
         try:
@@ -180,6 +203,11 @@ def send_debt_reminders():
                     reminders_sent += 1
                     logger.info(f"Sent debt reminder for task {task.title} to {phone_number}")
                 else:
+                    failures.append({
+                        'task_id': task.title,
+                        'task_title': task.title,
+                        'error': result.get('error', 'Unknown error')
+                    })
                     logger.error(f"Failed to send debt reminder for task {task.title}: {result.get('error')}")
             else:
                 logger.debug(
@@ -191,3 +219,19 @@ def send_debt_reminders():
             logger.exception(f"Error processing debt task {task.title}: {e}")
     
     logger.info(f"Debt reminder job completed: {reminders_sent} reminders sent")
+    
+    # Create notification for frontend polling
+    from messaging.models import SchedulerNotification
+    SchedulerNotification.objects.create(
+        job_type='debt_reminder',
+        tasks_found=debt_tasks.count(),
+        messages_sent=reminders_sent,
+        messages_failed=len(failures),
+        failure_details=failures,
+    )
+    
+    # Cleanup: Delete notifications older than 7 days
+    cleanup_cutoff = now - timezone.timedelta(days=7)
+    deleted_count, _ = SchedulerNotification.objects.filter(created_at__lt=cleanup_cutoff).delete()
+    if deleted_count:
+        logger.info(f"Cleaned up {deleted_count} old scheduler notifications")
