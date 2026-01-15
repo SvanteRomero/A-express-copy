@@ -80,3 +80,10 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         Can be extended for other notification types.
         """
         await self.send_json(event['data'])
+
+    async def toast_notification(self, event):
+        """
+        Handler for toast notifications.
+        Called when channel_layer.group_send is used with type='toast.notification'
+        """
+        await self.send_json(event['data'])

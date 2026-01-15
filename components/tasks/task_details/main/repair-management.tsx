@@ -58,28 +58,35 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
         technicians?.find(t => t.id.toString() === (taskData.assigned_to?.toString() || ""))?.full_name || "Unassigned"
       const newTech =
         technicians?.find(t => t.id.toString() === repairManagementData.assigned_to)?.full_name || "Unassigned"
-      activityMessages.push(`Assigned Technician changed from ${oldTech} to ${newTech}`)
+      activityMessages.push(`Updated Assigned Technician from "${oldTech}" to "${newTech}"`)
     }
     if (repairManagementData.status !== taskData.status) {
       changes.status = repairManagementData.status
-      activityMessages.push(`Status changed from ${taskData.status} to ${repairManagementData.status}`)
+      activityMessages.push(`Updated Status from "${taskData.status}" to "${repairManagementData.status}"`)
     }
     if (repairManagementData.current_location !== taskData.current_location) {
       changes.current_location = repairManagementData.current_location
-      activityMessages.push(`Location changed from ${taskData.current_location} to ${repairManagementData.current_location}`)
+      activityMessages.push(`Updated Location from "${taskData.current_location}" to "${repairManagementData.current_location}"`)
     }
     if (repairManagementData.urgency !== taskData.urgency) {
       changes.urgency = repairManagementData.urgency
-      activityMessages.push(`Urgency changed from ${taskData.urgency} to ${repairManagementData.urgency}`)
+      activityMessages.push(`Updated Urgency from "${taskData.urgency}" to "${repairManagementData.urgency}"`)
     }
 
     if (Object.keys(changes).length > 0) {
+      // Track what fields changed for the toast
+      const changedFieldNames: string[] = []
+      if (changes.assigned_to !== undefined) changedFieldNames.push('Technician')
+      if (changes.status !== undefined) changedFieldNames.push('Status')
+      if (changes.current_location !== undefined) changedFieldNames.push('Location')
+      if (changes.urgency !== undefined) changedFieldNames.push('Urgency')
+
       updateTaskMutation.mutate({ id: taskId, updates: changes }, {
         onSuccess: () => {
-          showRepairManagementSavedToast()
+          showRepairManagementSavedToast(changedFieldNames)
           if (activityMessages.length > 0) {
-            const message = activityMessages.join(", ")
-            addTaskActivity(taskId, { message: `Repair management updated: ${message}` })
+            const message = activityMessages.join(". ")
+            addTaskActivity(taskId, { message, type: 'status_update' })
           }
         },
       })

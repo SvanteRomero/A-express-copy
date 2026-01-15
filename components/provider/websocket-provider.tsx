@@ -12,9 +12,11 @@ import {
     getWebSocketClient,
     NotificationWebSocket,
     WebSocketMessage,
-    SchedulerNotificationMessage
+    SchedulerNotificationMessage,
+    ToastNotificationMessage,
 } from '@/lib/websocket';
 import { showSchedulerNotificationToast } from '@/components/notifications/toast';
+import { dispatchWebSocketToast } from '@/components/notifications/toast/websocket-toasts';
 
 interface WebSocketContextType {
     isConnected: boolean;
@@ -47,6 +49,11 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
                 failure_details: notification.failure_details,
                 created_at: notification.created_at,
             });
+        }
+
+        // Handle toast notifications - dispatch to appropriate toast
+        if (message.type === 'toast_notification') {
+            dispatchWebSocketToast(message as ToastNotificationMessage);
         }
     }, []);
 

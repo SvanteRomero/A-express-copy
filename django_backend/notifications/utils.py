@@ -76,3 +76,43 @@ def broadcast_task_notification(user_role, notification_data):
         logger.info(f"Broadcast task notification to {group_name}")
     except Exception as e:
         logger.error(f"Failed to broadcast task notification to {group_name}: {e}")
+
+
+def broadcast_toast_notification(roles: list, toast_type: str, data: dict = None):
+    """
+    Broadcast a toast notification to users of specified roles.
+    This enables instant server-to-client notifications for key events.
+    
+    Args:
+        roles: List of roles to broadcast to (e.g., ['manager', 'front_desk'])
+        toast_type: Type of toast (e.g., 'task_created', 'task_approved', 'payment_added')
+        data: Optional additional data for the toast
+    """
+    channel_layer = get_channel_layer()
+    
+    if not channel_layer:
+        logger.warning("Channel layer not available - skipping toast broadcast")
+        return
+    
+    message_data = {
+        'type': 'toast_notification',
+        'toast_type': toast_type,
+        'data': data or {},
+    }
+    
+    for role in roles:
+        # Normalize role name (lowercase, replace spaces with underscores)
+        normalized_role = role.lower().replace(' ', '_')
+        group_name = f'notifications_{normalized_role}'
+        
+        try:
+            async_to_sync(channel_layer.group_send)(
+                group_name,
+                {
+                    'type': 'toast.notification',  # Calls toast_notification handler
+                    'data': message_data,
+                }
+            )
+            logger.debug(f"Broadcast toast '{toast_type}' to {group_name}")
+        except Exception as e:
+            logger.error(f"Failed to broadcast toast to {group_name}: {e}")

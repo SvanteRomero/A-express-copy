@@ -23,7 +23,19 @@ export interface PongMessage {
     type: 'pong';
 }
 
-export type WebSocketMessage = SchedulerNotificationMessage | ConnectionMessage | PongMessage;
+export interface ToastNotificationMessage {
+    type: 'toast_notification';
+    toast_type: 'task_created' | 'task_approved' | 'task_picked_up' | 'payment_added' | 'task_updated';
+    data: {
+        task_title?: string;
+        customer_name?: string;
+        amount?: string;
+        sms_sent?: boolean;
+        fields_changed?: string[];
+    };
+}
+
+export type WebSocketMessage = SchedulerNotificationMessage | ConnectionMessage | PongMessage | ToastNotificationMessage;
 
 export type MessageHandler = (message: WebSocketMessage) => void;
 export type ConnectionStatusHandler = (isConnected: boolean) => void;

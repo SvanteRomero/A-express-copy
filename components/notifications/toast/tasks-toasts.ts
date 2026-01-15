@@ -71,11 +71,16 @@ export function showMarkAsDebtErrorToast(errorMessage: string) {
 
 /**
  * Show success toast when repair management is saved
+ * @param changedFields - Optional array of field names that were changed
  */
-export function showRepairManagementSavedToast() {
+export function showRepairManagementSavedToast(changedFields?: string[]) {
+    const description = changedFields && changedFields.length > 0
+        ? `Updated: ${changedFields.join(', ')}`
+        : 'Repair management details have been updated.';
+
     toast({
-        title: 'Changes Saved',
-        description: 'Repair management details have been updated.',
+        title: '✅ Changes Saved',
+        description,
     });
 }
 

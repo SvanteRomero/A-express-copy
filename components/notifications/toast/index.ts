@@ -111,3 +111,6 @@ export {
     showSchedulerNoTasksToast,
     showSchedulerNotificationToast,
 } from './scheduler-toasts';
+
+// Re-export WebSocket toast dispatcher
+export { dispatchWebSocketToast } from './websocket-toasts';
