@@ -5,6 +5,7 @@ import { Edit, Trash2, CheckCircle, MessageSquare } from "lucide-react"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/feedback/alert-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/feedback/dialog"
 import { Textarea } from "@/components/ui/core/textarea"
+import { NotifyCustomerDialog } from "./notify-customer-dialog"
 
 interface TaskActionsProps {
     task: any
@@ -53,6 +54,7 @@ export function TaskActions({
 }: TaskActionsProps) {
     const [rejectionNotes, setRejectionNotes] = useState("")
     const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
+    const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false)
 
     if (!showActions) return null
 
@@ -186,15 +188,21 @@ export function TaskActions({
         return (
             <div className="flex gap-2 w-full justify-end" onClick={stopProp}>
                 {task.status !== 'Completed' && (
-                    <Button
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white flex-1 sm:flex-none"
-                        onClick={() => {
-                            // Add notification logic here in the future
-                        }}
-                    >
-                        Notify Customer
-                    </Button>
+                    <>
+                        <Button
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700 text-white flex-1 sm:flex-none"
+                            onClick={() => setIsNotifyDialogOpen(true)}
+                        >
+                            Notify Customer
+                        </Button>
+                        <NotifyCustomerDialog
+                            isOpen={isNotifyDialogOpen}
+                            onOpenChange={setIsNotifyDialogOpen}
+                            task={task}
+                            onNotifyCustomer={onNotifyCustomer}
+                        />
+                    </>
                 )}
                 {isHistoryView && task.status === 'Picked Up' && new Date(task.updated_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
                     <Button
