@@ -59,6 +59,11 @@ export {
     showCustomerNotificationToast,
     showPhoneCopiedToast,
     showPhoneCopyErrorToast,
+    showCustomerUpdateSentToast,
+    showCustomerUpdateFailedToast,
+    showMessageRequiredToast,
+    showPhoneRequiredToast,
+    showPreviewFailedToast,
 } from './tasks-toasts';
 
 // Re-export settings toasts
@@ -112,5 +117,13 @@ export {
     showSchedulerNotificationToast,
 } from './scheduler-toasts';
 
+// Re-export technician toasts
+export {
+    showSentToWorkshopToast,
+    showWorkshopSelectionErrorToast,
+    showWorkshopStatusChangedToast,
+} from './technician-toasts';
+
 // Re-export WebSocket toast dispatcher
 export { dispatchWebSocketToast } from './websocket-toasts';
+

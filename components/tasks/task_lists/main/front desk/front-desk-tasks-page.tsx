@@ -8,9 +8,7 @@ import { TasksDisplay } from "@/components/tasks/task_utils/tasks-display";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs";
 import { useTasks, useUpdateTask } from "@/hooks/use-tasks";
 import {
-  showTaskApprovedToast,
   showTaskApprovalErrorToast,
-  showTaskPickedUpToast,
   showPickupErrorToast,
   showPaymentRequiredToast,
 } from "@/components/notifications/toast";
@@ -76,13 +74,11 @@ export function FrontDeskTasksPage() {
       }
 
       try {
-        const result = await updateTaskMutation.mutateAsync({
+        await updateTaskMutation.mutateAsync({
           id: taskTitle,
           updates,
         });
-
-        // Show toast based on SMS result
-        showTaskApprovedToast(result);
+        // Toast handled via WebSocket
       } catch (error) {
         showTaskApprovalErrorToast();
       } finally {
@@ -109,7 +105,7 @@ export function FrontDeskTasksPage() {
       setPickingUpTaskId(task.title);
 
       try {
-        const result = await updateTaskMutation.mutateAsync({
+        await updateTaskMutation.mutateAsync({
           id: task.title,
           updates: {
             status: "Picked Up",
@@ -117,9 +113,7 @@ export function FrontDeskTasksPage() {
             sent_out_by: user.id,
           },
         });
-
-        // Show toast based on SMS result
-        showTaskPickedUpToast(result, task.is_debt);
+        // Toast handled via WebSocket
       } catch (error) {
         showPickupErrorToast();
       } finally {

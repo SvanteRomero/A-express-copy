@@ -46,7 +46,11 @@ import {
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { addTaskActivity } from "@/lib/api-client"
-import { useToast } from "@/hooks/use-toast"
+import {
+  showSentToWorkshopToast,
+  showWorkshopSelectionErrorToast,
+  showWorkshopStatusChangedToast,
+} from "@/components/notifications/toast"
 import { useTask, useUpdateTask } from "@/hooks/use-tasks";
 import { useWorkshopLocations } from "@/hooks/use-locations";
 import { useWorkshopTechnicians } from "@/hooks/use-users";
@@ -59,7 +63,6 @@ interface TechnicianTaskDetailsProps {
 export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   const router = useRouter()
   const { user } = useAuth()
-  const { toast } = useToast()
   const queryClient = useQueryClient();
 
   const { data: task, isLoading, isError, error } = useTask(taskId);
@@ -98,11 +101,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
 
   const handleSendToWorkshop = async () => {
     if (!selectedWorkshopLocation || !selectedWorkshopTechnician) {
-      toast({
-        title: "Error",
-        description: "Please select a workshop location and technician.",
-        variant: "destructive",
-      })
+      showWorkshopSelectionErrorToast()
       return
     }
     updateTaskMutation.mutate({
@@ -113,20 +112,13 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
       }
     });
     setIsSendToWorkshopDialogOpen(false)
-    toast({
-      title: "Success",
-      description: "Task sent to workshop successfully.",
-    })
+    showSentToWorkshopToast()
   }
 
   const handleWorkshopStatusChange = async (newStatus: string) => {
     updateTaskMutation.mutate({ id: taskId, updates: { workshop_status: newStatus } });
-    toast({
-      title: "Success",
-      description: `Task marked as ${newStatus}.`,
-    })
+    showWorkshopStatusChangedToast(newStatus)
   }
-
 
 
   const getNoteIcon = (type: string) => {

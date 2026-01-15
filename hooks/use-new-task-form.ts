@@ -8,7 +8,6 @@ import { useAuth } from '@/hooks/use-auth'
 import { useNotifications } from '@/lib/notification-context'
 import { handleApiError } from '@/lib/error-handling'
 import {
-    showTaskCreatedToast,
     showCustomerCreatedToast,
     showTaskCreatedWithSmsToast,
 } from '@/components/notifications/toast'
@@ -296,9 +295,7 @@ export function useNewTaskForm() {
                 showCustomerCreatedToast(formData.customer_name)
             }
 
-            showTaskCreatedToast()
-
-            // Show SMS notification toast if SMS was sent
+            // Show SMS notification toast if SMS was sent (local-only feedback)
             if (response.data.sms_sent) {
                 showTaskCreatedWithSmsToast(response.data.sms_phone)
             }

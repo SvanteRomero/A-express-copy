@@ -170,6 +170,25 @@ class TaskViewSet(viewsets.ModelViewSet):
             sms_result = TaskNotificationHandler.notify_picked_up(updated_task, request.user)
             response_data['sms_sent'] = sms_result['success']
             response_data['sms_phone'] = sms_result['phone']
+
+        elif data.get('status') == 'Completed':
+            TaskNotificationHandler.notify_task_completed(updated_task, request.user)
+
+        # Notify workshop technician when task is assigned to workshop
+        if data.get('workshop_technician') and updated_task.workshop_technician:
+            TaskNotificationHandler.notify_sent_to_workshop(
+                updated_task, 
+                updated_task.workshop_technician, 
+                request.user
+            )
+
+        # Notify original technician when workshop marks task as Solved/Not Solved
+        if data.get('workshop_status') in ['Solved', 'Not Solved']:
+            TaskNotificationHandler.notify_workshop_status_changed(
+                updated_task,
+                data.get('workshop_status'),
+                request.user
+            )
             
         # Generic updates (handler has guard clause for status-specific cases)
         TaskNotificationHandler.notify_task_updated(updated_task, data)

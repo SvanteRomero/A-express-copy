@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addTaskPayment, sendDebtReminder, previewTemplateMessage } from "@/lib/api-client";
 import {
-  showPaymentAddedToast,
   showReminderSentToast,
   showReminderFailedToast,
   showNoPhoneToast,
@@ -41,7 +40,7 @@ const DebtsPage = () => {
       addTaskPayment(taskId, { amount, method: methodId, date: new Date().toISOString().split('T')[0] }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      showPaymentAddedToast();
+      // Toast handled via WebSocket
     },
   });
 

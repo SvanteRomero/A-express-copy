@@ -7,6 +7,10 @@ import { Input } from "@/components/ui/core/input"
 import { Label } from "@/components/ui/core/label"
 import { Loader2 } from "lucide-react"
 import { previewTemplateMessage, sendCustomerSMS } from "@/lib/api-client"
+import {
+    showCustomerUpdateSentToast,
+    showCustomerUpdateFailedToast,
+} from "@/components/notifications/toast"
 
 interface NotifyCustomerDialogProps {
     isOpen: boolean
@@ -61,15 +65,15 @@ export function NotifyCustomerDialog({
                 message: notifyMessage
             })
             if (response.success) {
-                alert("Message sent successfully!")
+                showCustomerUpdateSentToast(notifyPhone)
                 onOpenChange(false)
                 onNotifyCustomer?.(task.title, task.customer_details?.name || "")
             } else {
-                alert("Failed to send message: " + (response.error || "Unknown error"))
+                showCustomerUpdateFailedToast(response.error || "Unknown error")
             }
         } catch (error: any) {
             console.error("Failed to send SMS:", error)
-            alert("Error sending SMS: " + (error.response?.data?.error || error.message))
+            showCustomerUpdateFailedToast(error.response?.data?.error || error.message)
         } finally {
             setIsSendingNotify(false)
         }

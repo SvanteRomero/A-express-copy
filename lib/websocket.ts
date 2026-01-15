@@ -25,13 +25,18 @@ export interface PongMessage {
 
 export interface ToastNotificationMessage {
     type: 'toast_notification';
-    toast_type: 'task_created' | 'task_approved' | 'task_picked_up' | 'payment_added' | 'task_updated';
+    toast_type: 'task_created' | 'task_approved' | 'task_picked_up' | 'payment_added' | 'task_updated' | 'task_completed' | 'task_sent_to_workshop' | 'workshop_task_solved' | 'workshop_task_not_solved';
     data: {
         task_title?: string;
         customer_name?: string;
         amount?: string;
         sms_sent?: boolean;
+        sms_phone?: string;
+        is_debt?: boolean;
         fields_changed?: string[];
+        technician_name?: string;
+        sender_name?: string;
+        workshop_technician_name?: string;
     };
 }
 

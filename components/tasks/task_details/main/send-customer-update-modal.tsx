@@ -14,7 +14,13 @@ import { Textarea } from "@/components/ui/core/textarea"
 import { Label } from "@/components/ui/core/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select"
 import { MessageSquare, Send, Loader2 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import {
+    showCustomerUpdateSentToast,
+    showCustomerUpdateFailedToast,
+    showMessageRequiredToast,
+    showPhoneRequiredToast,
+    showPreviewFailedToast,
+} from "@/components/notifications/toast"
 import { sendCustomerSMS, previewTemplateMessage } from "@/lib/api-client"
 
 interface PhoneNumber {
@@ -58,7 +64,6 @@ export function SendCustomerUpdateModal({
     const [message, setMessage] = useState<string>("")
     const [isSending, setIsSending] = useState(false)
     const [isLoadingPreview, setIsLoadingPreview] = useState(false)
-    const { toast } = useToast()
 
     // Character count for SMS (160 chars per segment)
     const charCount = message.length
@@ -86,19 +91,11 @@ export function SendCustomerUpdateModal({
             if (result.success && result.message) {
                 setMessage(result.message)
             } else {
-                toast({
-                    title: "Preview Failed",
-                    description: result.error || "Could not generate message preview",
-                    variant: "destructive",
-                })
+                showPreviewFailedToast(result.error)
                 setMessage("")
             }
         } catch (error: any) {
-            toast({
-                title: "Preview Failed",
-                description: error?.response?.data?.error || "Could not generate message preview",
-                variant: "destructive",
-            })
+            showPreviewFailedToast(error?.response?.data?.error)
             setMessage("")
         } finally {
             setIsLoadingPreview(false)
@@ -107,20 +104,12 @@ export function SendCustomerUpdateModal({
 
     const handleSend = async () => {
         if (!message.trim()) {
-            toast({
-                title: "Message Required",
-                description: "Please enter a message to send.",
-                variant: "destructive",
-            })
+            showMessageRequiredToast()
             return
         }
 
         if (!selectedPhone) {
-            toast({
-                title: "Phone Number Required",
-                description: "Please select a phone number to send the message to.",
-                variant: "destructive",
-            })
+            showPhoneRequiredToast()
             return
         }
 
@@ -132,10 +121,7 @@ export function SendCustomerUpdateModal({
                 message: message.trim(),
             })
 
-            toast({
-                title: "Message Sent!",
-                description: `Customer update sent to ${selectedPhone}`,
-            })
+            showCustomerUpdateSentToast(selectedPhone)
 
             // Reset and close
             setMessage("")
@@ -143,11 +129,7 @@ export function SendCustomerUpdateModal({
             onClose()
         } catch (error: any) {
             const errorMessage = error.response?.data?.error || error.message || "Failed to send SMS"
-            toast({
-                title: "Failed to Send",
-                description: errorMessage,
-                variant: "destructive",
-            })
+            showCustomerUpdateFailedToast(errorMessage)
         } finally {
             setIsSending(false)
         }

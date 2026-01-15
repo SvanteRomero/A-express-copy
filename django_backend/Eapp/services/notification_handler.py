@@ -77,6 +77,7 @@ class TaskNotificationHandler:
             data={
                 'task_title': task.title,
                 'sms_sent': sms_result['success'],
+                'sms_phone': sms_result.get('phone'),
             }
         )
         
@@ -113,10 +114,59 @@ class TaskNotificationHandler:
             toast_type='task_picked_up',
             data={
                 'task_title': task.title,
+                'is_debt': task.is_debt,
+                'sms_sent': sms_result['success'],
+                'sms_phone': sms_result.get('phone'),
             }
         )
         
         return sms_result
+
+    @staticmethod
+    def notify_task_completed(task, technician):
+        """
+        Broadcast toast when technician marks task as completed.
+        """
+        technician_name = technician.get_full_name() if hasattr(technician, 'get_full_name') else str(technician)
+        broadcast_toast_notification(
+            roles=['manager', 'front_desk'],
+            toast_type='task_completed',
+            data={
+                'task_title': task.title,
+                'technician_name': technician_name,
+            }
+        )
+
+    @staticmethod
+    def notify_sent_to_workshop(task, workshop_technician, sender):
+        """
+        Broadcast toast to workshop technician when task is sent to them.
+        """
+        sender_name = sender.get_full_name() if hasattr(sender, 'get_full_name') else str(sender)
+        broadcast_toast_notification(
+            roles=['technician'],  # Workshop technicians are in the technician role group
+            toast_type='task_sent_to_workshop',
+            data={
+                'task_title': task.title,
+                'sender_name': sender_name,
+            }
+        )
+
+    @staticmethod
+    def notify_workshop_status_changed(task, workshop_status, workshop_technician):
+        """
+        Broadcast toast to original technician when workshop marks task as Solved/Not Solved.
+        """
+        tech_name = workshop_technician.get_full_name() if hasattr(workshop_technician, 'get_full_name') else str(workshop_technician)
+        toast_type = 'workshop_task_solved' if workshop_status == 'Solved' else 'workshop_task_not_solved'
+        broadcast_toast_notification(
+            roles=['technician'],  # Notify the original technician
+            toast_type=toast_type,
+            data={
+                'task_title': task.title,
+                'workshop_technician_name': tech_name,
+            }
+        )
 
     @staticmethod
     def notify_task_updated(task, data):
@@ -124,7 +174,7 @@ class TaskNotificationHandler:
         Broadcast generic task update toast if significant fields changed.
         """
         # Only broadcast if not already covered by status-specific toasts
-        if data.get('status') in ['Ready for Pickup', 'Picked Up']:
+        if data.get('status') in ['Ready for Pickup', 'Picked Up', 'Completed']:
             return
 
         fields_changed = []

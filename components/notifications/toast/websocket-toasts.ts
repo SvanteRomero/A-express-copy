@@ -22,20 +22,35 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
             });
             break;
 
-        case 'task_approved':
+        case 'task_approved': {
+            let description = `${data.task_title} is ready for pickup`;
+            if (data.sms_sent && data.sms_phone) {
+                description += ` • SMS sent to ${data.sms_phone}`;
+            } else if (data.sms_sent === false && data.sms_phone === null) {
+                description += ' • No phone on file';
+            }
             toast({
                 title: '✅ Task Approved',
-                description: `${data.task_title} is ready for pickup${data.sms_sent ? ' (SMS sent)' : ''}`,
+                description,
                 className: 'bg-green-600 text-white border-green-600',
             });
             break;
+        }
 
-        case 'task_picked_up':
+        case 'task_picked_up': {
+            const messageType = data.is_debt ? 'Debt reminder' : 'Thank you message';
+            let description = `${data.task_title} has been collected`;
+            if (data.sms_sent && data.sms_phone) {
+                description += ` • ${messageType} sent to ${data.sms_phone}`;
+            } else if (data.sms_sent === false && data.sms_phone === null) {
+                description += ' • No phone on file';
+            }
             toast({
                 title: '📦 Task Picked Up',
-                description: `${data.task_title} has been collected`,
+                description,
             });
             break;
+        }
 
         case 'payment_added':
             toast({
@@ -55,8 +70,41 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
             });
             break;
 
+        case 'task_completed':
+            toast({
+                title: '🛠️ Task Completed',
+                description: `${data.task_title} completed by ${data.technician_name}`,
+                className: 'bg-purple-600 text-white border-purple-600',
+            });
+            break;
+
+        case 'task_sent_to_workshop':
+            toast({
+                title: '🔧 New Workshop Task',
+                description: `${data.task_title} assigned to you by ${data.sender_name}`,
+                className: 'bg-indigo-600 text-white border-indigo-600',
+            });
+            break;
+
+        case 'workshop_task_solved':
+            toast({
+                title: '✅ Workshop Task Solved',
+                description: `${data.task_title} solved by ${data.workshop_technician_name}`,
+                className: 'bg-green-600 text-white border-green-600',
+            });
+            break;
+
+        case 'workshop_task_not_solved':
+            toast({
+                title: '⚠️ Workshop Task Not Solved',
+                description: `${data.task_title} returned by ${data.workshop_technician_name}`,
+                className: 'bg-orange-600 text-white border-orange-600',
+            });
+            break;
+
         default:
             // Unknown toast type - log for debugging
             console.warn('Unknown WebSocket toast type:', toast_type);
     }
 }
+

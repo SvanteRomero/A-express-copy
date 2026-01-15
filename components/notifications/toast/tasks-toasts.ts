@@ -138,3 +138,58 @@ export function showPhoneCopyErrorToast() {
         variant: 'destructive',
     });
 }
+
+/**
+ * Show success toast when customer update SMS is sent
+ */
+export function showCustomerUpdateSentToast(phoneNumber: string) {
+    toast({
+        title: '📱 Message Sent!',
+        description: `Customer update sent to ${phoneNumber}`,
+        className: 'bg-green-600 text-white border-green-600',
+    });
+}
+
+/**
+ * Show error toast when customer update SMS fails
+ */
+export function showCustomerUpdateFailedToast(errorMessage?: string) {
+    toast({
+        title: 'Failed to Send',
+        description: errorMessage || 'Failed to send SMS',
+        variant: 'destructive',
+    });
+}
+
+/**
+ * Show error toast when message is required
+ */
+export function showMessageRequiredToast() {
+    toast({
+        title: 'Message Required',
+        description: 'Please enter a message to send.',
+        variant: 'destructive',
+    });
+}
+
+/**
+ * Show error toast when phone number is required
+ */
+export function showPhoneRequiredToast() {
+    toast({
+        title: 'Phone Number Required',
+        description: 'Please select a phone number to send the message to.',
+        variant: 'destructive',
+    });
+}
+
+/**
+ * Show error toast when template preview fails
+ */
+export function showPreviewFailedToast(errorMessage?: string) {
+    toast({
+        title: 'Preview Failed',
+        description: errorMessage || 'Could not generate message preview',
+        variant: 'destructive',
+    });
+}
