@@ -35,10 +35,43 @@ export interface WebSocketClientConfig {
     pingInterval?: number;
 }
 
+/**
+ * Get the WebSocket base URL from the API URL.
+ * Converts http://localhost:8000/api to ws://localhost:8000
+ */
+function getWebSocketBaseUrl(): string {
+    if (typeof window === 'undefined') {
+        return 'ws://localhost:8000';
+    }
+
+    // Try to get from environment variable first
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (apiUrl) {
+        // Convert http(s)://host/api to ws(s)://host
+        const url = new URL(apiUrl);
+        const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+        return `${wsProtocol}//${url.host}`;
+    }
+
+    // For local development, use Django's default port
+    const host = window.location.hostname;
+
+    // Check for cloud development environments
+    if (host.includes('github.dev') || host.includes('gitpod.io')) {
+        // Replace frontend port with backend port
+        if (host.includes('-3000')) {
+            const backendHost = host.replace('-3000', '-8000');
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            return `${protocol}//${backendHost}`;
+        }
+    }
+
+    // Default: localhost with Django port
+    return 'ws://localhost:8000';
+}
+
 const DEFAULT_CONFIG: Required<WebSocketClientConfig> = {
-    baseUrl: typeof window !== 'undefined'
-        ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
-        : 'ws://localhost:8000',
+    baseUrl: getWebSocketBaseUrl(),
     reconnectInterval: 3000,
     maxReconnectAttempts: 10,
     pingInterval: 30000,

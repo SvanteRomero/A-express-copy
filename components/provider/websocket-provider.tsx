@@ -80,9 +80,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
     // Connect/disconnect based on auth state
     useEffect(() => {
-        // Only connect for managers and front_desk
-        const allowedRoles = ['manager', 'front_desk'];
-        const shouldConnect = isAuthenticated && user && allowedRoles.includes(user.role);
+        // Connect for all authenticated users
+        const shouldConnect = isAuthenticated && user;
 
         if (shouldConnect) {
             connectWebSocket();

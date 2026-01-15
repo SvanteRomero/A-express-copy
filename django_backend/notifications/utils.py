@@ -33,7 +33,7 @@ def broadcast_scheduler_notification(notification):
         'created_at': notification.created_at.isoformat(),
     }
     
-    # Broadcast to both manager and front_desk groups
+    # Broadcast to both manager and front_desk groups (using normalized names)
     for role in ['manager', 'front_desk']:
         group_name = f'notifications_{role}'
         try:

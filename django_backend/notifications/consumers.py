@@ -20,28 +20,29 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         """Handle WebSocket connection."""
         user = self.scope.get('user')
         
-        # Only authenticated users with specific roles can connect
+        # Only authenticated users can connect
         if user and user.is_authenticated:
-            user_role = getattr(user, 'role', None)
+            user_role = getattr(user, 'role', 'user')
+            # Normalize role for group name (lowercase, replace spaces with underscores)
+            normalized_role = user_role.lower().replace(' ', '_') if user_role else 'user'
             
-            if user_role in ['manager', 'front_desk']:
-                # Add user to role-based group
-                self.group_name = f'notifications_{user_role}'
-                await self.channel_layer.group_add(
-                    self.group_name,
-                    self.channel_name
-                )
-                await self.accept()
-                logger.info(f"WebSocket connected: user={user.username}, role={user_role}")
-                
-                # Send welcome message
-                await self.send_json({
-                    'type': 'connection_established',
-                    'message': f'Connected to notifications as {user_role}'
-                })
-                return
+            # Add user to role-based group
+            self.group_name = f'notifications_{normalized_role}'
+            await self.channel_layer.group_add(
+                self.group_name,
+                self.channel_name
+            )
+            await self.accept()
+            logger.info(f"WebSocket connected: user={user.username}, role={user_role}, group={self.group_name}")
+            
+            # Send welcome message
+            await self.send_json({
+                'type': 'connection_established',
+                'message': f'Connected to notifications as {user_role}'
+            })
+            return
         
-        # Reject connection for unauthorized users
+        # Reject connection for unauthenticated users
         logger.warning(f"WebSocket connection rejected: user={getattr(user, 'username', 'anonymous')}")
         await self.close()
     
