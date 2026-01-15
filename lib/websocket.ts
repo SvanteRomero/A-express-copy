@@ -44,24 +44,47 @@ function getWebSocketBaseUrl(): string {
         return 'ws://localhost:8000';
     }
 
-    // Try to get from environment variable first
+    // Try to get from environment variable first (build-time)
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (apiUrl) {
-        // Convert http(s)://host/api to ws(s)://host
-        const url = new URL(apiUrl);
-        const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-        return `${wsProtocol}//${url.host}`;
+        try {
+            // Convert http(s)://host/api to ws(s)://host
+            const url = new URL(apiUrl);
+            const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+            return `${wsProtocol}//${url.host}`;
+        } catch (e) {
+            console.error('Invalid NEXT_PUBLIC_API_URL:', apiUrl);
+        }
     }
 
-    // For local development, use Django's default port
     const host = window.location.hostname;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 
-    // Check for cloud development environments
+    // Railway deployment: frontend and backend are separate services
+    // The backend URL should be set via NEXT_PUBLIC_API_URL
+    // If not set, we can't auto-detect it (different Railway services have different URLs)
+    if (host.includes('railway.app') || host.includes('vercel.app')) {
+        // Check if there's a backend URL stored in window (set by config)
+        const backendUrl = (window as unknown as { __BACKEND_URL__?: string }).__BACKEND_URL__;
+        if (backendUrl) {
+            try {
+                const url = new URL(backendUrl);
+                return `${url.protocol === 'https:' ? 'wss:' : 'ws:'}//${url.host}`;
+            } catch (e) {
+                console.error('Invalid __BACKEND_URL__:', backendUrl);
+            }
+        }
+
+        // Fallback: try to derive from API client config if available
+        console.warn('WebSocket: No NEXT_PUBLIC_API_URL set for production. WebSocket will not connect.');
+        return '';  // Empty URL will prevent connection attempts
+    }
+
+    // Cloud development environments (GitHub Codespaces, Gitpod)
     if (host.includes('github.dev') || host.includes('gitpod.io')) {
         // Replace frontend port with backend port
         if (host.includes('-3000')) {
             const backendHost = host.replace('-3000', '-8000');
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             return `${protocol}//${backendHost}`;
         }
     }
