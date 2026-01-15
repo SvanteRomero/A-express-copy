@@ -5,7 +5,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/components/provider/auth-provider"
 import { NotificationProvider } from "@/lib/notification-context"
-import { WebSocketProvider } from "@/lib/websocket-context"
+import { WebSocketProvider } from "@/components/provider/websocket-provider"
 import { ThemeProvider } from "@/components/provider/theme-provider"
 import { Toaster } from "@/components/ui/feedback/toaster"
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'

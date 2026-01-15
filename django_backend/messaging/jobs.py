@@ -104,15 +104,19 @@ def send_pickup_reminders():
     
     logger.info(f"Pickup reminder job completed: {reminders_sent} reminders sent")
     
-    # Create notification for frontend polling
+    # Create notification for frontend
     from messaging.models import SchedulerNotification
-    SchedulerNotification.objects.create(
+    notification = SchedulerNotification.objects.create(
         job_type='pickup_reminder',
         tasks_found=ready_tasks.count(),
         messages_sent=reminders_sent,
         messages_failed=len(failures),
         failure_details=failures,
     )
+    
+    # Broadcast via WebSocket for instant notifications
+    from notifications.utils import broadcast_scheduler_notification
+    broadcast_scheduler_notification(notification)
     
     # Cleanup: Delete notifications older than 7 days
     cleanup_cutoff = now - timezone.timedelta(days=7)
@@ -220,15 +224,19 @@ def send_debt_reminders():
     
     logger.info(f"Debt reminder job completed: {reminders_sent} reminders sent")
     
-    # Create notification for frontend polling
+    # Create notification for frontend
     from messaging.models import SchedulerNotification
-    SchedulerNotification.objects.create(
+    notification = SchedulerNotification.objects.create(
         job_type='debt_reminder',
         tasks_found=debt_tasks.count(),
         messages_sent=reminders_sent,
         messages_failed=len(failures),
         failure_details=failures,
     )
+    
+    # Broadcast via WebSocket for instant notifications
+    from notifications.utils import broadcast_scheduler_notification
+    broadcast_scheduler_notification(notification)
     
     # Cleanup: Delete notifications older than 7 days
     cleanup_cutoff = now - timezone.timedelta(days=7)

@@ -134,6 +134,7 @@ _USE_CLOUDINARY = bool(_CLOUDINARY_URL)
 
 
 INSTALLED_APPS = [
+    "daphne",  # ASGI server for Django Channels (must be before django apps)
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -142,6 +143,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # For media-only Cloudinary use, cloudinary_storage comes AFTER staticfiles
     *(['cloudinary_storage', 'cloudinary'] if _USE_CLOUDINARY else []),
+    "channels",  # Django Channels for WebSocket support
     "corsheaders",
     "axes",  # Brute-force protection
     "users",
@@ -153,6 +155,7 @@ INSTALLED_APPS = [
     "reports",
     "messaging",  # SMS messaging via Briq
     "settings",  # System settings
+    "notifications",  # WebSocket notifications
     'django_extensions',
     'django_apscheduler',  # Background task scheduling
 ]
@@ -189,6 +192,21 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "A_express.wsgi.application"
+ASGI_APPLICATION = "A_express.asgi.application"
+
+# Channel Layers for WebSocket support
+# InMemoryChannelLayer for single-instance deployment
+# Switch to Redis if scaling to multiple instances
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379')],
+        },
+    } if os.environ.get('REDIS_URL') else {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    }
+}
 
 
 # Database

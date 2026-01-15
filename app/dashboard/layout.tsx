@@ -7,7 +7,6 @@ import { DashboardHeader } from "@/components/dashboard/layouts/dashboard-header
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
-import { useSchedulerNotifications } from "@/hooks/use-scheduler-notifications"
 
 interface DashboardLayoutProps {
     children: React.ReactNode
@@ -16,9 +15,6 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const { isAuthenticated, isLoading } = useAuth()
     const router = useRouter()
-
-    // Poll for scheduler notifications (only for managers/front_desk)
-    useSchedulerNotifications()
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
