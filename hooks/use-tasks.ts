@@ -162,12 +162,28 @@ export function useUpdateTask() {
         queryClient.setQueryData(['task', variables.id], context.previousTask);
       }
     },
+    onSuccess: (data, variables) => {
+      // Update the single task cache with the server response to ensure consistency
+      queryClient.setQueryData(['task', variables.id], data);
+
+      // Debounce refetch to allow server replication to complete in production
+      // This prevents the race condition where stale data appears in multiple tabs
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['technicianTasks'] });
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['technicianHistoryTasks'] });
+      }, 1000);
+    },
     onSettled: (data, error, variables) => {
-      // Always refetch after error or success to ensure we have the correct data
-      queryClient.invalidateQueries({ queryKey: ['technicianTasks'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['technicianHistoryTasks'] });
+      // Only refetch the individual task immediately to ensure it's up to date
+      // The list queries are handled in onSuccess with a delay
+      if (error) {
+        // On error, immediately refetch to ensure correct state after rollback
+        queryClient.invalidateQueries({ queryKey: ['technicianTasks'] });
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
+        queryClient.invalidateQueries({ queryKey: ['technicianHistoryTasks'] });
+      }
     },
   });
 }
