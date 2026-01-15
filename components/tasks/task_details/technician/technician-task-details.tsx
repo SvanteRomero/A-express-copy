@@ -144,7 +144,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
 
   if (isLoading) {
     return (
-      <div className="flex-1 space-y-8 p-6">
+      <div className="flex-1 space-y-6 sm:space-y-8 p-4 sm:p-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
           <div className="space-y-4">
@@ -162,9 +162,9 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
 
   if (!task) {
     return (
-      <div className="flex-1 space-y-8 p-6">
+      <div className="flex-1 space-y-6 sm:space-y-8 p-4 sm:p-6">
         <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Task Not Found</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Task Not Found</h2>
           <p className="text-gray-600 mb-4">The requested task could not be found.</p>
           <Button onClick={() => router.back()} className="bg-red-600 hover:bg-red-700">
             Go Back
@@ -175,22 +175,23 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   }
 
   return (
-    <div className="flex-1 space-y-8 p-6">
+    <div className="flex-1 space-y-6 sm:space-y-8 p-4 sm:p-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" onClick={() => router.back()} className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+        <Button variant="outline" size="sm" onClick={() => router.back()} className="flex items-center gap-2 w-fit">
           <ArrowLeft className="h-4 w-4" />
-          Back to Tasks
+          <span className="hidden xs:inline">Back to Tasks</span>
+          <span className="xs:hidden">Back</span>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Task Details - {task.title}</h1>
-          <p className="text-gray-600 mt-1">Repair management and documentation</p>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-gray-900">Task Details - {task.title}</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Repair management and documentation</p>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Task Overview */}
           <Card className="border-gray-200">
             <CardHeader>
@@ -198,32 +199,32 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Initial Issue */}
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h4 className="font-medium text-blue-900 mb-2">Initial Issue Description</h4>
-                <p className="text-blue-800">{task.description}</p>
+              <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-900 mb-2 text-sm sm:text-base">Initial Issue Description</h4>
+                <p className="text-blue-800 text-sm sm:text-base">{task.description}</p>
               </div>
 
               {/* Read-only fields */}
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Task ID</label>
-                  <p className="text-lg font-semibold text-gray-900">{task.title}</p>
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">Task ID</label>
+                  <p className="text-base sm:text-lg font-semibold text-gray-900">{task.title}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Customer Name</label>
-                  <p className="text-lg font-semibold text-gray-900">{task.customer_details?.name}</p>
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">Customer Name</label>
+                  <p className="text-base sm:text-lg font-semibold text-gray-900">{task.customer_details?.name}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Laptop Model</label>
-                  <p className="text-lg font-semibold text-gray-900">{task.brand_details?.name} {task.laptop_model_details?.name || task.laptop_model}</p>
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">Laptop Model</label>
+                  <p className="text-base sm:text-lg font-semibold text-gray-900 break-words">{task.brand_details?.name} {task.laptop_model_details?.name || task.laptop_model}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Date In</label>
-                  <p className="text-lg font-semibold text-gray-900">{task.date_in}</p>
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">Date In</label>
+                  <p className="text-base sm:text-lg font-semibold text-gray-900">{task.date_in}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Assigned Technician</label>
-                  <p className="text-lg font-semibold text-gray-900">{task.assigned_to_details?.full_name}</p>
+                <div className="sm:col-span-2">
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">Assigned Technician</label>
+                  <p className="text-base sm:text-lg font-semibold text-gray-900">{task.assigned_to_details?.full_name}</p>
                 </div>
               </div>
 
@@ -237,30 +238,28 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
 
           {/* Repair Status & Actions */}
           <Card className="border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold text-gray-900">Repair Status & Actions</CardTitle>
-              <CardDescription>Update task status and perform key actions</CardDescription>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900">Repair Status & Actions</CardTitle>
+              <CardDescription className="text-sm">Update task status and perform key actions</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Current Status</label>
-                  <div className="mt-2 flex items-center gap-2">
-                    <StatusBadge status={task.status} />
-                    {['Solved', 'Not Solved'].includes(task.workshop_status || '') && (
-                      <WorkshopStatusBadge status={task.workshop_status || ''} />
-                    )}
-                    {task.workshop_status === 'In Workshop' && (
-                      <WorkshopStatusBadge status='In Workshop' />
-                    )}
-                  </div>
+            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0 space-y-4">
+              <div>
+                <label className="text-xs sm:text-sm font-medium text-gray-700">Current Status</label>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <StatusBadge status={task.status} />
+                  {['Solved', 'Not Solved'].includes(task.workshop_status || '') && (
+                    <WorkshopStatusBadge status={task.workshop_status || ''} />
+                  )}
+                  {task.workshop_status === 'In Workshop' && (
+                    <WorkshopStatusBadge status='In Workshop' />
+                  )}
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 {task && task.status !== 'Completed' && (!task.workshop_status || ['Solved', 'Not Solved'].includes(task.workshop_status)) && (!user?.is_workshop || !task.original_technician) && (
                   <Button
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
                     onClick={handleMarkComplete}
                     disabled={updating}
                   >
@@ -271,7 +270,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                 {task.status === 'In Progress' && !user?.is_workshop && user?.id === task.assigned_to && (
                   <Dialog open={isSendToWorkshopDialogOpen} onOpenChange={setIsSendToWorkshopDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50 bg-transparent">
+                      <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50 bg-transparent w-full sm:w-auto">
                         <Users className="h-4 w-4 mr-2" />
                         Send to Workshop
                       </Button>
@@ -330,34 +329,34 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
 
           {/* Repair Notes & Activity Log */}
           <Card className="border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold text-gray-900">Repair Notes & Activity Log</CardTitle>
-              <CardDescription>Complete history of work performed and notes</CardDescription>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900">Repair Notes & Activity Log</CardTitle>
+              <CardDescription className="text-sm">Complete history of work performed and notes</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0 space-y-4">
               {/* Activity Log */}
-              <ScrollArea className="h-96 w-full border rounded-lg p-4">
-                <div className="space-y-4">
+              <ScrollArea className="h-64 sm:h-96 w-full border rounded-lg p-2 sm:p-4">
+                <div className="space-y-3 sm:space-y-4">
                   {task.activities && task.activities.length > 0 ? (
                     task.activities.map((note: any) => (
-                      <div key={note.id} className="flex gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="p-2 bg-white rounded-full border">{getNoteIcon(note.type)}</div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-gray-900">{note.user.full_name}</span>
-                            <Badge variant="outline" className="text-xs">
+                      <div key={note.id} className="flex gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
+                        <div className="p-1.5 sm:p-2 bg-white rounded-full border shrink-0">{getNoteIcon(note.type)}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
+                            <span className="font-medium text-gray-900 text-sm sm:text-base">{note.user.full_name}</span>
+                            <Badge variant="outline" className="text-[10px] sm:text-xs">
                               {note.type.replace("_", " ").toUpperCase()}
                             </Badge>
-                            <span className="text-xs text-gray-500">{new Date(note.timestamp).toLocaleString()}</span>
                           </div>
-                          <p className="text-gray-700">{note.message}</p>
+                          <span className="text-[10px] sm:text-xs text-gray-500 block mb-1">{new Date(note.timestamp).toLocaleString()}</span>
+                          <p className="text-gray-700 text-sm sm:text-base break-words">{note.message}</p>
                         </div>
                       </div>
                     ))
                   ) : (
                     <div className="text-center py-8 text-gray-500">
-                      <Clock className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                      <p>No activity logged yet</p>
+                      <Clock className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-gray-400" />
+                      <p className="text-sm sm:text-base">No activity logged yet</p>
                     </div>
                   )}
                 </div>
@@ -367,7 +366,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
               <div className="space-y-3 border-t pt-4">
                 <div className="flex gap-3">
                   <Select value={noteType} onValueChange={setNoteType}>
-                    <SelectTrigger className="w-48">
+                    <SelectTrigger className="w-full sm:w-48">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -381,9 +380,10 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
                   rows={3}
+                  className="text-base"
                 />
                 <Button
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
                   onClick={handleAddNote}
                   disabled={!newNote.trim() || updating}
                 >
@@ -396,26 +396,24 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
-
-
+        <div className="space-y-4 sm:space-y-6">
           {/* Timeline */}
           <Card className="border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold text-gray-900">Timeline</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg font-semibold text-gray-900">Timeline</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0 space-y-3">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-gray-500" />
+                <Calendar className="h-4 w-4 text-gray-500 shrink-0" />
                 <div>
-                  <p className="text-sm font-medium">Date In</p>
-                  <p className="text-sm text-gray-600">{task.date_in}</p>
+                  <p className="text-xs sm:text-sm font-medium">Date In</p>
+                  <p className="text-xs sm:text-sm text-gray-600">{task.date_in}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-gray-500" />
+                <AlertTriangle className="h-4 w-4 text-gray-500 shrink-0" />
                 <div>
-                  <p className="text-sm font-medium">Priority</p>
+                  <p className="text-xs sm:text-sm font-medium">Priority</p>
                   <div className="mt-1"><UrgencyBadge urgency={task.urgency} /></div>
                 </div>
               </div>
@@ -429,10 +427,10 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
 
 function WorkshopStatusButtons({ onStatusChange, updating }: { onStatusChange: (status: string) => void, updating: boolean }) {
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button className="bg-green-500 hover:bg-green-600 text-white" disabled={updating}>Solved</Button>
+          <Button className="bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto" disabled={updating}>Solved</Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -449,7 +447,7 @@ function WorkshopStatusButtons({ onStatusChange, updating }: { onStatusChange: (
       </AlertDialog>
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button className="bg-red-500 hover:bg-red-600 text-white" disabled={updating}>Not Solved</Button>
+          <Button className="bg-red-500 hover:bg-red-600 text-white w-full sm:w-auto" disabled={updating}>Not Solved</Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>

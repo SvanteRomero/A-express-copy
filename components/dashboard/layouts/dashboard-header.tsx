@@ -14,12 +14,15 @@ export function DashboardHeader() {
   const showWsIndicator = !!user
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+    <header className="flex h-14 sm:h-16 shrink-0 items-center gap-1.5 sm:gap-2 border-b px-3 sm:px-4">
       <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="mr-2 h-4" />
-      <div className="flex items-center gap-2">
-        <h1 className="text-lg font-semibold">A Express Dashboard</h1>
-        {user && <span className="text-sm text-muted-foreground">- {user.role}</span>}
+      <Separator orientation="vertical" className="mr-1 sm:mr-2 h-4" />
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+        <h1 className="text-sm sm:text-lg font-semibold truncate">
+          <span className="sm:hidden">A Express</span>
+          <span className="hidden sm:inline">A Express Dashboard</span>
+        </h1>
+        {user && <span className="text-xs sm:text-sm text-muted-foreground hidden sm:inline">- {user.role}</span>}
       </div>
 
       {/* Spacer */}
