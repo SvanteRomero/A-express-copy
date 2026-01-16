@@ -110,7 +110,7 @@ export function ExpenditureRequestsList() {
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Requester: {request.requester_name || request.requester?.username || 'Unknown'}</span>
+                    <span className="text-muted-foreground">Approver: {request.approver_name || request.approver?.username || 'Pending'}</span>
                   </div>
                   {request.status === 'Pending' && (isManager || isAccountant) && (
                     <div className="flex justify-end gap-2 mt-2">
@@ -133,7 +133,7 @@ export function ExpenditureRequestsList() {
                 <TableHead>Description</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Category</TableHead>
-                <TableHead>Requester</TableHead>
+                <TableHead>Approver</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Status</TableHead>
                 {(isManager || isAccountant) && <TableHead>Actions</TableHead>}
@@ -145,7 +145,7 @@ export function ExpenditureRequestsList() {
                   <TableCell>{request.description}</TableCell>
                   <TableCell>TSh {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parseFloat(request.amount))}</TableCell>
                   <TableCell>{request.category?.name || 'N/A'}</TableCell>
-                  <TableCell>{request.requester_name || request.requester?.username || 'Unknown'}</TableCell>
+                  <TableCell>{request.approver_name || request.approver?.username || 'Pending'}</TableCell>
                   <TableCell>{request.created_at ? format(new Date(request.created_at), 'PPP') : 'N/A'}</TableCell>
                   <TableCell>
                     <Badge variant={request.status === 'Approved' ? 'default' : request.status === 'Rejected' ? 'destructive' : 'secondary'}>
