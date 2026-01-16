@@ -124,7 +124,7 @@ export function ManagerTasksPage() {
       {/* Main Content */}
       <Tabs defaultValue="pending">
         <TabsList className="grid w-full grid-cols-2 bg-gray-100">
-          <TabsTrigger value="pending" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Pending and in Progress</TabsTrigger>
+          <TabsTrigger value="pending" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Current Tasks</TabsTrigger>
           <TabsTrigger value="completed" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Completed</TabsTrigger>
         </TabsList>
         <TabsContent value="pending">
