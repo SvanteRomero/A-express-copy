@@ -13,6 +13,23 @@ import type { ToastNotificationMessage } from '@/lib/websocket';
 export function dispatchWebSocketToast(message: ToastNotificationMessage) {
     const { toast_type, data } = message;
 
+    // Deduplication key based on toast type and relevant ID (task_title or id)
+    // We use a static store to track recent toasts
+    const key = `${toast_type}:${data.task_title || data.customer_name || 'generic'}`;
+    const lastTime = (window as any).__lastToastTimes?.[key] || 0;
+    const now = Date.now();
+
+    // Prevent duplicate toasts within 2 seconds
+    if (now - lastTime < 2000) {
+        return;
+    }
+
+    // Initialize storage if needed
+    if (!(window as any).__lastToastTimes) {
+        (window as any).__lastToastTimes = {};
+    }
+    (window as any).__lastToastTimes[key] = now;
+
     switch (toast_type) {
         case 'task_created':
             toast({
