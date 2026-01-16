@@ -95,7 +95,7 @@ export function ExpenditureRequestsList() {
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="font-semibold">{request.description}</div>
-                      <div className="text-xs text-muted-foreground">{request.date ? format(new Date(request.date), 'PPP') : 'N/A'}</div>
+                      <div className="text-xs text-muted-foreground">{request.created_at ? format(new Date(request.created_at), 'PPP') : 'N/A'}</div>
                     </div>
                     <div className="font-bold">
                       TSh {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parseFloat(request.amount))}
@@ -104,7 +104,7 @@ export function ExpenditureRequestsList() {
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-2">
                   <div className="flex justify-between items-center text-sm border-t pt-2 mt-2">
-                    <span className="text-muted-foreground">Category: {request.category_name || 'N/A'}</span>
+                    <span className="text-muted-foreground">Category: {request.category?.name || 'N/A'}</span>
                     <Badge variant={request.status === 'Approved' ? 'default' : request.status === 'Rejected' ? 'destructive' : 'secondary'}>
                       {request.status}
                     </Badge>
@@ -144,9 +144,9 @@ export function ExpenditureRequestsList() {
                 <TableRow key={request.id}>
                   <TableCell>{request.description}</TableCell>
                   <TableCell>TSh {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parseFloat(request.amount))}</TableCell>
-                  <TableCell>{request.category_name || 'N/A'}</TableCell>
+                  <TableCell>{request.category?.name || 'N/A'}</TableCell>
                   <TableCell>{request.requester_name || request.requester?.username || 'Unknown'}</TableCell>
-                  <TableCell>{request.date ? format(new Date(request.date), 'PPP') : 'N/A'}</TableCell>
+                  <TableCell>{request.created_at ? format(new Date(request.created_at), 'PPP') : 'N/A'}</TableCell>
                   <TableCell>
                     <Badge variant={request.status === 'Approved' ? 'default' : request.status === 'Rejected' ? 'destructive' : 'secondary'}>
                       {request.status}

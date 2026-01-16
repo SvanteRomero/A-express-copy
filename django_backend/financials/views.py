@@ -138,7 +138,16 @@ class ExpenditureRequestViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
-        serializer.save(requester=self.request.user)
+        instance = serializer.save(requester=self.request.user)
+        
+        # Broadcast to managers for approval
+        from .broadcasts import broadcast_expenditure_request
+        broadcast_expenditure_request(
+            request_id=instance.id,
+            description=instance.description,
+            amount=str(instance.amount),
+            requester_name=self.request.user.get_full_name() or self.request.user.username
+        )
 
     @action(detail=False, methods=["post"])
     def create_and_approve(self, request):

@@ -16,9 +16,11 @@ import {
     ToastNotificationMessage,
     TaskStatusUpdateMessage,
     DataUpdateMessage,
+    ExpenditureRequestMessage,
 } from '@/lib/websocket';
 import { showSchedulerNotificationToast } from '@/components/notifications/toast';
 import { dispatchWebSocketToast } from '@/components/notifications/toast/websocket-toasts';
+import { showExpenditureRequestToast } from '@/components/notifications/toast/expenditure-request-toast';
 
 interface WebSocketContextType {
     isConnected: boolean;
@@ -89,6 +91,15 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         // Handle account updates
         if (message.type === 'account_update') {
             queryClient.invalidateQueries({ queryKey: ['accounts'] });
+        }
+
+        // Handle expenditure request notifications - show interactive toast to managers
+        if (message.type === 'expenditure_request') {
+            const data = message as ExpenditureRequestMessage;
+            showExpenditureRequestToast(data, () => {
+                // Invalidate expenditure requests cache after action
+                queryClient.invalidateQueries({ queryKey: ['expenditureRequests'] });
+            });
         }
     }, [queryClient]);
 

@@ -53,7 +53,15 @@ export interface DataUpdateMessage {
     customer_id?: number;
 }
 
-export type WebSocketMessage = SchedulerNotificationMessage | ConnectionMessage | PongMessage | ToastNotificationMessage | TaskStatusUpdateMessage | DataUpdateMessage;
+export interface ExpenditureRequestMessage {
+    type: 'expenditure_request';
+    request_id: number;
+    description: string;
+    amount: string;
+    requester_name: string;
+}
+
+export type WebSocketMessage = SchedulerNotificationMessage | ConnectionMessage | PongMessage | ToastNotificationMessage | TaskStatusUpdateMessage | DataUpdateMessage | ExpenditureRequestMessage;
 
 export type MessageHandler = (message: WebSocketMessage) => void;
 export type ConnectionStatusHandler = (isConnected: boolean) => void;

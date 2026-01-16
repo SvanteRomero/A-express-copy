@@ -79,3 +79,46 @@ def broadcast_account_update():
             logger.debug(f"Broadcast account update to {group_name}")
         except Exception as e:
             logger.error(f"Failed to broadcast account update to {group_name}: {e}")
+
+
+def broadcast_expenditure_request(request_id: int, description: str, amount: str, requester_name: str):
+    """
+    Broadcast an expenditure request to managers for approval.
+    This shows an interactive toast with approve/reject buttons.
+    
+    Args:
+        request_id: The ID of the expenditure request
+        description: Description of the expenditure
+        amount: Amount requested (as string)
+        requester_name: Name of the person who made the request
+    """
+    from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
+    
+    channel_layer = get_channel_layer()
+    
+    if not channel_layer:
+        logger.warning("Channel layer not available - skipping expenditure request broadcast")
+        return
+    
+    data = {
+        'type': 'expenditure_request',
+        'request_id': request_id,
+        'description': description,
+        'amount': amount,
+        'requester_name': requester_name,
+    }
+    
+    # Broadcast only to managers who can approve requests
+    group_name = 'notifications_manager'
+    try:
+        async_to_sync(channel_layer.group_send)(
+            group_name,
+            {
+                'type': 'data.update',
+                'data': data,
+            }
+        )
+        logger.info(f"Broadcast expenditure request {request_id} to managers")
+    except Exception as e:
+        logger.error(f"Failed to broadcast expenditure request to managers: {e}")
