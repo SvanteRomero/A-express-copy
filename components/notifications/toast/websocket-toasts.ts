@@ -128,6 +128,29 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
             });
             break;
 
+        case 'payment_method_created':
+            toast({
+                title: '💳 Payment Method Created',
+                description: `${data.payment_method_name} created by ${data.user_name}`,
+                className: 'bg-green-600 text-white border-green-600',
+            });
+            break;
+
+        case 'payment_method_updated':
+            toast({
+                title: '💳 Payment Method Updated',
+                description: `${data.payment_method_name} updated by ${data.user_name}`,
+            });
+            break;
+
+        case 'payment_method_deleted':
+            toast({
+                title: '🗑️ Payment Method Deleted',
+                description: `${data.payment_method_name} deleted by ${data.user_name}`,
+                className: 'bg-red-600 text-white border-red-600',
+            });
+            break;
+
         default:
             // Unknown toast type - log for debugging
             console.warn('Unknown WebSocket toast type:', toast_type);

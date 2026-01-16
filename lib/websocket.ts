@@ -26,7 +26,7 @@ export interface PongMessage {
 export interface ToastNotificationMessage {
     type: 'toast_notification';
     id: string;
-    toast_type: 'task_created' | 'task_approved' | 'task_picked_up' | 'payment_added' | 'task_updated' | 'task_completed' | 'task_sent_to_workshop' | 'workshop_task_solved' | 'workshop_task_not_solved' | 'task_assigned';
+    toast_type: 'task_created' | 'task_approved' | 'task_picked_up' | 'payment_added' | 'task_updated' | 'task_completed' | 'task_sent_to_workshop' | 'workshop_task_solved' | 'workshop_task_not_solved' | 'task_assigned' | 'payment_method_created' | 'payment_method_updated' | 'payment_method_deleted';
     data: {
         task_title?: string;
         customer_name?: string;
@@ -39,6 +39,8 @@ export interface ToastNotificationMessage {
         sender_name?: string;
         workshop_technician_name?: string;
         assigner_name?: string;
+        payment_method_name?: string;
+        user_name?: string;
     };
 }
 
@@ -50,7 +52,7 @@ export interface TaskStatusUpdateMessage {
 }
 
 export interface DataUpdateMessage {
-    type: 'payment_update' | 'customer_update' | 'account_update' | 'expenditure_update';
+    type: 'payment_update' | 'customer_update' | 'account_update' | 'expenditure_update' | 'payment_method_update';
     task_id?: string;
     customer_id?: number;
 }

@@ -99,6 +99,12 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             queryClient.invalidateQueries({ queryKey: ['financial-summary'] }); // Likely affects summary too
         }
 
+        // Handle payment method updates
+        if (message.type === 'payment_method_update') {
+            queryClient.invalidateQueries({ queryKey: ['paymentMethods'] });
+            queryClient.invalidateQueries({ queryKey: ['paymentCategories'] }); // May affect categories too
+        }
+
         // Handle expenditure request notifications - show interactive toast to managers
         if (message.type === 'expenditure_request') {
             const data = message as ExpenditureRequestMessage;

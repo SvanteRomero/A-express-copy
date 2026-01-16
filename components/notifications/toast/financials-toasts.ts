@@ -100,3 +100,44 @@ export function showExpenditureCancellationErrorToast(errorMessage?: string) {
         variant: 'destructive',
     });
 }
+
+/**
+ * Show success toast when payment method is created
+ */
+export function showPaymentMethodCreatedToast() {
+    toast({
+        title: 'Success',
+        description: 'Payment method created successfully.',
+    });
+}
+
+/**
+ * Show success toast when payment method is updated
+ */
+export function showPaymentMethodUpdatedToast() {
+    toast({
+        title: 'Success',
+        description: 'Payment method updated successfully.',
+    });
+}
+
+/**
+ * Show success toast when payment method is deleted
+ */
+export function showPaymentMethodDeletedToast() {
+    toast({
+        title: 'Success',
+        description: 'Payment method deleted successfully.',
+    });
+}
+
+/**
+ * Show error toast for payment method operations
+ */
+export function showPaymentMethodErrorToast(action: string, errorMessage?: string) {
+    toast({
+        title: 'Error',
+        description: errorMessage || `Failed to ${action} payment method.`,
+        variant: 'destructive',
+    });
+}

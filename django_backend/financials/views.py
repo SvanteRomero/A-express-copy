@@ -56,6 +56,28 @@ class PaymentMethodViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated()]
         return super().get_permissions()
 
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        from .broadcasts import broadcast_payment_method_toast, broadcast_payment_method_update
+        user_name = self.request.user.get_full_name() or self.request.user.username
+        broadcast_payment_method_toast('created', instance.name, user_name)
+        broadcast_payment_method_update()
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        from .broadcasts import broadcast_payment_method_toast, broadcast_payment_method_update
+        user_name = self.request.user.get_full_name() or self.request.user.username
+        broadcast_payment_method_toast('updated', instance.name, user_name)
+        broadcast_payment_method_update()
+
+    def perform_destroy(self, instance):
+        payment_method_name = instance.name
+        super().perform_destroy(instance)
+        from .broadcasts import broadcast_payment_method_toast, broadcast_payment_method_update
+        user_name = self.request.user.get_full_name() or self.request.user.username
+        broadcast_payment_method_toast('deleted', payment_method_name, user_name)
+        broadcast_payment_method_update()
+
 
 class PaymentCategoryViewSet(viewsets.ModelViewSet):
     queryset = PaymentCategory.objects.all()
