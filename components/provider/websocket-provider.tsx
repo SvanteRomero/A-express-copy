@@ -7,7 +7,6 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { apiClient } from '@/lib/api-client';
 import {
     getWebSocketClient,
     NotificationWebSocket,
@@ -62,24 +61,18 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         setIsConnected(connected);
     }, []);
 
-    // Fetch WebSocket token and connect
-    const connectWebSocket = useCallback(async () => {
+    // Connect to WebSocket (uses cookie-based auth, same as HTTP)
+    const connectWebSocket = useCallback(() => {
         if (isConnecting.current || wsClient.current?.isConnected) return;
         isConnecting.current = true;
 
         try {
-            // Get a temporary token for WebSocket authentication
-            const response = await apiClient.post<{ token: string }>('/auth/ws-token/');
-            const token = response.data.token;
-
-            if (token) {
-                wsClient.current = getWebSocketClient();
-                wsClient.current.addMessageHandler(handleMessage);
-                wsClient.current.addStatusHandler(handleStatusChange);
-                wsClient.current.connect(token);
-            }
+            wsClient.current = getWebSocketClient();
+            wsClient.current.addMessageHandler(handleMessage);
+            wsClient.current.addStatusHandler(handleStatusChange);
+            wsClient.current.connect();
         } catch (error) {
-            console.debug('Failed to get WebSocket token:', error);
+            console.debug('Failed to connect WebSocket:', error);
         } finally {
             isConnecting.current = false;
         }

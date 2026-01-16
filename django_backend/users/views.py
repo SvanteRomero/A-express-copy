@@ -541,29 +541,6 @@ def get_current_user(request):
     })
 
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def get_websocket_token(request):
-    """
-    Generate a short-lived access token for WebSocket authentication.
-    
-    Since WebSockets can't use HttpOnly cookies, we need to provide
-    a token that the frontend can pass as a query parameter.
-    The token is short-lived (5 minutes) for security.
-    """
-    from rest_framework_simplejwt.tokens import AccessToken
-    from datetime import timedelta
-    
-    # Create a short-lived access token (5 minutes)
-    token = AccessToken.for_user(request.user)
-    token.set_exp(lifetime=timedelta(minutes=5))
-    
-    return Response({
-        'token': str(token),
-        'expires_in': 300,  # 5 minutes in seconds
-    })
-
-
 # =============================================================================
 # Technician Dashboard Stats
 # =============================================================================

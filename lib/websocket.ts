@@ -129,7 +129,6 @@ export class NotificationWebSocket {
     private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
     private pingInterval: ReturnType<typeof setInterval> | null = null;
     private config: Required<WebSocketClientConfig>;
-    private token: string | null = null;
     private isIntentionalClose = false;
 
     constructor(config: WebSocketClientConfig = {}) {
@@ -137,15 +136,15 @@ export class NotificationWebSocket {
     }
 
     /**
-     * Connect to the WebSocket server with JWT authentication.
+     * Connect to the WebSocket server.
+     * Authentication is handled via cookies (same as HTTP requests).
      */
-    connect(token: string): void {
+    connect(): void {
         if (this.ws?.readyState === WebSocket.OPEN) {
             console.debug('WebSocket already connected');
             return;
         }
 
-        this.token = token;
         this.isIntentionalClose = false;
         this.createConnection();
     }
@@ -194,12 +193,7 @@ export class NotificationWebSocket {
     }
 
     private createConnection(): void {
-        if (!this.token) {
-            console.error('Cannot connect: no token provided');
-            return;
-        }
-
-        const wsUrl = `${this.config.baseUrl}/ws/notifications/?token=${this.token}`;
+        const wsUrl = `${this.config.baseUrl}/ws/notifications/`;
 
         try {
             this.ws = new WebSocket(wsUrl);

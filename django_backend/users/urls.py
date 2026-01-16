@@ -27,9 +27,6 @@ urlpatterns = [
     # Current user endpoint (uses cookie auth)
     path('auth/me/', views.get_current_user, name='auth_me'),
     
-    # WebSocket token endpoint (for WS authentication)
-    path('auth/ws-token/', views.get_websocket_token, name='auth_ws_token'),
-    
     path('', include(router.urls)),
     path('', include(list_router.urls)),
     path('', include(auth_router.urls)),
