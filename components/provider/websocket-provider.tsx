@@ -73,6 +73,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             const data = message as DataUpdateMessage;
             queryClient.invalidateQueries({ queryKey: ['payments'] });
             queryClient.invalidateQueries({ queryKey: ['revenue-overview'] });
+            queryClient.invalidateQueries({ queryKey: ['tasks'] }); // Update lists
+            queryClient.invalidateQueries({ queryKey: ['technicianTasks'] }); // Update technician lists
             if (data.task_id) {
                 queryClient.invalidateQueries({ queryKey: ['task', data.task_id] });
             }
