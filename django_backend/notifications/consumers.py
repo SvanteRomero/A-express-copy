@@ -87,3 +87,10 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         Called when channel_layer.group_send is used with type='toast.notification'
         """
         await self.send_json(event['data'])
+
+    async def task_status_update(self, event):
+        """
+        Handler for task status update messages.
+        Called when channel_layer.group_send is used with type='task.status.update'
+        """
+        await self.send_json(event['data'])

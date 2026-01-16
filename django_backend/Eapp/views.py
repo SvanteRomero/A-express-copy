@@ -193,6 +193,9 @@ class TaskViewSet(viewsets.ModelViewSet):
         # Generic updates (handler has guard clause for status-specific cases)
         TaskNotificationHandler.notify_task_updated(updated_task, data)
 
+        # Broadcast task update for live cross-user cache invalidation
+        TaskNotificationHandler.broadcast_task_update(updated_task, list(data.keys()))
+
         return Response(response_data)
 
     def destroy(self, request, *args, **kwargs):

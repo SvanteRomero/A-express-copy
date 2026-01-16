@@ -6,6 +6,7 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 import {
     getWebSocketClient,
@@ -13,6 +14,7 @@ import {
     WebSocketMessage,
     SchedulerNotificationMessage,
     ToastNotificationMessage,
+    TaskStatusUpdateMessage,
 } from '@/lib/websocket';
 import { showSchedulerNotificationToast } from '@/components/notifications/toast';
 import { dispatchWebSocketToast } from '@/components/notifications/toast/websocket-toasts';
@@ -26,6 +28,7 @@ const WebSocketContext = createContext<WebSocketContextType | undefined>(undefin
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     const { user, isAuthenticated } = useAuth();
+    const queryClient = useQueryClient();
     const [isConnected, setIsConnected] = useState(false);
     const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
     const wsClient = useRef<NotificationWebSocket | null>(null);
@@ -54,7 +57,18 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         if (message.type === 'toast_notification') {
             dispatchWebSocketToast(message as ToastNotificationMessage);
         }
-    }, []);
+
+        // Handle task status updates - invalidate React Query caches for live updates
+        if (message.type === 'task_status_update') {
+            const { task_id } = message as TaskStatusUpdateMessage;
+
+            // Invalidate all task-related queries to trigger refetch
+            queryClient.invalidateQueries({ queryKey: ['tasks'] });
+            queryClient.invalidateQueries({ queryKey: ['task', task_id] });
+            queryClient.invalidateQueries({ queryKey: ['technicianTasks'] });
+            queryClient.invalidateQueries({ queryKey: ['technicianHistoryTasks'] });
+        }
+    }, [queryClient]);
 
     // Handle connection status changes
     const handleStatusChange = useCallback((connected: boolean) => {

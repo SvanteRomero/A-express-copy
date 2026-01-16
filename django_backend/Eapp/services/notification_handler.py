@@ -210,3 +210,16 @@ class TaskNotificationHandler:
                 'amount': str(payment.amount),
             }
         )
+
+    @staticmethod
+    def broadcast_task_update(task, updated_fields: list = None):
+        """
+        Broadcast task update for live cache invalidation across all clients.
+        This enables real-time updates without page refresh.
+        """
+        from notifications.utils import broadcast_task_status_update
+        broadcast_task_status_update(
+            task_id=task.title,
+            new_status=task.status,
+            updated_fields=updated_fields
+        )

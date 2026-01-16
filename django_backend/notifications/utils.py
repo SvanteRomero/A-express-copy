@@ -116,3 +116,42 @@ def broadcast_toast_notification(roles: list, toast_type: str, data: dict = None
             logger.debug(f"Broadcast toast '{toast_type}' to {group_name}")
         except Exception as e:
             logger.error(f"Failed to broadcast toast to {group_name}: {e}")
+
+
+def broadcast_task_status_update(task_id: str, new_status: str, updated_fields: list = None):
+    """
+    Broadcast a task status update to all connected users.
+    This triggers React Query cache invalidation on the frontend for live updates.
+    
+    Args:
+        task_id: The task title/ID
+        new_status: The new status of the task
+        updated_fields: List of field names that were changed
+    """
+    channel_layer = get_channel_layer()
+    
+    if not channel_layer:
+        logger.warning("Channel layer not available - skipping task status update broadcast")
+        return
+    
+    data = {
+        'type': 'task_status_update',
+        'task_id': task_id,
+        'new_status': new_status,
+        'updated_fields': updated_fields or [],
+    }
+    
+    # Broadcast to all role groups for cross-user visibility
+    for role in ['manager', 'front_desk', 'technician', 'accountant']:
+        group_name = f'notifications_{role}'
+        try:
+            async_to_sync(channel_layer.group_send)(
+                group_name,
+                {
+                    'type': 'task.status.update',  # Calls task_status_update handler
+                    'data': data,
+                }
+            )
+            logger.debug(f"Broadcast task status update to {group_name}")
+        except Exception as e:
+            logger.error(f"Failed to broadcast task status update to {group_name}: {e}")

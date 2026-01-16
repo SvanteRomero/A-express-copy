@@ -40,7 +40,14 @@ export interface ToastNotificationMessage {
     };
 }
 
-export type WebSocketMessage = SchedulerNotificationMessage | ConnectionMessage | PongMessage | ToastNotificationMessage;
+export interface TaskStatusUpdateMessage {
+    type: 'task_status_update';
+    task_id: string;
+    new_status: string;
+    updated_fields: string[];
+}
+
+export type WebSocketMessage = SchedulerNotificationMessage | ConnectionMessage | PongMessage | ToastNotificationMessage | TaskStatusUpdateMessage;
 
 export type MessageHandler = (message: WebSocketMessage) => void;
 export type ConnectionStatusHandler = (isConnected: boolean) => void;
