@@ -15,6 +15,7 @@ import {
     SchedulerNotificationMessage,
     ToastNotificationMessage,
     TaskStatusUpdateMessage,
+    DataUpdateMessage,
 } from '@/lib/websocket';
 import { showSchedulerNotificationToast } from '@/components/notifications/toast';
 import { dispatchWebSocketToast } from '@/components/notifications/toast/websocket-toasts';
@@ -61,12 +62,31 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         // Handle task status updates - invalidate React Query caches for live updates
         if (message.type === 'task_status_update') {
             const { task_id } = message as TaskStatusUpdateMessage;
-
-            // Invalidate all task-related queries to trigger refetch
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
             queryClient.invalidateQueries({ queryKey: ['task', task_id] });
             queryClient.invalidateQueries({ queryKey: ['technicianTasks'] });
             queryClient.invalidateQueries({ queryKey: ['technicianHistoryTasks'] });
+        }
+
+        // Handle payment updates
+        if (message.type === 'payment_update') {
+            const data = message as DataUpdateMessage;
+            queryClient.invalidateQueries({ queryKey: ['payments'] });
+            queryClient.invalidateQueries({ queryKey: ['revenue-overview'] });
+            if (data.task_id) {
+                queryClient.invalidateQueries({ queryKey: ['task', data.task_id] });
+            }
+        }
+
+        // Handle customer updates
+        if (message.type === 'customer_update') {
+            queryClient.invalidateQueries({ queryKey: ['customers'] });
+            queryClient.invalidateQueries({ queryKey: ['customer-stats'] });
+        }
+
+        // Handle account updates
+        if (message.type === 'account_update') {
+            queryClient.invalidateQueries({ queryKey: ['accounts'] });
         }
     }, [queryClient]);
 

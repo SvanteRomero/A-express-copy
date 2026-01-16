@@ -47,7 +47,13 @@ export interface TaskStatusUpdateMessage {
     updated_fields: string[];
 }
 
-export type WebSocketMessage = SchedulerNotificationMessage | ConnectionMessage | PongMessage | ToastNotificationMessage | TaskStatusUpdateMessage;
+export interface DataUpdateMessage {
+    type: 'payment_update' | 'customer_update' | 'account_update';
+    task_id?: string;
+    customer_id?: number;
+}
+
+export type WebSocketMessage = SchedulerNotificationMessage | ConnectionMessage | PongMessage | ToastNotificationMessage | TaskStatusUpdateMessage | DataUpdateMessage;
 
 export type MessageHandler = (message: WebSocketMessage) => void;
 export type ConnectionStatusHandler = (isConnected: boolean) => void;

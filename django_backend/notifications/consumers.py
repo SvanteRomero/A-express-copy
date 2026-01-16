@@ -94,3 +94,10 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         Called when channel_layer.group_send is used with type='task.status.update'
         """
         await self.send_json(event['data'])
+
+    async def data_update(self, event):
+        """
+        Handler for generic data update messages (payments, customers, accounts).
+        Called when channel_layer.group_send is used with type='data.update'
+        """
+        await self.send_json(event['data'])
