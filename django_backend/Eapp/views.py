@@ -173,6 +173,10 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         elif data.get('status') == 'Completed':
             TaskNotificationHandler.notify_task_completed(updated_task, request.user)
+            
+        else:
+            # Generic updates (only if not covered by a status-specific handler above)
+            TaskNotificationHandler.notify_task_updated(updated_task, data)
 
         # Notify workshop technician when task is assigned to workshop
         if data.get('workshop_technician') and updated_task.workshop_technician:
@@ -189,9 +193,6 @@ class TaskViewSet(viewsets.ModelViewSet):
                 data.get('workshop_status'),
                 request.user
             )
-            
-        # Generic updates (handler has guard clause for status-specific cases)
-        TaskNotificationHandler.notify_task_updated(updated_task, data)
 
         # Broadcast task update for live cross-user cache invalidation
         TaskNotificationHandler.broadcast_task_update(updated_task, list(data.keys()))

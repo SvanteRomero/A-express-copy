@@ -11,24 +11,25 @@ import type { ToastNotificationMessage } from '@/lib/websocket';
  * Called by the WebSocketProvider when a toast_notification message is received.
  */
 export function dispatchWebSocketToast(message: ToastNotificationMessage) {
-    const { toast_type, data } = message;
+    const { toast_type, data, id } = message;
 
-    // Deduplication key based on toast type and relevant ID (task_title or id)
-    // We use a static store to track recent toasts
-    const key = `${toast_type}:${data.task_title || data.customer_name || 'generic'}`;
-    const lastTime = (window as any).__lastToastTimes?.[key] || 0;
-    const now = Date.now();
-
-    // Prevent duplicate toasts within 2 seconds
-    if (now - lastTime < 2000) {
+    // Robust deduplication using unique message ID from server
+    if ((window as any).__processedToastIds?.has(id)) {
+        console.warn(`[WebSocketToast] Duplicate skipped by ID: ${id}`);
         return;
     }
 
     // Initialize storage if needed
-    if (!(window as any).__lastToastTimes) {
-        (window as any).__lastToastTimes = {};
+    if (!(window as any).__processedToastIds) {
+        (window as any).__processedToastIds = new Set();
     }
-    (window as any).__lastToastTimes[key] = now;
+
+    // Add to processed set and limit size
+    (window as any).__processedToastIds.add(id);
+    if ((window as any).__processedToastIds.size > 100) {
+        const iterator = (window as any).__processedToastIds.values();
+        (window as any).__processedToastIds.delete(iterator.next().value);
+    }
 
     switch (toast_type) {
         case 'task_created':

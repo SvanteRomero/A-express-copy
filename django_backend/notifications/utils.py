@@ -4,6 +4,7 @@ Use these functions from anywhere in the Django app to push notifications.
 """
 
 import logging
+import uuid
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
@@ -96,6 +97,7 @@ def broadcast_toast_notification(roles: list, toast_type: str, data: dict = None
     
     message_data = {
         'type': 'toast_notification',
+        'id': str(uuid.uuid4()),
         'toast_type': toast_type,
         'data': data or {},
     }

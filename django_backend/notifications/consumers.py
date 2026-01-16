@@ -86,6 +86,7 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         Handler for toast notifications.
         Called when channel_layer.group_send is used with type='toast.notification'
         """
+        logger.info(f"Sending toast notification to {getattr(self, 'group_name', 'unknown')}: {event['data'].get('toast_type')}")
         await self.send_json(event['data'])
 
     async def task_status_update(self, event):
