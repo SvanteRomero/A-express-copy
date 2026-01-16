@@ -32,8 +32,16 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
                 self.group_name,
                 self.channel_name
             )
+            
+            # Add user to specific user group for direct messaging
+            self.user_group_name = f'user_{user.id}'
+            await self.channel_layer.group_add(
+                self.user_group_name,
+                self.channel_name
+            )
+
             await self.accept()
-            logger.info(f"WebSocket connected: user={user.username}, role={user_role}, group={self.group_name}")
+            logger.info(f"WebSocket connected: user={user.username}, role={user_role}, group={self.group_name}, user_group={self.user_group_name}")
             
             # Send welcome message
             await self.send_json({
@@ -53,6 +61,13 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
                 self.group_name,
                 self.channel_name
             )
+        
+        if hasattr(self, 'user_group_name'):
+            await self.channel_layer.group_discard(
+                self.user_group_name,
+                self.channel_name
+            )
+            
             logger.info(f"WebSocket disconnected: group={self.group_name}")
     
     async def receive_json(self, content):

@@ -127,6 +127,9 @@ class TaskViewSet(viewsets.ModelViewSet):
         
         response_data['sms_sent'] = sms_result['success']
         response_data['sms_phone'] = sms_result['phone']
+
+        # Broadcast update for live list refresh
+        TaskNotificationHandler.broadcast_task_update(task)
         
         headers = self.get_success_headers(response_data)
         return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
@@ -176,7 +179,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             
         else:
             # Generic updates (only if not covered by a status-specific handler above)
-            TaskNotificationHandler.notify_task_updated(updated_task, data)
+            TaskNotificationHandler.notify_task_updated(updated_task, data, request.user)
 
         # Notify workshop technician when task is assigned to workshop
         if data.get('workshop_technician') and updated_task.workshop_technician:

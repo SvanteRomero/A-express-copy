@@ -1,4 +1,4 @@
-from notifications.utils import broadcast_toast_notification
+from notifications.utils import broadcast_toast_notification, send_toast_to_user
 import logging
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,29 @@ class TaskNotificationHandler:
             }
         )
         
+        # 3. Notify assigned technician (if any)
+        if task.assigned_to:
+            TaskNotificationHandler.notify_task_assigned(task, task.assigned_to, task.created_by)
+
         return sms_result
+
+    @staticmethod
+    def notify_task_assigned(task, assignee, assigner):
+        """
+        Send a personal toast to the technician who was assigned the task.
+        """
+        if not assignee:
+            return
+
+        assigner_name = assigner.get_full_name() if hasattr(assigner, 'get_full_name') else str(assigner)
+        send_toast_to_user(
+            user=assignee,
+            toast_type='task_assigned',
+            data={
+                'task_title': task.title,
+                'assigner_name': assigner_name,
+            }
+        )
 
     @staticmethod
     def notify_ready_for_pickup(task, user):
@@ -169,9 +191,14 @@ class TaskNotificationHandler:
         )
 
     @staticmethod
-    def notify_task_updated(task, data):
+    def notify_task_updated(task, data, user=None):
         """
-        Broadcast generic task update toast if significant fields changed.
+        Broadcast generic task update toast and notify new assignee.
+        
+        Args:
+            task: Updated task instance
+            data: Update data dict
+            user: User performing the update (optional, needed for assignment notification)
         """
         # Only broadcast if not already covered by status-specific toasts
         if data.get('status') in ['Ready for Pickup', 'Picked Up', 'Completed']:
@@ -196,6 +223,10 @@ class TaskNotificationHandler:
                     'fields_changed': fields_changed,
                 }
             )
+
+        # Notify new technician if assignment changed
+        if 'assigned_to' in data and task.assigned_to and user:
+            TaskNotificationHandler.notify_task_assigned(task, task.assigned_to, user)
 
     @staticmethod
     def notify_payment_added(task, payment):

@@ -120,6 +120,14 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
             });
             break;
 
+        case 'task_assigned':
+            toast({
+                title: '📌 New Task Assignment',
+                description: `${data.task_title} assigned to you by ${data.assigner_name}`,
+                className: 'bg-blue-600 text-white border-blue-600',
+            });
+            break;
+
         default:
             // Unknown toast type - log for debugging
             console.warn('Unknown WebSocket toast type:', toast_type);

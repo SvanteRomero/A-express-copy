@@ -157,3 +157,38 @@ def broadcast_task_status_update(task_id: str, new_status: str, updated_fields: 
             logger.debug(f"Broadcast task status update to {group_name}")
         except Exception as e:
             logger.error(f"Failed to broadcast task status update to {group_name}: {e}")
+
+
+def send_toast_to_user(user, toast_type: str, data: dict = None):
+    """
+    Send a toast notification to a specific user via WebSocket.
+    
+    Args:
+        user: The User object to send to (must have an id)
+        toast_type (str): Type of toast (e.g., 'task_assigned')
+        data (dict): Dictionary containing notification details
+    """
+    channel_layer = get_channel_layer()
+    if not channel_layer:
+        logger.warning(f"Could not get channel layer for user notification: {user.id}")
+        return
+
+    message_data = {
+        'type': 'toast_notification',
+        'id': str(uuid.uuid4()),
+        'toast_type': toast_type,
+        'data': data or {},
+    }
+    
+    group_name = f'user_{user.id}'
+    try:
+        async_to_sync(channel_layer.group_send)(
+            group_name,
+            {
+                'type': 'toast.notification',  # Calls toast_notification handler
+                'data': message_data,
+            }
+        )
+        logger.debug(f"Sent toast '{toast_type}' to user {user.username} (id={user.id})")
+    except Exception as e:
+        logger.error(f"Failed to send toast to user {user.id}: {e}")
