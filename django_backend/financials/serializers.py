@@ -54,12 +54,18 @@ class PaymentCategorySerializer(serializers.ModelSerializer):
 
 
 class PaymentSerializer(serializers.ModelSerializer):
-    method_name = serializers.CharField(source="method.name", read_only=True)
+    method_name = serializers.SerializerMethodField()
     task_title = serializers.CharField(source="task.title", read_only=True)
     task_status = serializers.CharField(source="task.status", read_only=True)
     category_name = serializers.CharField(
         source="category.name", read_only=True, allow_null=True
     )
+
+    def get_method_name(self, obj):
+        """Return payment method name from snapshot if method is deleted, otherwise from FK"""
+        if obj.method:
+            return obj.method.name
+        return obj.payment_method_name
 
     class Meta:
         model = Payment
@@ -94,13 +100,20 @@ class ExpenditureRequestSerializer(serializers.ModelSerializer):
     # Expose snapshot names
     requester_name = serializers.CharField(read_only=True)
     approver_name = serializers.CharField(read_only=True)
+    payment_method_name = serializers.SerializerMethodField()
 
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=PaymentCategory.objects.all(), source="category", write_only=True
     )
     payment_method_id = serializers.PrimaryKeyRelatedField(
-        queryset=PaymentMethod.objects.all(), source="payment_method", write_only=True
+        queryset=PaymentMethod.objects.all(), source="payment_method", write_only=True, required=False, allow_null=True
     )
+
+    def get_payment_method_name(self, obj):
+        """Return payment method name from snapshot if method is deleted, otherwise from FK"""
+        if obj.payment_method:
+            return obj.payment_method.name
+        return obj.payment_method_name
 
     class Meta:
         model = ExpenditureRequest
@@ -112,6 +125,7 @@ class ExpenditureRequestSerializer(serializers.ModelSerializer):
             "task_title",
             "category",
             "payment_method",
+            "payment_method_name",
             "status",
             "cost_type",
             "requester",

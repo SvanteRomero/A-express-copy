@@ -103,6 +103,7 @@ export interface ExpenditureRequest {
     task_title: string | null;
     status: string;
     category_name?: string;
+    payment_method_name?: string;
     requester: { username: string } | null;
     requester_name: string | null;
     approver: { username: string } | null;

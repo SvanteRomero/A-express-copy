@@ -35,7 +35,8 @@ class Payment(models.Model):
     task = models.ForeignKey('Eapp.Task', on_delete=models.CASCADE, related_name='payments', null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     date = models.DateField(default=get_current_date)
-    method = models.ForeignKey(PaymentMethod, on_delete=models.PROTECT)
+    method = models.ForeignKey(PaymentMethod, on_delete=models.SET_NULL, null=True, blank=True)
+    payment_method_name = models.CharField(max_length=100, blank=True, null=True)
     description = models.CharField(max_length=255, default='Customer Payment', blank=True)
     category = models.ForeignKey(
         PaymentCategory,
@@ -44,6 +45,11 @@ class Payment(models.Model):
         blank=True,
         related_name='payments'
     )
+
+    def save(self, *args, **kwargs):
+        if self.method and not self.payment_method_name:
+            self.payment_method_name = self.method.name
+        super().save(*args, **kwargs)
 
     def __str__(self):
         if self.task:
@@ -112,7 +118,7 @@ class ExpenditureRequest(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     task = models.ForeignKey('Eapp.Task', on_delete=models.SET_NULL, null=True, blank=True, related_name='expenditure_requests')
     category = models.ForeignKey(PaymentCategory, on_delete=models.PROTECT)
-    payment_method = models.ForeignKey(PaymentMethod, on_delete=models.PROTECT)
+    payment_method = models.ForeignKey(PaymentMethod, on_delete=models.SET_NULL, null=True, blank=True)
     
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     cost_type = models.CharField(max_length=20, choices=CostBreakdown.CostType.choices, default=CostBreakdown.CostType.INCLUSIVE)
@@ -120,9 +126,10 @@ class ExpenditureRequest(models.Model):
     requester = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='expenditure_requests_made')
     approver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='expenditure_requests_approved')
     
-    # Snapshot fields to preserve names if users are deleted
+    # Snapshot fields to preserve names if entities are deleted
     requester_name = models.CharField(max_length=150, blank=True, null=True)
     approver_name = models.CharField(max_length=150, blank=True, null=True)
+    payment_method_name = models.CharField(max_length=100, blank=True, null=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -132,6 +139,8 @@ class ExpenditureRequest(models.Model):
             self.requester_name = self.requester.get_full_name() or self.requester.username
         if self.approver and not self.approver_name:
             self.approver_name = self.approver.get_full_name() or self.approver.username
+        if self.payment_method and not self.payment_method_name:
+            self.payment_method_name = self.payment_method.name
         super().save(*args, **kwargs)
 
     def __str__(self):
