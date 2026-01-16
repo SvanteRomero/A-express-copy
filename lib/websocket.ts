@@ -251,7 +251,9 @@ export class NotificationWebSocket {
         };
 
         this.ws.onerror = (error) => {
-            console.error('WebSocket error:', error);
+            // WebSocket errors are typically transient (reconnects handle them)
+            // Use debug level to reduce console noise in development
+            console.debug('WebSocket error (will auto-reconnect):', error);
         };
 
         this.ws.onmessage = (event) => {
