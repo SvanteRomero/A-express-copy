@@ -7,8 +7,7 @@
 
 import { toast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/feedback/toast';
-import { approveExpenditureRequest, rejectExpenditureRequest } from '@/lib/api-client';
-import { useQueryClient } from '@tanstack/react-query';
+import { approveExpenditureRequest, rejectExpenditureRequest } from '@/lib/api-client';;
 
 interface ExpenditureRequestData {
     request_id: number;
