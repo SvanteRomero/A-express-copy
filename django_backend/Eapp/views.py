@@ -214,9 +214,9 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAdminOrManagerOrAccountant])
     def debts(self, request):
         """
-        Returns a list of tasks that are marked as debt.
+        Returns a list of tasks that are marked as debt and not terminated.
         """
-        tasks = self.get_queryset().filter(is_debt=True)
+        tasks = self.get_queryset().filter(is_debt=True).exclude(status='Terminated')
         page = self.paginate_queryset(tasks)
         if page is not None:
             serializer = TaskListSerializer(page, many=True)
