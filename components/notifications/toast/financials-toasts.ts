@@ -80,3 +80,23 @@ export function showExpenditureRequestErrorToast(isRefund: boolean, errorMessage
         variant: 'destructive',
     });
 }
+/**
+ * Show success toast when expenditure request is cancelled
+ */
+export function showExpenditureCancelledToast() {
+    toast({
+        title: 'Success',
+        description: 'Expenditure request cancelled.',
+    });
+}
+
+/**
+ * Show error toast when expenditure cancellation fails
+ */
+export function showExpenditureCancellationErrorToast(errorMessage?: string) {
+    toast({
+        title: 'Error',
+        description: errorMessage || 'Failed to cancel request.',
+        variant: 'destructive',
+    });
+}

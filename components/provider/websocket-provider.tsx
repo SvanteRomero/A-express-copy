@@ -93,6 +93,12 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             queryClient.invalidateQueries({ queryKey: ['accounts'] });
         }
 
+        // Handle expenditure updates
+        if (message.type === 'expenditure_update') {
+            queryClient.invalidateQueries({ queryKey: ['expenditureRequests'] });
+            queryClient.invalidateQueries({ queryKey: ['financial-summary'] }); // Likely affects summary too
+        }
+
         // Handle expenditure request notifications - show interactive toast to managers
         if (message.type === 'expenditure_request') {
             const data = message as ExpenditureRequestMessage;

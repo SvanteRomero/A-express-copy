@@ -122,3 +122,37 @@ def broadcast_expenditure_request(request_id: int, description: str, amount: str
         logger.info(f"Broadcast expenditure request {request_id} to managers")
     except Exception as e:
         logger.error(f"Failed to broadcast expenditure request to managers: {e}")
+
+
+def broadcast_expenditure_update():
+    """
+    Broadcast an update to expenditure requests list (created, approved, rejected, deleted).
+    Triggers cache invalidation for all who can view expenditures.
+    """
+    from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
+
+    channel_layer = get_channel_layer()
+
+    if not channel_layer:
+        logger.warning("Channel layer not available - skipping expenditure update broadcast")
+        return
+
+    data = {
+        'type': 'expenditure_update',
+    }
+
+    # Broadcast to all roles who can see expenditure lists
+    for role in ['manager', 'accountant', 'admin']:
+        group_name = f'notifications_{role}'
+        try:
+            async_to_sync(channel_layer.group_send)(
+                group_name,
+                {
+                    'type': 'data.update',
+                    'data': data,
+                }
+            )
+            logger.debug(f"Broadcast expenditure update to {group_name}")
+        except Exception as e:
+            logger.error(f"Failed to broadcast expenditure update to {group_name}: {e}")

@@ -1,9 +1,9 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getExpenditureRequests, approveExpenditureRequest, rejectExpenditureRequest } from '@/lib/api-client';
+import { getExpenditureRequests, approveExpenditureRequest, rejectExpenditureRequest, deleteExpenditureRequest } from '@/lib/api-client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card";
+import { Card, CardContent, CardHeader} from "@/components/ui/layout/card";
 import { Button } from "@/components/ui/core/button";
 import { Badge } from "@/components/ui/core/badge";
 import { useAuth } from '@/hooks/use-auth';
@@ -12,6 +12,8 @@ import {
   showExpenditureApprovalErrorToast,
   showExpenditureRejectedToast,
   showExpenditureRejectionErrorToast,
+  showExpenditureCancelledToast,
+  showExpenditureCancellationErrorToast,
 } from '@/components/notifications/toast';
 import { useState } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -58,6 +60,17 @@ export function ExpenditureRequestsList() {
     },
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: deleteExpenditureRequest,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenditureRequests'] });
+      showExpenditureCancelledToast();
+    },
+    onError: (error: any) => {
+      showExpenditureCancellationErrorToast(error.response?.data?.detail);
+    },
+  });
+
   const isManager = user?.role === 'Manager';
   const isAccountant = user?.role === 'Accountant'; // Assuming an Accountant role might also approve/reject
 
@@ -67,6 +80,10 @@ export function ExpenditureRequestsList() {
 
   const handleReject = (id: number) => {
     rejectMutation.mutate(id);
+  };
+
+  const handleCancel = (id: number) => {
+    cancelMutation.mutate(id);
   };
 
   const getStatusBadge = (status: string) => {
@@ -112,14 +129,23 @@ export function ExpenditureRequestsList() {
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Approver: {request.approver_name || request.approver?.username || 'Pending'}</span>
                   </div>
-                  {request.status === 'Pending' && (isManager || isAccountant) && (
+                  {request.status === 'Pending' && (
                     <div className="flex justify-end gap-2 mt-2">
-                      <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50" onClick={() => handleApprove(request.id)} disabled={approveMutation.isPending}>
-                        <Check className="h-4 w-4 mr-1" /> Approve
-                      </Button>
-                      <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50" onClick={() => handleReject(request.id)} disabled={rejectMutation.isPending}>
-                        <X className="h-4 w-4 mr-1" /> Reject
-                      </Button>
+                      {isManager && (
+                        <>
+                          <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50" onClick={() => handleApprove(request.id)} disabled={approveMutation.isPending}>
+                            <Check className="h-4 w-4 mr-1" /> Approve
+                          </Button>
+                          <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50" onClick={() => handleReject(request.id)} disabled={rejectMutation.isPending}>
+                            <X className="h-4 w-4 mr-1" /> Reject
+                          </Button>
+                        </>
+                      )}
+                      {isAccountant && !isManager && (
+                        <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50" onClick={() => handleCancel(request.id)} disabled={cancelMutation.isPending}>
+                          <X className="h-4 w-4 mr-1" /> Cancel
+                        </Button>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -156,12 +182,21 @@ export function ExpenditureRequestsList() {
                     <TableCell>
                       {request.status === 'Pending' && (
                         <div className="flex space-x-2">
-                          <Button size="sm" variant="ghost" className="text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => handleApprove(request.id)} disabled={approveMutation.isPending}>
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleReject(request.id)} disabled={rejectMutation.isPending}>
-                            <X className="h-4 w-4" />
-                          </Button>
+                          {isManager && (
+                            <>
+                              <Button size="sm" variant="ghost" className="text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => handleApprove(request.id)} disabled={approveMutation.isPending}>
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleReject(request.id)} disabled={rejectMutation.isPending}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          {isAccountant && !isManager && (
+                            <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleCancel(request.id)} disabled={cancelMutation.isPending}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       )}
                     </TableCell>

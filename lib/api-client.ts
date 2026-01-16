@@ -182,6 +182,7 @@ export const createExpenditureRequest = (data: any) => apiClient.post('/expendit
 export const createAndApproveExpenditureRequest = (data: any) => apiClient.post('/expenditure-requests/create_and_approve/', data);
 export const approveExpenditureRequest = (id: number) => apiClient.post(`/expenditure-requests/${id}/approve/`);
 export const rejectExpenditureRequest = (id: number) => apiClient.post(`/expenditure-requests/${id}/reject/`);
+export const deleteExpenditureRequest = (id: number) => apiClient.delete(`/expenditure-requests/${id}/`);
 
 // Customer Stats & Acquisition
 export const getCustomerStats = () => apiClient.get('/customers/stats/');

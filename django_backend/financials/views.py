@@ -141,13 +141,14 @@ class ExpenditureRequestViewSet(viewsets.ModelViewSet):
         instance = serializer.save(requester=self.request.user)
         
         # Broadcast to managers for approval
-        from .broadcasts import broadcast_expenditure_request
+        from .broadcasts import broadcast_expenditure_request, broadcast_expenditure_update
         broadcast_expenditure_request(
             request_id=instance.id,
             description=instance.description,
             amount=str(instance.amount),
             requester_name=self.request.user.get_full_name() or self.request.user.username
         )
+        broadcast_expenditure_update()
 
     @action(detail=False, methods=["post"])
     def create_and_approve(self, request):
@@ -181,6 +182,10 @@ class ExpenditureRequestViewSet(viewsets.ModelViewSet):
                 payment_method=expenditure.payment_method,
                 status=CostBreakdown.Status.APPROVED,
             )
+
+        
+        from .broadcasts import broadcast_expenditure_update
+        broadcast_expenditure_update()
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -218,6 +223,9 @@ class ExpenditureRequestViewSet(viewsets.ModelViewSet):
                 status=CostBreakdown.Status.APPROVED,
             )
 
+        from .broadcasts import broadcast_expenditure_update
+        broadcast_expenditure_update()
+
         serializer = self.get_serializer(expenditure)
         return Response(serializer.data)
 
@@ -234,8 +242,16 @@ class ExpenditureRequestViewSet(viewsets.ModelViewSet):
         expenditure.approver = request.user
         expenditure.save()
 
+        from .broadcasts import broadcast_expenditure_update
+        broadcast_expenditure_update()
+
         serializer = self.get_serializer(expenditure)
         return Response(serializer.data)
+
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+        from .broadcasts import broadcast_expenditure_update
+        broadcast_expenditure_update()
 
 
 class FinancialSummaryView(APIView):

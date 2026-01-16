@@ -49,7 +49,7 @@ export interface TaskStatusUpdateMessage {
 }
 
 export interface DataUpdateMessage {
-    type: 'payment_update' | 'customer_update' | 'account_update';
+    type: 'payment_update' | 'customer_update' | 'account_update' | 'expenditure_update';
     task_id?: string;
     customer_id?: number;
 }
