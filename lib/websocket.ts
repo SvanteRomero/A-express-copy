@@ -61,6 +61,7 @@ export interface ExpenditureRequestMessage {
     description: string;
     amount: string;
     requester_name: string;
+    requester_id: number;
 }
 
 export type WebSocketMessage = SchedulerNotificationMessage | ConnectionMessage | PongMessage | ToastNotificationMessage | TaskStatusUpdateMessage | DataUpdateMessage | ExpenditureRequestMessage;

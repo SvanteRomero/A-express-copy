@@ -81,7 +81,7 @@ def broadcast_account_update():
             logger.error(f"Failed to broadcast account update to {group_name}: {e}")
 
 
-def broadcast_expenditure_request(request_id: int, description: str, amount: str, requester_name: str):
+def broadcast_expenditure_request(request_id: int, description: str, amount: str, requester_name: str, requester_id: int):
     """
     Broadcast an expenditure request to managers for approval.
     This shows an interactive toast with approve/reject buttons.
@@ -91,6 +91,7 @@ def broadcast_expenditure_request(request_id: int, description: str, amount: str
         description: Description of the expenditure
         amount: Amount requested (as string)
         requester_name: Name of the person who made the request
+        requester_id: ID of the person who made the request
     """
     from asgiref.sync import async_to_sync
     from channels.layers import get_channel_layer
@@ -107,6 +108,7 @@ def broadcast_expenditure_request(request_id: int, description: str, amount: str
         'description': description,
         'amount': amount,
         'requester_name': requester_name,
+        'requester_id': requester_id,
     }
     
     # Broadcast only to managers who can approve requests

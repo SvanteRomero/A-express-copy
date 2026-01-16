@@ -146,7 +146,8 @@ class ExpenditureRequestViewSet(viewsets.ModelViewSet):
             request_id=instance.id,
             description=instance.description,
             amount=str(instance.amount),
-            requester_name=self.request.user.get_full_name() or self.request.user.username
+            requester_name=self.request.user.get_full_name() or self.request.user.username,
+            requester_id=self.request.user.id
         )
         broadcast_expenditure_update()
 

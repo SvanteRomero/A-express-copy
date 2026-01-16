@@ -102,6 +102,13 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         // Handle expenditure request notifications - show interactive toast to managers
         if (message.type === 'expenditure_request') {
             const data = message as ExpenditureRequestMessage;
+
+            // Validate: Don't show toast to the person who made the request
+            // They already got a success toast from the mutation
+            if (user && user.id === data.requester_id) {
+                return;
+            }
+
             showExpenditureRequestToast(data, () => {
                 // Invalidate expenditure requests cache after action
                 queryClient.invalidateQueries({ queryKey: ['expenditureRequests'] });
