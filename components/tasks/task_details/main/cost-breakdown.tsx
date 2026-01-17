@@ -69,98 +69,100 @@ export function CostBreakdown({ task }: CostBreakdownProps) {
           )}
         </div>
       </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Category</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              {isManager && <TableHead></TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell className="font-medium">Estimated Cost</TableCell>
-              <TableCell className="text-right">TSh {parseFloat(task.estimated_cost || '0').toFixed(2)}</TableCell>
-              {isManager && <TableCell></TableCell>}
-            </TableRow>
-            {costBreakdowns?.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell>{item.description}</TableCell>
-                <TableCell
-                  className={`text-right ${item.cost_type === 'Subtractive' ? 'text-red-600' : item.cost_type === 'Additive' ? 'text-green-600' : ''}`}>
-                  {item.cost_type === 'Subtractive' ? '- ' : item.cost_type === 'Additive' ? '+ ' : ''}TSh {parseFloat(item.amount).toFixed(2)}
-                </TableCell>
-                {isManager && (
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(item.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
-            {isAdding && (
+      <CardContent className="px-2 sm:px-6">
+        <div className="overflow-x-auto -mx-2 sm:mx-0">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell>
-                  {isOtherCategory ? (
-                    <Input
-                      type="text"
-                      placeholder="Specify category..."
-                      value={newBreakdown.category}
-                      onChange={(e) => setNewBreakdown({ ...newBreakdown, category: e.target.value })}
-                    />
-                  ) : (
-                    <Select
-                      value={newBreakdown.category}
-                      onValueChange={(value) => {
-                        if (value === 'Other') {
-                          setIsOtherCategory(true);
-                          setNewBreakdown({ ...newBreakdown, category: '' });
-                        } else {
-                          setNewBreakdown({ ...newBreakdown, category: value });
-                        }
-                      }}
-                    >
+                <TableHead className="whitespace-nowrap">Category</TableHead>
+                <TableHead className="text-right whitespace-nowrap">Amount</TableHead>
+                {isManager && <TableHead></TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell className="font-medium whitespace-nowrap">Estimated Cost</TableCell>
+                <TableCell className="text-right whitespace-nowrap">TSh {parseFloat(task.estimated_cost || '0').toFixed(2)}</TableCell>
+                {isManager && <TableCell></TableCell>}
+              </TableRow>
+              {costBreakdowns?.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="whitespace-nowrap">{item.description}</TableCell>
+                  <TableCell
+                    className={`text-right whitespace-nowrap ${item.cost_type === 'Subtractive' ? 'text-red-600' : item.cost_type === 'Additive' ? 'text-green-600' : ''}`}>
+                    {item.cost_type === 'Subtractive' ? '- ' : item.cost_type === 'Additive' ? '+ ' : ''}TSh {parseFloat(item.amount).toFixed(2)}
+                  </TableCell>
+                  {isManager && (
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(item.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+              {isAdding && (
+                <TableRow>
+                  <TableCell>
+                    {isOtherCategory ? (
+                      <Input
+                        type="text"
+                        placeholder="Specify category..."
+                        value={newBreakdown.category}
+                        onChange={(e) => setNewBreakdown({ ...newBreakdown, category: e.target.value })}
+                      />
+                    ) : (
+                      <Select
+                        value={newBreakdown.category}
+                        onValueChange={(value) => {
+                          if (value === 'Other') {
+                            setIsOtherCategory(true);
+                            setNewBreakdown({ ...newBreakdown, category: '' });
+                          } else {
+                            setNewBreakdown({ ...newBreakdown, category: value });
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Discount">Discount</SelectItem>
+                          <SelectItem value="Commission">Commission</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Select value={newBreakdown.cost_type} onValueChange={(value) => setNewBreakdown({ ...newBreakdown, cost_type: value })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select category..." />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Discount">Discount</SelectItem>
-                        <SelectItem value="Commission">Commission</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="Inclusive">Include</SelectItem>
+                        <SelectItem value="Additive">Add</SelectItem>
+                        <SelectItem value="Subtractive">Subtract</SelectItem>
                       </SelectContent>
                     </Select>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Select value={newBreakdown.cost_type} onValueChange={(value) => setNewBreakdown({ ...newBreakdown, cost_type: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Inclusive">Include</SelectItem>
-                      <SelectItem value="Additive">Add</SelectItem>
-                      <SelectItem value="Subtractive">Subtract</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <Input
-                    type="number"
-                    placeholder="Amount"
-                    value={newBreakdown.amount}
-                    onChange={(e) => setNewBreakdown({ ...newBreakdown, amount: e.target.value })}
-                    className="text-right"
-                  />
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button size="sm" onClick={handleAdd}>Add</Button>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      placeholder="Amount"
+                      value={newBreakdown.amount}
+                      onChange={(e) => setNewBreakdown({ ...newBreakdown, amount: e.target.value })}
+                      className="text-right"
+                    />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" onClick={handleAdd}>Add</Button>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
       <CardFooter className="flex justify-between items-center">
         <Label className="text-base font-semibold text-gray-900">Total Cost</Label>

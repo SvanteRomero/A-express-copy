@@ -88,69 +88,69 @@ export default function Financials({ taskId }: FinancialsProps) {
       </div>
 
       <Card className="border-gray-200">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-semibold text-gray-900">Payment History</CardTitle>
-            {canEditFinancials && (
-              <div className="flex items-center gap-2">
-                <CurrencyInput
-                  placeholder="Amount"
-                  value={newPaymentAmount}
-                  onValueChange={value => setNewPaymentAmount(value || "")}
-                  className="w-24"
-                />
-                <Select value={newPaymentMethod} onValueChange={setNewPaymentMethod}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods?.map(method => (
-                      <SelectItem key={method.id} value={String(method.id)}>
-                        {method.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        <CardHeader className="space-y-4">
+          <CardTitle className="text-xl font-semibold text-gray-900">Payment History</CardTitle>
+          {canEditFinancials && (
+            <div className="flex flex-wrap items-center gap-2">
+              <CurrencyInput
+                placeholder="Amount"
+                value={newPaymentAmount}
+                onValueChange={value => setNewPaymentAmount(value || "")}
+                className="w-full sm:w-24"
+              />
+              <Select value={newPaymentMethod} onValueChange={setNewPaymentMethod}>
+                <SelectTrigger className="w-full sm:w-32">
+                  <SelectValue placeholder="Method" />
+                </SelectTrigger>
+                <SelectContent>
+                  {paymentMethods?.map(method => (
+                    <SelectItem key={method.id} value={String(method.id)}>
+                      {method.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={handleAddPayment}
+                disabled={!newPaymentAmount || !newPaymentMethod}
+                className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Payment
+              </Button>
+              {isAccountant && (
                 <Button
-                  onClick={handleAddPayment}
-                  disabled={!newPaymentAmount || !newPaymentMethod}
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  onClick={() => setIsAddExpenditureOpen(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
                 >
                   <Plus className="h-4 w-4 mr-1" />
-                  Add Payment
+                  Add Refund
                 </Button>
-                {isAccountant && (
-                  <Button
-                    onClick={() => setIsAddExpenditureOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Refund
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Amount</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Method</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {taskData.payments.map((payment: any) => (
-                <TableRow key={payment.id}>
-                  <TableCell className="font-medium text-green-600">TSh {parseFloat(payment.amount).toFixed(2)}</TableCell>
-                  <TableCell>{payment.date}</TableCell>
-                  <TableCell>{payment.method_name}</TableCell>
+        <CardContent className="px-2 sm:px-6">
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="whitespace-nowrap">Amount</TableHead>
+                  <TableHead className="whitespace-nowrap">Date</TableHead>
+                  <TableHead className="whitespace-nowrap">Method</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {taskData.payments.map((payment: any) => (
+                  <TableRow key={payment.id}>
+                    <TableCell className="font-medium text-green-600 whitespace-nowrap">TSh {parseFloat(payment.amount).toFixed(2)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{payment.date}</TableCell>
+                    <TableCell className="whitespace-nowrap">{payment.method_name}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
           {taskData.payments.length === 0 && (
             <div className="text-center py-8 text-gray-500">No payments recorded yet</div>
           )}

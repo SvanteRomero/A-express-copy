@@ -6,7 +6,15 @@ Example: A1-001, A1-002, B3-015
 
 Year character starts at 'A' from the first task ever created,
 incrementing by one letter each year.
+
+Configuration:
+    Set TASK_ID_YEAR_OFFSET environment variable to offset the starting year character.
+    - 0 (default): Start at 'A'
+    - 1: Start at 'B'
+    - 2: Start at 'C'
+    - etc.
 """
+import os
 from django.utils import timezone
 
 
@@ -41,19 +49,22 @@ class TaskIDGenerator:
         """
         Calculate the year character based on the first task ever created.
         
+        The starting character can be offset via TASK_ID_YEAR_OFFSET env var.
+        
         Returns:
             str: Single character representing the year offset
         """
         from Eapp.models import Task
         
         now = timezone.now()
+        offset = int(os.environ.get('TASK_ID_YEAR_OFFSET', 0))
         first_task = Task.objects.order_by('created_at').first()
         
         if first_task:
             first_year = first_task.created_at.year
-            year_char = chr(ord('A') + now.year - first_year)
+            year_char = chr(ord('A') + offset + now.year - first_year)
         else:
-            year_char = 'A'
+            year_char = chr(ord('A') + offset)
         
         return year_char
     
