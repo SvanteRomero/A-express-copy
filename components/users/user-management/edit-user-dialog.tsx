@@ -95,7 +95,7 @@ export function EditUserDialog({ isOpen, onOpenChange, editingUser, setEditingUs
                                     </SelectContent>
                                 </Select>
                             </div>
-                            {editingUser.role === "Technician" && (
+                            {(editingUser.role === "Technician" || editingUser.role === "Manager") && (
                                 <div className="flex items-center space-x-2">
                                     <Switch
                                         id="edit-is_workshop"

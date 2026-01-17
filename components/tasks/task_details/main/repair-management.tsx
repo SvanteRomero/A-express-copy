@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/use-auth"
 import { addTaskActivity } from "@/lib/api-client"
 import { useTask, useTaskStatusOptions, useTaskUrgencyOptions, useUpdateTask } from "@/hooks/use-tasks"
-import { useTechnicians } from "@/hooks/use-users"
+import { useAssignableUsers } from "@/hooks/use-users"
 import { useLocations } from "@/hooks/use-locations"
 import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useMemo, useState } from "react"
@@ -22,7 +22,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const { data: taskData, isLoading, isError, error } = useTask(taskId)
-  const { data: technicians } = useTechnicians()
+  const { data: technicians } = useAssignableUsers()
   const { data: locations } = useLocations()
   const { data: statusOptions } = useTaskStatusOptions()
   const { data: urgencyOptions } = useTaskUrgencyOptions()
@@ -165,7 +165,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
                 <SelectContent>
                   {technicians?.map(tech => (
                     <SelectItem key={tech.id} value={tech.id.toString()}>
-                      {tech.full_name}
+                      {tech.full_name}{tech.role === 'Manager' ? ' (Manager)' : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -109,7 +109,7 @@ export function AddUserDialog({ isOpen, onOpenChange, newUser, setNewUser, onAdd
                         </div>
                     </div>
 
-                    {newUser.role === "Technician" && (
+                    {(newUser.role === "Technician" || newUser.role === "Manager") && (
                         <div className="flex items-center space-x-2">
                             <Switch
                                 id="is_workshop"

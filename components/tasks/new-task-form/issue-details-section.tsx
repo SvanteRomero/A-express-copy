@@ -173,7 +173,7 @@ export function IssueDetailsSection({ form }: IssueDetailsSectionProps) {
                                 : technicians
                             )?.map((technician) => (
                                 <SelectItem key={technician.id} value={technician.id.toString()}>
-                                    {technician.first_name} {technician.last_name}
+                                    {technician.first_name} {technician.last_name}{technician.role === 'Manager' ? ' (Manager)' : ''}
                                 </SelectItem>
                             ))}
                         </SelectContent>

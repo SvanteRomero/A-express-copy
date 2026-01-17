@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { listWorkshopTechnicians, listUsersByRole } from '@/lib/api-client'
+import { listWorkshopTechnicians, listUsersByRole, listAssignableUsers } from '@/lib/api-client'
 import { User } from "@/hooks/use-user-management"
 
 export function useTechnicians() {
@@ -27,6 +27,16 @@ export function useWorkshopTechnicians() {
         queryKey: ['workshopTechnicians'],
         queryFn: async () => {
             const response = await listWorkshopTechnicians();
+            return response.data;
+        },
+    });
+}
+
+export function useAssignableUsers() {
+    return useQuery<User[]>({
+        queryKey: ['assignableUsers'],
+        queryFn: async () => {
+            const response = await listAssignableUsers();
             return response.data;
         },
     });

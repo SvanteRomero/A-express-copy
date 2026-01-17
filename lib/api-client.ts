@@ -112,6 +112,7 @@ export const updateLocation = (locationId: number, locationData: { name: string;
 export const deleteLocation = (locationId: number) => apiClient.delete(`/locations/${locationId}/`);
 export const listWorkshopLocations = () => apiClient.get('locations/workshop-locations/');
 export const listWorkshopTechnicians = () => apiClient.get('list/workshop-technicians/');
+export const listAssignableUsers = () => apiClient.get('list/assignable-users/');
 
 export const login = async (username: any, password: any) => {
   // Tokens are now set as HttpOnly cookies by the server

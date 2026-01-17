@@ -458,6 +458,16 @@ class UserListViewSet(viewsets.ViewSet):
         serializer = UserSerializer(technicians, many=True, context={'request': request})
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'], url_path='assignable-users')
+    def list_assignable_users(self, request):
+        """Returns users who can be assigned to tasks (Technicians and Managers)."""
+        users = User.objects.filter(
+            role__in=['Technician', 'Manager'], 
+            is_active=True
+        )
+        serializer = UserSerializer(users, many=True, context={'request': request})
+        return Response(serializer.data)
+
 
 # =============================================================================
 # Cookie Authentication Endpoints

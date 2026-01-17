@@ -11,7 +11,7 @@ import {
     showCustomerCreatedToast,
     showTaskCreatedWithSmsToast,
 } from '@/components/notifications/toast'
-import { useTechnicians, useManagers, useWorkshopTechnicians } from '@/hooks/use-users'
+import { useTechnicians, useManagers, useWorkshopTechnicians, useAssignableUsers } from '@/hooks/use-users'
 import { useBrands, useModels } from '@/hooks/use-brands-models'
 import { useLocations } from '@/hooks/use-locations'
 import { useCustomers } from '@/hooks/use-customers'
@@ -93,7 +93,7 @@ export function useNewTaskForm() {
     })
 
     // Data hooks
-    const { data: technicians, isLoading: isLoadingTechnicians } = useTechnicians()
+    const { data: technicians, isLoading: isLoadingTechnicians } = useAssignableUsers()
     const { data: workshopTechnicians, isLoading: isLoadingWorkshopTechnicians } = useWorkshopTechnicians()
     const { data: managers, isLoading: isLoadingManagers } = useManagers()
     const { data: brands, isLoading: isLoadingBrands } = useBrands()

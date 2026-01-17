@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/core/button";
 import { Plus } from "lucide-react";
@@ -17,20 +17,51 @@ import {
   DialogTrigger,
 } from "@/components/ui/feedback/dialog";
 import { useTasks, useUpdateTask } from "@/hooks/use-tasks";
-import { useTechnicians } from "@/hooks/use-users";
+import { useAssignableUsers } from "@/hooks/use-users";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageSkeleton } from "@/components/ui/core/loaders";
 
-type Tab = 'pending' | 'completed';
+type Tab = 'pending' | 'completed' | 'myTasks';
+const TABS_ORDER: Tab[] = ['pending', 'completed', 'myTasks'];
 
 export function ManagerTasksPage() {
   const { user } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<Tab>('pending');
   const [pages, setPages] = useState({
     pending: 1,
     completed: 1,
+    myTasks: 1,
   });
+
+  // Swipe handling
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+  const minSwipeDistance = 50;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const distance = touchStartX.current - touchEndX.current;
+    const currentIndex = TABS_ORDER.indexOf(activeTab);
+
+    if (Math.abs(distance) > minSwipeDistance) {
+      if (distance > 0 && currentIndex < TABS_ORDER.length - 1) {
+        // Swipe left - go to next tab
+        setActiveTab(TABS_ORDER[currentIndex + 1]);
+      } else if (distance < 0 && currentIndex > 0) {
+        // Swipe right - go to previous tab
+        setActiveTab(TABS_ORDER[currentIndex - 1]);
+      }
+    }
+  };
 
   const { data: pendingTasksData, isLoading: isLoadingPending } = useTasks({
     page: pages.pending,
@@ -42,7 +73,14 @@ export function ManagerTasksPage() {
     status: "Completed,Ready for Pickup",
   });
 
-  const { data: technicians } = useTechnicians();
+  // My Tasks - tasks assigned to this manager
+  const { data: myTasksData, isLoading: isLoadingMyTasks } = useTasks({
+    page: pages.myTasks,
+    assigned_to: user?.id,
+    status: "In Progress,Pending,Awaiting Parts,Assigned - Not Accepted,Diagnostic",
+  });
+
+  const { data: technicians } = useAssignableUsers();
 
   const [isBrandModalOpen, setIsBrandModalOpen] = useState(false);
 
@@ -57,6 +95,11 @@ export function ManagerTasksPage() {
 
   const handleRowClick = (task: any) => {
     router.push(`/dashboard/tasks/${task.title}`);
+  };
+
+  // Special handler for My Tasks - navigate to technician task details
+  const handleMyTaskRowClick = (task: any) => {
+    router.push(`/dashboard/technician/tasks/${task.title}`);
   };
 
   const handleProcessPickup = (taskTitle: string) => {
@@ -83,7 +126,7 @@ export function ManagerTasksPage() {
     }));
   };
 
-  const isLoading = isLoadingPending || isLoadingCompleted;
+  const isLoading = isLoadingPending || isLoadingCompleted || isLoadingMyTasks;
 
   if (isLoading) {
     return <PageSkeleton />;
@@ -121,44 +164,66 @@ export function ManagerTasksPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <Tabs defaultValue="pending">
-        <TabsList className="grid w-full grid-cols-2 bg-gray-100">
+      {/* Main Content with Swipe Support */}
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as Tab)}>
+        <TabsList className="grid w-full grid-cols-3 bg-gray-100">
           <TabsTrigger value="pending" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Current Tasks</TabsTrigger>
           <TabsTrigger value="completed" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Completed</TabsTrigger>
+          <TabsTrigger value="myTasks" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">My Tasks</TabsTrigger>
         </TabsList>
-        <TabsContent value="pending">
-          <TasksDisplay
-            tasks={pendingTasksData?.results || []}
-            technicians={technicians || []}
-            onRowClick={handleRowClick}
-            showActions={true}
-            onDeleteTask={deleteTaskMutation.mutate}
-            onProcessPickup={handleProcessPickup}
-            onTerminateTask={handleTerminateTask}
-            isManagerView={true}
-          />
-          <div className="flex justify-end space-x-2 mt-4">
-            <Button onClick={() => handlePageChange('pending', 'previous')} disabled={!pendingTasksData?.previous}>Previous</Button>
-            <Button onClick={() => handlePageChange('pending', 'next')} disabled={!pendingTasksData?.next}>Next</Button>
-          </div>
-        </TabsContent>
-        <TabsContent value="completed">
-          <TasksDisplay
-            tasks={completedTasksData?.results || []}
-            technicians={technicians || []}
-            onRowClick={handleRowClick}
-            showActions={true}
-            onDeleteTask={deleteTaskMutation.mutate}
-            onProcessPickup={handleProcessPickup}
-            isCompletedTab={true}
-            isManagerView={true}
-          />
-          <div className="flex justify-end space-x-2 mt-4">
-            <Button onClick={() => handlePageChange('completed', 'previous')} disabled={!completedTasksData?.previous}>Previous</Button>
-            <Button onClick={() => handlePageChange('completed', 'next')} disabled={!completedTasksData?.next}>Next</Button>
-          </div>
-        </TabsContent>
+
+        {/* Swipeable content area */}
+        <div
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <TabsContent value="pending">
+            <TasksDisplay
+              tasks={pendingTasksData?.results || []}
+              technicians={technicians || []}
+              onRowClick={handleRowClick}
+              showActions={true}
+              onDeleteTask={deleteTaskMutation.mutate}
+              onProcessPickup={handleProcessPickup}
+              onTerminateTask={handleTerminateTask}
+              isManagerView={true}
+            />
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button onClick={() => handlePageChange('pending', 'previous')} disabled={!pendingTasksData?.previous}>Previous</Button>
+              <Button onClick={() => handlePageChange('pending', 'next')} disabled={!pendingTasksData?.next}>Next</Button>
+            </div>
+          </TabsContent>
+          <TabsContent value="completed">
+            <TasksDisplay
+              tasks={completedTasksData?.results || []}
+              technicians={technicians || []}
+              onRowClick={handleRowClick}
+              showActions={true}
+              onDeleteTask={deleteTaskMutation.mutate}
+              onProcessPickup={handleProcessPickup}
+              isCompletedTab={true}
+              isManagerView={true}
+            />
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button onClick={() => handlePageChange('completed', 'previous')} disabled={!completedTasksData?.previous}>Previous</Button>
+              <Button onClick={() => handlePageChange('completed', 'next')} disabled={!completedTasksData?.next}>Next</Button>
+            </div>
+          </TabsContent>
+          <TabsContent value="myTasks">
+            <TasksDisplay
+              tasks={myTasksData?.results || []}
+              technicians={technicians || []}
+              onRowClick={handleMyTaskRowClick}
+              showActions={false}
+              isManagerView={false}
+            />
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button onClick={() => handlePageChange('myTasks', 'previous')} disabled={!myTasksData?.previous}>Previous</Button>
+              <Button onClick={() => handlePageChange('myTasks', 'next')} disabled={!myTasksData?.next}>Next</Button>
+            </div>
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );
