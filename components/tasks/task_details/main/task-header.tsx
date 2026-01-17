@@ -80,7 +80,7 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
 
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex-grow">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Task Details - {taskData.title}</h1>
+          <h1 className="text-xl md:text-3xl font-bold tracking-tight text-gray-900">Task Details - {taskData.title}</h1>
           <div className="flex items-center gap-2 mt-2">
             <StatusBadge status={taskData.status} />
             {taskData.workshop_status && (

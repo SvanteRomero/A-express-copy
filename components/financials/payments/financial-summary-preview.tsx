@@ -45,7 +45,8 @@ interface PDFFinancialData {
             name: string;
             is_user_selectable: boolean;
             account: number | null;
-        };
+        } | null;
+        payment_method_name?: string;
         status: string;
         cost_type: string;
         requester: any;
@@ -90,7 +91,8 @@ interface FinancialSummary {
             name: string
             is_user_selectable: boolean
             account: number | null
-        }
+        } | null
+        payment_method_name?: string
         status: string
         cost_type: string
         requester: any
@@ -263,7 +265,7 @@ export function FinancialSummaryPreview({ isOpen, onClose, openingBalance }: Fin
                 const expenditureData = financialData.expenditures.map(item => [
                     item.description || 'N/A',
                     parseFloat(item.amount).toLocaleString('en-US'),
-                    item.payment_method?.name || 'N/A',
+                    item.payment_method?.name || item.payment_method_name || 'N/A',
                     item.category?.name || 'N/A',
                     item.status || 'N/A',
                     item.requester?.full_name || 'N/A',
@@ -626,7 +628,7 @@ export function FinancialSummaryPreview({ isOpen, onClose, openingBalance }: Fin
                                                                     {formatCurrency(expenditure.amount)}
                                                                 </TableCell>
                                                                 <TableCell>
-                                                                    <Badge variant="outline">{expenditure.payment_method.name}</Badge>
+                                                                    <Badge variant="outline">{expenditure.payment_method?.name || expenditure.payment_method_name || 'N/A'}</Badge>
                                                                 </TableCell>
                                                                 <TableCell>{expenditure.category.name}</TableCell>
                                                                 <TableCell>
@@ -634,7 +636,7 @@ export function FinancialSummaryPreview({ isOpen, onClose, openingBalance }: Fin
                                                                         {expenditure.status}
                                                                     </Badge>
                                                                 </TableCell>
-                                                                <TableCell>{expenditure.requester.full_name}</TableCell>
+                                                                <TableCell>{expenditure.requester?.full_name || 'N/A'}</TableCell>
                                                                 <TableCell>{format(new Date(expenditure.created_at), 'MMM dd, yyyy')}</TableCell>
                                                             </TableRow>
                                                         ))}

@@ -32,11 +32,11 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
   }
 
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex-1 space-y-4 p-4 md:space-y-6 md:p-6">
       <TaskHeader taskId={taskId} />
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 bg-gray-100">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-gray-100">
           <TabsTrigger value="overview" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
             Overview
           </TabsTrigger>
