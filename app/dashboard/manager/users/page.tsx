@@ -1,7 +1,7 @@
 "use client"
 
-import { useAuth } from "@/lib/auth-context"
-import { ManagerUserManagement } from "@/components/users/manager-user-management"
+import { useAuth } from "@/hooks/use-auth"
+import { UserManagement } from "@/components/users/user-management"
 
 export default function ManagerUsersPage() {
   const { user } = useAuth()
@@ -20,6 +20,6 @@ export default function ManagerUsersPage() {
     )
   }
 
-  return <ManagerUserManagement />
+  return <UserManagement />
 }
 

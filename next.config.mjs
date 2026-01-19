@@ -11,6 +11,14 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://127.0.0.1:8000/api/:path*',
+      },
+    ]
+  },
   // Security headers
   async headers() {
     return [
@@ -30,8 +38,8 @@ const nextConfig = {
   webpack: (config, { dev }) => {
     if (dev) {
       config.watchOptions = {
-        poll: 1000,           // Check for changes every 1 second
-        aggregateTimeout: 300, // Wait 300ms after change before rebuilding
+        poll: 10,           // Check for changes every 0.01 second
+        aggregateTimeout: 30, // Wait 30ms after change before rebuilding
         ignored: ['**/node_modules/**', '**/.git/**', '**/django_backend/**', '**/.next/**'],
       }
     }

@@ -4,7 +4,7 @@ import type React from "react"
 import { SidebarProvider, SidebarInset } from "@/components/ui/layout/sidebar"
 import { AppSidebar } from "@/components/dashboard/layouts/app-sidebar"
 import { DashboardHeader } from "@/components/dashboard/layouts/dashboard-header"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 

@@ -20,6 +20,7 @@ class TaskListSerializer(serializers.ModelSerializer):
     assigned_to_details = UserListSerializer(source='assigned_to', read_only=True)
     outstanding_balance = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     laptop_model_details = ModelSerializer(source='laptop_model', read_only=True)
+    total_cost = serializers.DecimalField(source='calculated_total_cost', max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = Task
@@ -38,6 +39,8 @@ class TaskListSerializer(serializers.ModelSerializer):
             'customer_details',
             'assigned_to_details',
             'outstanding_balance',
+            'total_cost',
+            'is_debt',
         )
 
 class TaskDetailSerializer(serializers.ModelSerializer):
@@ -76,6 +79,9 @@ class TaskDetailSerializer(serializers.ModelSerializer):
     )
     negotiated_by_details = UserSerializer(source="negotiated_by", read_only=True)
     laptop_model_details = ModelSerializer(source='laptop_model', read_only=True)
+    approved_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    sent_out_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    qc_rejected_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Task
@@ -88,7 +94,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             'device_type', 'device_notes',
             'estimated_cost', 'total_cost', 'paid_amount', 'payment_status',
             'current_location', 'date_in', 'approved_at', 'approved_by',
-            'paid_date', 'next_payment_date', 'date_out', 'negotiated_by', 'negotiated_by_details',
+            'date_out', 'negotiated_by', 'negotiated_by_details',
             'activities', 'payments', 'outstanding_balance', 'is_referred', 'is_debt', 'referred_by', 'referred_by_details',
             'workshop_status', 'workshop_location', 'workshop_technician', 'original_technician_snapshot', 'original_location_snapshot', 'original_technician', 'original_technician_details',
             'workshop_location_details', 'workshop_technician_details', 'original_technician_snapshot_details', 'approved_by_details',

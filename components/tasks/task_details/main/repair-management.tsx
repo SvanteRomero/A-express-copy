@@ -4,12 +4,14 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/core/button"
 import { Label } from "@/components/ui/core/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select"
-import { useAuth } from "@/lib/auth-context"
-import { updateTask, addTaskActivity } from "@/lib/api-client"
-import { useTask, useTechnicians, useLocations, useTaskStatusOptions, useTaskUrgencyOptions } from "@/hooks/use-data"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useAuth } from "@/hooks/use-auth"
+import { addTaskActivity } from "@/lib/api-client"
+import { useTask, useTaskStatusOptions, useTaskUrgencyOptions, useUpdateTask } from "@/hooks/use-tasks"
+import { useAssignableUsers } from "@/hooks/use-users"
+import { useLocations } from "@/hooks/use-locations"
+import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useMemo, useState } from "react"
-import { useToast } from "@/hooks/use-toast"
+import { showRepairManagementSavedToast } from "@/components/notifications/toast"
 import { Badge } from "@/components/ui/core/badge"
 
 interface RepairManagementProps {
@@ -20,11 +22,10 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const { data: taskData, isLoading, isError, error } = useTask(taskId)
-  const { data: technicians } = useTechnicians()
+  const { data: technicians } = useAssignableUsers()
   const { data: locations } = useLocations()
   const { data: statusOptions } = useTaskStatusOptions()
   const { data: urgencyOptions } = useTaskUrgencyOptions()
-  const { toast } = useToast()
 
   const [repairManagementData, setRepairManagementData] = useState({
     assigned_to: "",
@@ -44,12 +45,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
     }
   }, [taskData])
 
-  const updateTaskMutation = useMutation({
-    mutationFn: (updates: { [key: string]: any }) => updateTask(taskId, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["task", taskId] })
-    },
-  })
+  const updateTaskMutation = useUpdateTask()
 
   const handleRepairManagementSave = () => {
     if (!taskData) return
@@ -62,28 +58,35 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
         technicians?.find(t => t.id.toString() === (taskData.assigned_to?.toString() || ""))?.full_name || "Unassigned"
       const newTech =
         technicians?.find(t => t.id.toString() === repairManagementData.assigned_to)?.full_name || "Unassigned"
-      activityMessages.push(`Assigned Technician changed from ${oldTech} to ${newTech}`)
+      activityMessages.push(`Updated Assigned Technician from "${oldTech}" to "${newTech}"`)
     }
     if (repairManagementData.status !== taskData.status) {
       changes.status = repairManagementData.status
-      activityMessages.push(`Status changed from ${taskData.status} to ${repairManagementData.status}`)
+      activityMessages.push(`Updated Status from "${taskData.status}" to "${repairManagementData.status}"`)
     }
     if (repairManagementData.current_location !== taskData.current_location) {
       changes.current_location = repairManagementData.current_location
-      activityMessages.push(`Location changed from ${taskData.current_location} to ${repairManagementData.current_location}`)
+      activityMessages.push(`Updated Location from "${taskData.current_location}" to "${repairManagementData.current_location}"`)
     }
     if (repairManagementData.urgency !== taskData.urgency) {
       changes.urgency = repairManagementData.urgency
-      activityMessages.push(`Urgency changed from ${taskData.urgency} to ${repairManagementData.urgency}`)
+      activityMessages.push(`Updated Urgency from "${taskData.urgency}" to "${repairManagementData.urgency}"`)
     }
 
     if (Object.keys(changes).length > 0) {
-      updateTaskMutation.mutate(changes, {
+      // Track what fields changed for the toast
+      const changedFieldNames: string[] = []
+      if (changes.assigned_to !== undefined) changedFieldNames.push('Technician')
+      if (changes.status !== undefined) changedFieldNames.push('Status')
+      if (changes.current_location !== undefined) changedFieldNames.push('Location')
+      if (changes.urgency !== undefined) changedFieldNames.push('Urgency')
+
+      updateTaskMutation.mutate({ id: taskId, updates: changes }, {
         onSuccess: () => {
-          toast({ title: "Changes Saved", description: "Repair management details have been updated." })
+          showRepairManagementSavedToast(changedFieldNames)
           if (activityMessages.length > 0) {
-            const message = activityMessages.join(", ")
-            addTaskActivity(taskId, { message: `Repair management updated: ${message}` })
+            const message = activityMessages.join(". ")
+            addTaskActivity(taskId, { message, type: 'status_update' })
           }
         },
       })
@@ -162,7 +165,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
                 <SelectContent>
                   {technicians?.map(tech => (
                     <SelectItem key={tech.id} value={tech.id.toString()}>
-                      {tech.full_name}
+                      {tech.full_name}{tech.role === 'Manager' ? ' (Manager)' : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>

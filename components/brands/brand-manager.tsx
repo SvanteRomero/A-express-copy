@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/core/button";
 import { getBrands, createBrand } from "@/lib/api-client";
-import { Brand } from "@/lib/api";
+import { Brand } from "@/components/brands/types";
 import { Input } from "@/components/ui/core/input";
+import { ListSkeleton } from "@/components/ui/core/loaders";
 
 export function BrandManager() {
     const [brands, setBrands] = useState<Brand[]>([]);
@@ -46,7 +47,7 @@ export function BrandManager() {
         }
     };
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <ListSkeleton items={4} />;
     if (error) return <div>Error: {error}</div>;
 
     return (

@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { ManagerDashboard } from "@/components/dashboard/overviews/manager-dashboard"
 
 export default function ManagerPage() {

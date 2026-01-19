@@ -4,22 +4,11 @@ import { useMemo, useCallback } from "react"
 import type * as React from "react"
 import { usePathname } from "next/navigation"
 import {
-  Building2,
-  Calendar,
   ChevronUp,
-  CreditCard,
-  FileText,
-  Home,
   Settings,
   User,
-  Users,
-  Wrench,
-  ClipboardList,
-  Database,
   Shield,
-  Activity,
-  UserCog,
-  Banknote,
+  LogOut,
 } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -45,252 +34,25 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/layout/sidebar"
-import { useAuth } from "@/lib/auth-context"
-import { getMediaUrl } from "@/lib/media-utils"
+import { useAuth } from "@/hooks/use-auth"
 import Link from "next/link"
-
-// Navigation items for different roles
-const navigationItems = {
-  Administrator: [
-    {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: Home,
-    },
-    {
-      title: "User Management",
-      url: "/dashboard/admin/users",
-      icon: Users,
-    },
-    {
-      title: "System Settings",
-      url: "/dashboard/admin/settings",
-      icon: Settings,
-    },
-    {
-      title: "Database Management",
-      url: "/dashboard/admin/database",
-      icon: Database,
-    },
-    {
-      title: "System Logs",
-      url: "/dashboard/admin/logs",
-      icon: Activity,
-    },
-    {
-      title: "Customers",
-      url: "/dashboard/customers",
-      icon: Building2,
-    },
-    {
-      title: "Tasks",
-      url: "/dashboard/front-desk/tasks",
-      icon: Wrench,
-    },
-    {
-      title: "Payments",
-      url: "/dashboard/payments",
-      icon: CreditCard,
-    },
-    {
-      title: "Reports",
-      url: "/dashboard/reports",
-      icon: FileText,
-    },
-    {
-      title: "Profile",
-      url: "/dashboard/profile",
-      icon: User,
-    },
-  ],
-  Manager: [
-    {
-      title: "Dashboard",
-      url: "/dashboard/manager",
-      icon: Home,
-    },
-    {
-      title: "User Management",
-      url: "/dashboard/manager/users",
-      icon: UserCog,
-    },
-    {
-      title: "Account Management",
-      url: "/dashboard/manager/accounts",
-      icon: Banknote,
-    },
-    {
-      title: "Debts",
-      url: "/dashboard/debts",
-      icon: Banknote,
-    },
-    {
-      title: "Customers",
-      url: "/dashboard/customers",
-      icon: Building2,
-    },
-    {
-      title: "Tasks",
-      url: "/dashboard/manager/tasks",
-      icon: Wrench,
-    },
-    {
-      title: "Task History",
-      url: "/dashboard/manager/history",
-      icon: FileText,
-    },
-    {
-      title: "Payments",
-      url: "/dashboard/payments",
-      icon: CreditCard,
-    },
-    {
-      title: "Reports",
-      url: "/dashboard/reports",
-      icon: FileText,
-    },
-    {
-      title: "Profile",
-      url: "/dashboard/profile",
-      icon: User,
-    },
-  ],
-  Technician: [
-    {
-      title: "Dashboard",
-      url: "/dashboard/technician",
-      icon: Home,
-    },
-    {
-      title: "Tasks",
-      url: "/dashboard/technician/tasks",
-      icon: ClipboardList,
-    },
-    {
-      title: "Customers",
-      url: "/dashboard/customers",
-      icon: Building2,
-    },
-    {
-      title: "Profile",
-      url: "/dashboard/profile",
-      icon: User,
-    },
-  ],
-  "Front Desk": [
-    {
-      title: "Dashboard",
-      url: "/dashboard/front-desk",
-      icon: Home,
-    },
-    {
-      title: "Customers",
-      url: "/dashboard/customers",
-      icon: Building2,
-    },
-    {
-      title: "Tasks",
-      url: "/dashboard/front-desk/tasks",
-      icon: Wrench,
-    },
-    {
-      title: "History",
-      url: "/dashboard/front-desk/history",
-      icon: FileText,
-    },
-    {
-      title: "Profile",
-      url: "/dashboard/profile",
-      icon: User,
-    },
-  ],
-  Accountant: [
-    {
-      title: "Dashboard",
-      url: "/dashboard/accountant",
-      icon: Home,
-    },
-    {
-      title: "Tasks",
-      url: "/dashboard/accountant/tasks",
-      icon: Wrench,
-    },
-    {
-      title: "History",
-      url: "/dashboard/accountant/history",
-      icon: FileText,
-    },
-    {
-      title: "Debts",
-      url: "/dashboard/debts",
-      icon: Banknote,
-    },
-    {
-      title: "Payments",
-      url: "/dashboard/payments",
-      icon: CreditCard,
-    },
-    {
-      title: "Reports",
-      url: "/dashboard/reports",
-      icon: FileText,
-    },
-    {
-      title: "Profile",
-      url: "/dashboard/profile",
-      icon: User,
-    },
-  ],
-}
+import { navigationItems } from "@/config/navigation"
+import { getUserFullName, getUserInitials, getUserProfilePictureUrl, getDashboardUrl } from "@/lib/user-utils"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, logout } = useAuth()
   const pathname = usePathname()
 
-  const items = useMemo(() => (user ? navigationItems[user.role as keyof typeof navigationItems] : []) || [], [user]);
-
-  const getDashboardUrl = useCallback(() => {
-    if (!user) return "/dashboard";
-    switch (user.role) {
-      case "Administrator":
-        return "/dashboard"
-      case "Manager":
-        return "/dashboard/manager"
-      case "Technician":
-        return "/dashboard/technician"
-      case "Accountant":
-        return "/dashboard/accountant"
-      case "Front Desk":
-        return "/dashboard"
-      default:
-        return "/dashboard"
-    }
-  }, [user])
+  const items = useMemo(() => (user ? navigationItems[user.role] : []) || [], [user]);
 
   // Create a full name from first_name and last_name
-  const fullName = useMemo(() => {
-    if (!user) return "";
-    return `${user.first_name} ${user.last_name}`.trim();
-  }, [user]);
+  const fullName = useMemo(() => getUserFullName(user), [user]);
 
   // Generate initials for avatar fallback
-  const getInitials = useCallback(() => {
-    if (!user) return "U";
-    if (user.first_name && user.last_name) {
-      return `${user.first_name[0]}${user.last_name[0]}`.toUpperCase()
-    } else if (user.first_name) {
-      return user.first_name[0].toUpperCase()
-    } else if (user.username) {
-      return user.username[0].toUpperCase()
-    }
-    return "U"
-  }, [user])
+  const initials = useMemo(() => getUserInitials(user), [user]);
 
   // Compute profile picture URL - handles S3 and local dev
-  const profilePictureUrl = useMemo(() => {
-    if (!user) return "/placeholder-user.jpg"
-    return getMediaUrl(user.profile_picture)
-  }, [user])
+  const profilePictureUrl = useMemo(() => getUserProfilePictureUrl(user), [user])
 
   const checkIsActive = useCallback((itemUrl: string) => {
     // Exact match for the dashboard root to avoid highlighting everything
@@ -311,7 +73,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href={getDashboardUrl()} prefetch={false}>
+              <Link href={getDashboardUrl(user)} prefetch={false}>
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <Shield className="size-4" />
                 </div>
@@ -358,7 +120,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <Avatar className="h-8 w-8 rounded-lg">
                     <AvatarImage src={profilePictureUrl} alt={fullName} />
                     <AvatarFallback className="rounded-lg">
-                      {getInitials()}
+                      {initials}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
@@ -379,7 +141,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <Avatar className="h-8 w-8 rounded-lg">
                       <AvatarImage src={profilePictureUrl} alt={fullName} />
                       <AvatarFallback className="rounded-lg">
-                        {getInitials()}
+                        {initials}
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
@@ -392,19 +154,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <DropdownMenuGroup>
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard/profile" prefetch={false}>
-                      <User />
-                      Profile
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard/settings" prefetch={false}>
-                      <Settings />
-                      Settings
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
                     </Link>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout}>Log out</DropdownMenuItem>
+                <DropdownMenuItem onClick={logout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

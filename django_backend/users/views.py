@@ -57,6 +57,14 @@ class UserViewSet(viewsets.ModelViewSet):
         if user.is_superuser and not request.user.is_superuser:
             return Response({"error": "Only superusers can update other superusers."}, status=status.HTTP_403_FORBIDDEN)
         
+        # Handle password update if provided
+        password = request.data.get('password')
+        if password:
+            if len(password) < 8:
+                 return Response({"error": "Password must be at least 8 characters long."}, status=status.HTTP_400_BAD_REQUEST)
+            user.set_password(password)
+            user.save()
+
         serializer = self.get_serializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -450,6 +458,16 @@ class UserListViewSet(viewsets.ViewSet):
         serializer = UserSerializer(technicians, many=True, context={'request': request})
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'], url_path='assignable-users')
+    def list_assignable_users(self, request):
+        """Returns users who can be assigned to tasks (Technicians and Managers)."""
+        users = User.objects.filter(
+            role__in=['Technician', 'Manager'], 
+            is_active=True
+        )
+        serializer = UserSerializer(users, many=True, context={'request': request})
+        return Response(serializer.data)
+
 
 # =============================================================================
 # Cookie Authentication Endpoints
@@ -532,3 +550,59 @@ def get_current_user(request):
         'authenticated': True
     })
 
+
+# =============================================================================
+# Technician Dashboard Stats
+# =============================================================================
+
+from rest_framework.views import APIView
+from Eapp.models import Task
+
+
+class TechnicianDashboardStats(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        today = timezone.now().date()
+        
+        # 1. Assigned Tasks (Pending)
+        assigned_count = Task.objects.filter(assigned_to=user, status="Pending").count()
+        
+        # 2. In Progress Tasks
+        in_progress_count = Task.objects.filter(assigned_to=user, status="In Progress").count()
+        
+        # 3. Completed Today
+        completed_today_count = Task.objects.filter(
+            assigned_to=user,
+            status="Completed",
+            updated_at__date=today
+        ).count()
+        
+        # 4. Urgent Tasks (Active + Yupo/Ina Haraka)
+        urgent_count = Task.objects.filter(
+            assigned_to=user,
+            urgency__in=["Yupo", "Ina Haraka"]
+        ).exclude(
+             status__in=["Completed", "Picked Up", "Terminated", "Ready for Pickup"]
+        ).count()
+
+        # 5. Recent Activity (Last 5 updated tasks for this user)
+        recent_tasks_qs = Task.objects.filter(assigned_to=user).order_by('-updated_at')[:5]
+        recent_tasks_data = []
+        for t in recent_tasks_qs:
+             recent_tasks_data.append({
+                 "id": t.title,
+                 "title": t.title,
+                 "laptop_model_name": t.laptop_model.name if t.laptop_model else "Device",
+                 "status": t.status
+             })
+
+        data = {
+            "assigned_count": assigned_count,
+            "in_progress_count": in_progress_count,
+            "completed_today_count": completed_today_count,
+            "urgent_count": urgent_count,
+            "recent_tasks": recent_tasks_data
+        }
+        return Response(data)

@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/hooks/use-auth';
 import { AccountsManagementPage } from '@/components/accounts/accounts-management-page';
 
 export default function ManagerAccountsPage() {

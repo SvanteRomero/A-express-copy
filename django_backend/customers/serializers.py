@@ -21,10 +21,19 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
 
 class PhoneNumberWriteSerializer(serializers.ModelSerializer):
     """Serializer for creating/updating phone numbers with encryption."""
+    # Make id writable so we can receive existing phone number IDs from frontend
+    id = serializers.IntegerField(required=False)
     
     class Meta:
         model = PhoneNumber
         fields = ['id', 'phone_number']
+        # Disable default unique validator since we encrypt before saving
+        # and uniqueness should be checked on the encrypted value, not plaintext
+        extra_kwargs = {
+            'phone_number': {
+                'validators': []
+            }
+        }
     
     def create(self, validated_data):
         # Encrypt phone number before saving
@@ -50,7 +59,22 @@ class CustomerSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'customer_type', 'phone_numbers', 'phone_numbers_write', 'has_debt', 'tasks_count']
 
     def create(self, validated_data):
+        from rest_framework import serializers
         phone_numbers_data = validated_data.pop('phone_numbers', [])
+        
+        # Check for duplicate phone numbers belonging to other customers
+        for phone_number_data in phone_numbers_data:
+            phone = phone_number_data.get('phone_number', '')
+            if phone:
+                existing = PhoneNumber.objects.filter(phone_number=phone).select_related('customer').first()
+                if existing:
+                    raise serializers.ValidationError({
+                        'phone_number_duplicate': {
+                            'phone': phone,
+                            'customer_name': existing.customer.name
+                        }
+                    })
+        
         customer = Customer.objects.create(**validated_data)
         for phone_number_data in phone_numbers_data:
             # Encrypt phone number before saving
@@ -67,6 +91,8 @@ class CustomerSerializer(serializers.ModelSerializer):
         instance.save()
 
         with transaction.atomic():
+            from rest_framework import serializers
+            
             # Separate new and existing phone numbers
             new_phone_numbers = []
             existing_phone_numbers_data = []
@@ -74,15 +100,28 @@ class CustomerSerializer(serializers.ModelSerializer):
                 if 'id' in pn_data:
                     existing_phone_numbers_data.append(pn_data)
                 else:
-                    # Encrypt new phone numbers
+                    # Check if this new phone number already belongs to another customer
                     phone = pn_data.get('phone_number', '')
                     if phone:
+                        existing = PhoneNumber.objects.filter(phone_number=phone).exclude(customer=instance).select_related('customer').first()
+                        if existing:
+                            raise serializers.ValidationError({
+                                'phone_number_duplicate': {
+                                    'phone': phone,
+                                    'customer_name': existing.customer.name
+                                }
+                            })
                         phone = encrypt_value(phone)
                     new_phone_numbers.append(PhoneNumber(customer=instance, phone_number=phone))
 
-            # Bulk create new phone numbers
+            # Collect IDs of existing phone numbers to keep
+            phone_ids_to_keep = [pn['id'] for pn in existing_phone_numbers_data if 'id' in pn]
+
+            # Bulk create new phone numbers and track their IDs
+            created_phone_ids = []
             if new_phone_numbers:
-                PhoneNumber.objects.bulk_create(new_phone_numbers)
+                created_phones = PhoneNumber.objects.bulk_create(new_phone_numbers)
+                created_phone_ids = [pn.id for pn in created_phones]
 
             # Update existing phone numbers
             if existing_phone_numbers_data:
@@ -94,9 +133,9 @@ class CustomerSerializer(serializers.ModelSerializer):
                     pns_to_update.append(pn)
                 PhoneNumber.objects.bulk_update(pns_to_update, ['phone_number'])
             
-            # Delete phone numbers that are not in the payload
-            phone_ids_to_keep = [pn['id'] for pn in existing_phone_numbers_data if 'id' in pn]
-            instance.phone_numbers.exclude(id__in=phone_ids_to_keep).delete()
+            # Delete phone numbers that are not in the payload (excluding newly created ones)
+            all_ids_to_keep = phone_ids_to_keep + created_phone_ids
+            instance.phone_numbers.exclude(id__in=all_ids_to_keep).delete()
 
         return instance
 

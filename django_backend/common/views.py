@@ -38,6 +38,8 @@ class BrandViewSet(viewsets.ModelViewSet):
             self.permission_classes = [IsManager]
         return super().get_permissions()
 
+from django_filters.rest_framework import DjangoFilterBackend
+
 class ModelViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows models to be viewed or edited.
@@ -45,5 +47,6 @@ class ModelViewSet(viewsets.ModelViewSet):
     queryset = Model.objects.all()
     serializer_class = ModelSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ['name', 'brand__name']
+    filterset_fields = ['brand']

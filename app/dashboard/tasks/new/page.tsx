@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { NewTaskForm } from "@/components/tasks/new-task-form"
 
 export default function NewTaskPage() {

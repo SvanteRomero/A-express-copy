@@ -3,9 +3,9 @@ import type React from "react"
 import { useState } from "react"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { AuthProvider } from "@/lib/auth-context"
+import { AuthProvider } from "@/components/provider/auth-provider"
 import { NotificationProvider } from "@/lib/notification-context"
-import { WebSocketProvider } from "@/lib/websocket-context"
+import { WebSocketProvider } from "@/components/provider/websocket-provider"
 import { ThemeProvider } from "@/components/provider/theme-provider"
 import { Toaster } from "@/components/ui/feedback/toaster"
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -22,9 +22,11 @@ export default function RootLayout({
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
-        // Reduce unnecessary refetches during navigation
-        staleTime: 1000 * 1, // 1 second
+        // Increase staleTime to prevent refetches from overwriting optimistic updates
+        // during tab switches in production (where network is slower)
+        staleTime: 1000 * 30, // 30 seconds (was 10 seconds)
         refetchOnWindowFocus: false,
+        refetchOnMount: 'always', // Always check cache first, only refetch if stale
       },
     },
   }))

@@ -56,6 +56,28 @@ class PaymentMethodViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated()]
         return super().get_permissions()
 
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        from .broadcasts import broadcast_payment_method_toast, broadcast_payment_method_update
+        user_name = self.request.user.get_full_name() or self.request.user.username
+        broadcast_payment_method_toast('created', instance.name, user_name)
+        broadcast_payment_method_update()
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        from .broadcasts import broadcast_payment_method_toast, broadcast_payment_method_update
+        user_name = self.request.user.get_full_name() or self.request.user.username
+        broadcast_payment_method_toast('updated', instance.name, user_name)
+        broadcast_payment_method_update()
+
+    def perform_destroy(self, instance):
+        payment_method_name = instance.name
+        super().perform_destroy(instance)
+        from .broadcasts import broadcast_payment_method_toast, broadcast_payment_method_update
+        user_name = self.request.user.get_full_name() or self.request.user.username
+        broadcast_payment_method_toast('deleted', payment_method_name, user_name)
+        broadcast_payment_method_update()
+
 
 class PaymentCategoryViewSet(viewsets.ModelViewSet):
     queryset = PaymentCategory.objects.all()
@@ -138,7 +160,18 @@ class ExpenditureRequestViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
-        serializer.save(requester=self.request.user)
+        instance = serializer.save(requester=self.request.user)
+        
+        # Broadcast to managers for approval
+        from .broadcasts import broadcast_expenditure_request, broadcast_expenditure_update
+        broadcast_expenditure_request(
+            request_id=instance.id,
+            description=instance.description,
+            amount=str(instance.amount),
+            requester_name=self.request.user.get_full_name() or self.request.user.username,
+            requester_id=self.request.user.id
+        )
+        broadcast_expenditure_update()
 
     @action(detail=False, methods=["post"])
     def create_and_approve(self, request):
@@ -172,6 +205,10 @@ class ExpenditureRequestViewSet(viewsets.ModelViewSet):
                 payment_method=expenditure.payment_method,
                 status=CostBreakdown.Status.APPROVED,
             )
+
+        
+        from .broadcasts import broadcast_expenditure_update
+        broadcast_expenditure_update()
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -209,6 +246,9 @@ class ExpenditureRequestViewSet(viewsets.ModelViewSet):
                 status=CostBreakdown.Status.APPROVED,
             )
 
+        from .broadcasts import broadcast_expenditure_update
+        broadcast_expenditure_update()
+
         serializer = self.get_serializer(expenditure)
         return Response(serializer.data)
 
@@ -225,8 +265,16 @@ class ExpenditureRequestViewSet(viewsets.ModelViewSet):
         expenditure.approver = request.user
         expenditure.save()
 
+        from .broadcasts import broadcast_expenditure_update
+        broadcast_expenditure_update()
+
         serializer = self.get_serializer(expenditure)
         return Response(serializer.data)
+
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+        from .broadcasts import broadcast_expenditure_update
+        broadcast_expenditure_update()
 
 
 class FinancialSummaryView(APIView):
@@ -296,3 +344,46 @@ class FinancialSummaryView(APIView):
 
         serializer = FinancialSummarySerializer(financial_data)
         return Response(serializer.data)
+
+
+# =============================================================================
+# Accountant Dashboard Stats
+# =============================================================================
+
+from django.db.models import F
+
+
+class AccountantDashboardStats(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        today = timezone.now().date()
+        
+        # 1. Today's Revenue (Sum of payments made today)
+        todays_revenue = (
+            Payment.objects.filter(
+                date=today
+            ).aggregate(total=Sum("amount"))["total"]
+            or 0
+        )
+        
+        # 2. Outstanding Payments (Sum of outstanding balance for all tasks)
+        outstanding_payments_total = (
+            Task.objects.aggregate(
+                total=Sum(F("total_cost") - F("paid_amount"))
+            )["total"] 
+            or 0
+        )
+
+        # 3. Tasks Pending Payment (Count of tasks with payment status 'Unpaid' or 'Partially Paid')
+        pending_payment_count = Task.objects.filter(
+            payment_status__in=['Unpaid', 'Partially Paid']
+        ).count()
+
+        data = {
+            "todays_revenue": float(todays_revenue),
+            "outstanding_payments_total": float(outstanding_payments_total),
+            "pending_payment_count": pending_payment_count,
+        }
+        return Response(data)
+

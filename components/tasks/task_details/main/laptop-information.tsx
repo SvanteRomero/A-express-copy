@@ -6,11 +6,10 @@ import { Input } from "@/components/ui/core/input"
 import { Label } from "@/components/ui/core/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select"
 import { Laptop, Edit, User, MapPin } from "lucide-react"
-import { useAuth } from "@/lib/auth-context"
-import { updateTask } from "@/lib/api-client"
-import { useTask, useBrands } from "@/hooks/use-data"
-import { useModels } from "@/hooks/use-models"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useAuth } from "@/hooks/use-auth"
+import { useTask, useUpdateTask } from "@/hooks/use-tasks"
+import { useBrands, useModels } from "@/hooks/use-brands-models"
+import { useQueryClient } from "@tanstack/react-query"
 import { SetStateAction, useState } from "react"
 import { SimpleCombobox } from "@/components/ui/core/combobox"
 
@@ -28,15 +27,10 @@ export default function LaptopInformation({ taskId }: LaptopInformationProps) {
   const [isEditingLaptop, setIsEditingLaptop] = useState(false)
   const modelOptions = models ? models.filter((m: any) => m?.name).map((m: any) => ({ label: m.name, value: m.name })) : []
 
-  const updateTaskMutation = useMutation({
-    mutationFn: (updates: { [key: string]: any }) => updateTask(taskId, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["task", taskId] })
-    },
-  })
+  const updateTaskMutation = useUpdateTask()
 
   const handleFieldUpdate = async (field: string, value: any) => {
-    updateTaskMutation.mutate({ [field]: value })
+    updateTaskMutation.mutate({ id: taskId, updates: { [field]: value } })
   }
 
   const isAdmin = user?.role === "Administrator"

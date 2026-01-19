@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.db.models import Sum
-from .models import Payment, CostBreakdown
+from .models import Payment, CostBreakdown, Account
 from Eapp.models import Task
 
 @receiver([post_save, post_delete], sender=Payment)
@@ -14,7 +14,11 @@ def update_task_on_payment_change(sender, instance, **kwargs):
             # Clear is_debt if fully paid
             if task.is_debt and task.payment_status == task.PaymentStatus.FULLY_PAID:
                 task.is_debt = False
-            task.save(update_fields=['paid_amount', 'payment_status', 'paid_date', 'is_debt'])
+            task.save(update_fields=['paid_amount', 'payment_status', 'is_debt'])
+            
+            # Broadcast payment update for live cross-user sync
+            from .broadcasts import broadcast_payment_update
+            broadcast_payment_update(task_id=task.title)
     except Task.DoesNotExist:
         pass # Task was deleted, do nothing.
 
@@ -25,6 +29,16 @@ def update_task_on_cost_breakdown_change(sender, instance, **kwargs):
             task = instance.task
             task.total_cost = task._calculate_total_cost()
             task.update_payment_status()
-            task.save(update_fields=['total_cost', 'payment_status', 'paid_date'])
+            task.save(update_fields=['total_cost', 'payment_status'])
+            
+            # Broadcast payment update for live cross-user sync
+            from .broadcasts import broadcast_payment_update
+            broadcast_payment_update(task_id=task.title)
     except Task.DoesNotExist:
         pass # Task was deleted, do nothing.
+
+@receiver(post_save, sender=Account)
+def broadcast_account_change(sender, instance, **kwargs):
+    """Broadcast account changes for live balance updates."""
+    from .broadcasts import broadcast_account_update
+    broadcast_account_update()

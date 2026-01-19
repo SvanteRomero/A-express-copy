@@ -22,7 +22,8 @@ import {
 } from '@/components/ui/core/select';
 import { Checkbox } from '@/components/ui/core/checkbox';
 import { useUpdateTask, useCreateCostBreakdown } from '@/hooks/use-tasks';
-import { useTaskUrgencyOptions, useTechnicians } from '@/hooks/use-data';
+import { useTaskUrgencyOptions } from '@/hooks/use-tasks';
+import { useAssignableUsers } from '@/hooks/use-users';
 import { useMutation } from '@tanstack/react-query';
 import { addTaskActivity } from '@/lib/api-client';
 
@@ -34,16 +35,16 @@ interface ReturnTaskDialogProps {
 
 export function ReturnTaskDialog({ task, isOpen, onClose }: ReturnTaskDialogProps) {
   const [newIssueDescription, setNewIssueDescription] = useState('');
-  const [newEstimatedCost, setNewEstimatedCost] = useState<number | '' >('');
+  const [newEstimatedCost, setNewEstimatedCost] = useState<number | ''>('');
   const [urgency, setUrgency] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [renegotiate, setRenegotiate] = useState(false);
   const updateTaskMutation = useUpdateTask();
   const createCostBreakdownMutation = useCreateCostBreakdown();
   const { data: urgencyOptions } = useTaskUrgencyOptions();
-  const { data: technicians } = useTechnicians();
+  const { data: technicians } = useAssignableUsers();
 
-  const addTaskActivityMutation = useMutation({ 
+  const addTaskActivityMutation = useMutation({
     mutationFn: (data: any) => addTaskActivity(task.title, data)
   });
 
@@ -129,7 +130,7 @@ export function ReturnTaskDialog({ task, isOpen, onClose }: ReturnTaskDialogProp
               <SelectContent>
                 {technicians?.map((technician: any) => (
                   <SelectItem key={technician.id} value={technician.id}>
-                    {technician.first_name} {technician.last_name}
+                    {technician.first_name} {technician.last_name}{technician.role === 'Manager' ? ' (Manager)' : ''}
                   </SelectItem>
                 ))}
               </SelectContent>

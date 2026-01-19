@@ -76,8 +76,6 @@ class Task(models.Model):
     current_location = models.CharField(max_length=100)
     urgency = models.CharField(max_length=20, choices=Urgency.choices, default=Urgency.YUPO)
     date_in = models.DateField(default=get_current_date)
-    paid_date = models.DateField(null=True, blank=True)
-    next_payment_date = models.DateField(null=True, blank=True)
     is_debt = models.BooleanField(default=False)
     is_referred = models.BooleanField(default=False)
     referred_by = models.ForeignKey(
@@ -215,8 +213,6 @@ class Task(models.Model):
             self.payment_status = self.PaymentStatus.PARTIALLY_PAID
         elif self.paid_amount >= self.total_cost:
             self.payment_status = self.PaymentStatus.FULLY_PAID
-            if not self.paid_date:
-                self.paid_date = timezone.now().date()
 
 
 class TaskActivity(models.Model):

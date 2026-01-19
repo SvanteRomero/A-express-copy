@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/core/badge"
 import { useState, useEffect } from "react"
 import type { OutstandingPaymentsReport } from "../types"
+import { Spinner } from "@/components/ui/core/loaders"
 
 interface OutstandingPaymentsPreviewProps {
     report: OutstandingPaymentsReport
@@ -125,7 +126,7 @@ export const OutstandingPaymentsPreview = ({
                     <div className="relative">
                         {isLoading && (
                             <div className="absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center z-10">
-                                <div className="text-gray-600">Loading...</div>
+                                <Spinner size="lg" className="text-muted-foreground" />
                             </div>
                         )}
                         <Table>

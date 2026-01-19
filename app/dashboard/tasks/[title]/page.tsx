@@ -1,6 +1,6 @@
 'use client'
 import React from "react"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/hooks/use-auth"
 import { TechnicianTaskDetails } from "@/components/tasks/task_details/technician/technician-task-details"
 import { TaskDetailsPage } from "@/components/tasks/task_details/main/task-details-page"
 

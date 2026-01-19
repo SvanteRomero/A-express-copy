@@ -1,15 +1,19 @@
 'use client';
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/core/button";
 import { Plus } from "lucide-react";
-import { TasksDisplay } from "@/components/tasks/tasks-display";
+import { TasksDisplay } from "@/components/tasks/task_utils/tasks-display";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs";
 import { useTasks, useUpdateTask } from "@/hooks/use-tasks";
-import { useToast } from "@/hooks/use-toast";
-import { useTechnicians } from "@/hooks/use-data";
-import { useAuth } from "@/lib/auth-context";
+import {
+  showTaskApprovalErrorToast,
+  showPickupErrorToast,
+  showPaymentRequiredToast,
+} from "@/components/notifications/toast";
+import { useTechnicians } from "@/hooks/use-users";
+import { useAuth } from "@/hooks/use-auth";
 
 type PageState = {
   "not-completed": number;
@@ -40,10 +44,10 @@ export function FrontDeskTasksPage() {
     page: pages.pickup,
     status: "Ready for Pickup",
   });
-  
+
   const { data: technicians } = useTechnicians();
   const updateTaskMutation = useUpdateTask();
-  const { toast } = useToast();
+  const [approvingTaskId, setApprovingTaskId] = useState<string | null>(null);
 
   const handleRowClick = useCallback((task: any) => {
     router.push(`/dashboard/tasks/${task.title}`);
@@ -51,41 +55,72 @@ export function FrontDeskTasksPage() {
 
   const handleApprove = useCallback(async (taskTitle: string) => {
     if (user) {
-      updateTaskMutation.mutate({
-        id: taskTitle,
-        updates: {
-          status: "Ready for Pickup",
-          approved_by: user.id,
-          approved_at: new Date().toISOString(),
-        },
-      });
+      // Prevent double-clicks
+      if (approvingTaskId) return;
+
+      setApprovingTaskId(taskTitle);
+
+      // Find the task from the completed tasks data
+      const task = completedTasksData?.results?.find((t: any) => t.title === taskTitle);
+
+      const updates: any = {
+        status: "Ready for Pickup",
+        approved_by: user.id,
+        approved_at: new Date().toISOString(),
+      };
+
+      if (!task?.workshop_status) {
+        updates.workshop_status = 'Solved';
+      }
+
+      try {
+        await updateTaskMutation.mutateAsync({
+          id: taskTitle,
+          updates,
+        });
+        // Toast handled via WebSocket
+      } catch (error) {
+        showTaskApprovalErrorToast();
+      } finally {
+        setApprovingTaskId(null);
+      }
     }
-  }, [updateTaskMutation, user]);
+  }, [updateTaskMutation, user, completedTasksData, approvingTaskId]);
 
   const handleReject = useCallback(async (taskTitle: string, notes: string) => {
     updateTaskMutation.mutate({ id: taskTitle, updates: { status: "In Progress", qc_notes: notes, workshop_status: null } });
   }, [updateTaskMutation]);
 
+  const [pickingUpTaskId, setPickingUpTaskId] = useState<string | null>(null);
+
   const handlePickedUp = useCallback(async (task: any) => {
     if (task.payment_status !== 'Fully Paid' && !task.is_debt) {
-      toast({
-        title: "Payment Required",
-        description: "This task cannot be marked as picked up until it is fully paid. Please contact the manager for assistance.",
-        variant: "destructive",
-      });
+      showPaymentRequiredToast();
       return;
     }
     if (user) {
-      updateTaskMutation.mutate({
-        id: task.title,
-        updates: {
-          status: "Picked Up",
-          date_out: new Date().toISOString(),
-          sent_out_by: user.id,
-        },
-      });
+      // Prevent double-clicks
+      if (pickingUpTaskId) return;
+
+      setPickingUpTaskId(task.title);
+
+      try {
+        await updateTaskMutation.mutateAsync({
+          id: task.title,
+          updates: {
+            status: "Picked Up",
+            date_out: new Date().toISOString(),
+            sent_out_by: user.id,
+          },
+        });
+        // Toast handled via WebSocket
+      } catch (error) {
+        showPickupErrorToast();
+      } finally {
+        setPickingUpTaskId(null);
+      }
     }
-  }, [updateTaskMutation, user, toast]);
+  }, [updateTaskMutation, user, pickingUpTaskId]);
 
   const handleNotifyCustomer = useCallback((taskTitle: string, customerName: string) => {
     alert(`Notifying ${customerName} for task ${taskTitle}`);
@@ -101,7 +136,7 @@ export function FrontDeskTasksPage() {
   const isLoading = isLoadingNotCompleted || isLoadingCompleted || isLoadingPickup;
 
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex-1 space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Front Desk Tasks</h1>
@@ -145,6 +180,7 @@ export function FrontDeskTasksPage() {
             onApprove={handleApprove}
             onReject={handleReject}
             isFrontDeskCompletedView={true}
+            approvingTaskId={approvingTaskId}
           />
           <div className="flex justify-end space-x-2 mt-4">
             <Button onClick={() => handlePageChange('completed', 'previous')} disabled={!completedTasksData?.previous}>Previous</Button>
@@ -160,6 +196,7 @@ export function FrontDeskTasksPage() {
             isPickupView={true}
             onPickedUp={handlePickedUp}
             onNotifyCustomer={handleNotifyCustomer}
+            pickingUpTaskId={pickingUpTaskId}
           />
           <div className="flex justify-end space-x-2 mt-4">
             <Button onClick={() => handlePageChange('pickup', 'previous')} disabled={!pickupTasksData?.previous}>Previous</Button>

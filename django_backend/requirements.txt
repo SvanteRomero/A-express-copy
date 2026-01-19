@@ -30,6 +30,7 @@ python-dotenv
 # Django Channels for WebSocket support
 channels
 channels-redis
+daphne
 
 pytz
 
@@ -46,3 +47,6 @@ django-ratelimit
 # Cloudinary: Free tier with 25GB storage, 25GB/month bandwidth
 django-cloudinary-storage
 cloudinary
+
+# Background task scheduling
+django-apscheduler

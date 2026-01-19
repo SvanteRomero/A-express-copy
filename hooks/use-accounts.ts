@@ -5,7 +5,14 @@ import {
   updateAccount as apiUpdateAccount,
   deleteAccount as apiDeleteAccount,
 } from '@/lib/api-client';
-import { toast } from '@/hooks/use-toast';
+import {
+  showAccountCreatedToast,
+  showAccountCreateErrorToast,
+  showAccountUpdatedToast,
+  showAccountUpdateErrorToast,
+  showAccountDeletedToast,
+  showAccountDeleteErrorToast,
+} from '@/components/notifications/toast';
 
 export interface Account {
   id: number;
@@ -33,11 +40,11 @@ export function useAccounts() {
     mutationFn: apiCreateAccount,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      toast({ title: 'Success', description: 'Account created successfully.' });
+      showAccountCreatedToast();
     },
     onError: (error: any) => {
       const errorMessage = error.response?.data?.name?.[0] || 'Failed to create account.';
-      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
+      showAccountCreateErrorToast(errorMessage);
     },
   });
 
@@ -45,11 +52,11 @@ export function useAccounts() {
     mutationFn: ({ id, data }: { id: number; data: { name: string } }) => apiUpdateAccount(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      toast({ title: 'Success', description: 'Account updated successfully.' });
+      showAccountUpdatedToast();
     },
     onError: (error: any) => {
       const errorMessage = error.response?.data?.name?.[0] || 'Failed to update account.';
-      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
+      showAccountUpdateErrorToast(errorMessage);
     },
   });
 
@@ -57,10 +64,10 @@ export function useAccounts() {
     mutationFn: apiDeleteAccount,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      toast({ title: 'Success', description: 'Account deleted successfully.' });
+      showAccountDeletedToast();
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to delete account.', variant: 'destructive' });
+      showAccountDeleteErrorToast();
     },
   });
 
