@@ -81,14 +81,15 @@ def broadcast_account_update():
             logger.error(f"Failed to broadcast account update to {group_name}: {e}")
 
 
-def broadcast_expenditure_request(request_id: int, description: str, amount: str, requester_name: str, requester_id: int):
+def broadcast_transaction_request(request_id: int, transaction_type: str, description: str, amount: str, requester_name: str, requester_id: int):
     """
-    Broadcast an expenditure request to managers for approval.
+    Broadcast a transaction request to managers for approval.
     This shows an interactive toast with approve/reject buttons.
     
     Args:
-        request_id: The ID of the expenditure request
-        description: Description of the expenditure
+        request_id: The ID of the transaction request
+        transaction_type: 'Expenditure' or 'Revenue'
+        description: Description of the transaction
         amount: Amount requested (as string)
         requester_name: Name of the person who made the request
         requester_id: ID of the person who made the request
@@ -99,12 +100,13 @@ def broadcast_expenditure_request(request_id: int, description: str, amount: str
     channel_layer = get_channel_layer()
     
     if not channel_layer:
-        logger.warning("Channel layer not available - skipping expenditure request broadcast")
+        logger.warning("Channel layer not available - skipping transaction request broadcast")
         return
     
     data = {
-        'type': 'expenditure_request',
+        'type': 'transaction_request',
         'request_id': request_id,
+        'transaction_type': transaction_type,
         'description': description,
         'amount': amount,
         'requester_name': requester_name,
@@ -121,15 +123,15 @@ def broadcast_expenditure_request(request_id: int, description: str, amount: str
                 'data': data,
             }
         )
-        logger.info(f"Broadcast expenditure request {request_id} to managers")
+        logger.info(f"Broadcast {transaction_type} request {request_id} to managers")
     except Exception as e:
-        logger.error(f"Failed to broadcast expenditure request to managers: {e}")
+        logger.error(f"Failed to broadcast transaction request to managers: {e}")
 
 
-def broadcast_expenditure_update():
+def broadcast_transaction_update():
     """
-    Broadcast an update to expenditure requests list (created, approved, rejected, deleted).
-    Triggers cache invalidation for all who can view expenditures.
+    Broadcast an update to transaction requests list (created, approved, rejected, deleted).
+    Triggers cache invalidation for all who can view transactions.
     """
     from asgiref.sync import async_to_sync
     from channels.layers import get_channel_layer
@@ -137,14 +139,14 @@ def broadcast_expenditure_update():
     channel_layer = get_channel_layer()
 
     if not channel_layer:
-        logger.warning("Channel layer not available - skipping expenditure update broadcast")
+        logger.warning("Channel layer not available - skipping transaction update broadcast")
         return
 
     data = {
-        'type': 'expenditure_update',
+        'type': 'transaction_update',
     }
 
-    # Broadcast to all roles who can see expenditure lists
+    # Broadcast to all roles who can see transaction lists
     for role in ['manager', 'accountant', 'admin']:
         group_name = f'notifications_{role}'
         try:
@@ -155,9 +157,9 @@ def broadcast_expenditure_update():
                     'data': data,
                 }
             )
-            logger.debug(f"Broadcast expenditure update to {group_name}")
+            logger.debug(f"Broadcast transaction update to {group_name}")
         except Exception as e:
-            logger.error(f"Failed to broadcast expenditure update to {group_name}: {e}")
+            logger.error(f"Failed to broadcast transaction update to {group_name}: {e}")
 
 
 def broadcast_payment_method_toast(action: str, payment_method_name: str, user_name: str):

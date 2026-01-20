@@ -9,9 +9,16 @@ router.register(
     r"payment-categories", views.PaymentCategoryViewSet, basename="payment-category"
 )
 router.register(r"payments", views.PaymentViewSet, basename="payment")
+# New unified endpoint
+router.register(
+    r"transaction-requests",
+    views.TransactionRequestViewSet,
+    basename="transaction-request",
+)
+# Backwards compatibility - same viewset, different URL
 router.register(
     r"expenditure-requests",
-    views.ExpenditureRequestViewSet,
+    views.TransactionRequestViewSet,
     basename="expenditure-request",
 )
 router.register(

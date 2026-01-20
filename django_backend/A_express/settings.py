@@ -158,9 +158,12 @@ INSTALLED_APPS = [
     "notifications",  # WebSocket notifications
     'django_extensions',
     'django_apscheduler',  # Background task scheduling
+    'debug_toolbar',  # Django Debug Toolbar for development
+    'silk',  # Django Silk for API profiling
 ]
 
 MIDDLEWARE = [
+    "debug_toolbar.middleware.DebugToolbarMiddleware",  # Debug Toolbar (should be early)
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",  # Serve static files in production
@@ -168,6 +171,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "silk.middleware.SilkyMiddleware",  # Silk profiling (after auth)
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "axes.middleware.AxesMiddleware",  # Account lockout after failed attempts
@@ -231,7 +235,7 @@ else:
         DATABASES = {
             "default": {
                 "ENGINE": "django.db.backends.mysql",
-                "NAME": "my_django_api",
+                "NAME": "my_django_api_test",
                 "USER": "root",
                 "PASSWORD": "",
                 "HOST": "127.0.0.1",
@@ -351,7 +355,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Africa/Dar_es_Salaam"
 
 USE_I18N = True
 
@@ -396,4 +400,11 @@ BRIQ_SENDER_ID = os.environ.get('BRIQ_SENDER_ID', 'A-EXPRESS')
 # =============================================================================
 APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
 APSCHEDULER_RUN_NOW_TIMEOUT = 25  # Seconds
+
+# =============================================================================
+# Django Debug Toolbar Configuration
+# =============================================================================
+INTERNAL_IPS = [
+    '127.0.0.1',
+]
 

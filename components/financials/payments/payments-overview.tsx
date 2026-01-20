@@ -1,16 +1,15 @@
 'use client'
 
 import { useState } from "react"
-import { format } from "date-fns"
-import { Plus, Download } from "lucide-react"
+import { Plus, Download, DollarSign, MinusCircle } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { Button } from "@/components/ui/core/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { usePayments, usePaymentMethods, usePaymentCategories, useRevenueOverview } from "@/hooks/use-payments"
 import { useAuth } from "@/hooks/use-auth"
-import { AddExpenditureDialog } from "../add-expenditure-dialog"
-import { ExpenditureRequestsList } from "../expenditure-requests-list"
+import { AddTransactionDialog } from "../add-transaction-dialog"
+import { TransactionRequestsList } from "../transaction-requests-list"
 import { FinancialSummaryPreview } from "./financial-summary-preview"
 import { PaymentsTable } from "./payments-table"
 import { RevenueStatsCards } from "./revenue-stats-cards"
@@ -28,13 +27,22 @@ interface Payment {
   category_name: string;
 }
 
+type TransactionType = 'Expenditure' | 'Revenue';
+
+interface TransactionDialogState {
+  isOpen: boolean;
+  type: TransactionType;
+}
+
 export function PaymentsOverview() {
   const [methodFilter, setMethodFilter] = useState("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [activeTab, setActiveTab] = useState("revenue")
-  const [date, setDate] = useState<Date | undefined>(undefined)
   const [searchTerm, setSearchTerm] = useState("")
-  const [isAddExpenditureOpen, setIsAddExpenditureOpen] = useState(false)
+  const [transactionDialog, setTransactionDialog] = useState<TransactionDialogState>({
+    isOpen: false,
+    type: 'Expenditure'
+  })
   const [isFinancialSummaryOpen, setIsFinancialSummaryOpen] = useState(false)
   const [page, setPage] = useState(1)
   const pageSize = 10
@@ -43,13 +51,13 @@ export function PaymentsOverview() {
   const { user } = useAuth()
   const isManager = user?.role === 'Manager'
   const isAccountant = user?.role === 'Accountant'
+  const canAddTransactions = isAccountant || isManager
 
   // Data fetching with React Query
   const { data: paymentsData, isLoading, isError } = usePayments({
     method: methodFilter,
     category: categoryFilter,
     is_refunded: activeTab === "expenditure",
-    date: date ? format(date, "yyyy-MM-dd") : undefined,
     search: searchTerm,
     page: page,
     page_size: pageSize,
@@ -70,6 +78,14 @@ export function PaymentsOverview() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'TZS' }).format(amount)
   }
 
+  const openTransactionDialog = (type: TransactionType) => {
+    setTransactionDialog({ isOpen: true, type })
+  }
+
+  const closeTransactionDialog = () => {
+    setTransactionDialog({ ...transactionDialog, isOpen: false })
+  }
+
   if (isError) return <div>Error fetching payments.</div>
 
   return (
@@ -81,15 +97,25 @@ export function PaymentsOverview() {
           <p className='text-muted-foreground'>Manage and track all payment transactions</p>
         </div>
         <div className="flex items-center space-x-2">
-          {(isAccountant || isManager) && (
-            <Button onClick={() => setIsAddExpenditureOpen(true)}>
-              <Plus className='mr-2 h-4 w-4' />
-              Add Expenditure
-            </Button>
+          {canAddTransactions && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => openTransactionDialog('Revenue')}
+                className="border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700"
+              >
+                <DollarSign className='mr-2 h-4 w-4' />
+                Add Revenue
+              </Button>
+              <Button onClick={() => openTransactionDialog('Expenditure')}>
+                <MinusCircle className='mr-2 h-4 w-4' />
+                Add Expenditure
+              </Button>
+            </>
           )}
-          <Button onClick={() => setIsFinancialSummaryOpen(true)}>
+          <Button variant="outline" onClick={() => setIsFinancialSummaryOpen(true)}>
             <Download className='mr-2 h-4 w-4' />
-            Export Report
+            Export
           </Button>
         </div>
       </div>
@@ -110,29 +136,25 @@ export function PaymentsOverview() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue='revenue' onValueChange={setActiveTab} className='space-y-4'>
-            <div className={`flex ${isMobile ? 'flex-col gap-4' : 'items-center justify-between'}`}>
-              <TabsList>
-                <TabsTrigger value='revenue'>Revenue</TabsTrigger>
-                <TabsTrigger value='expenditure'>Expenditure</TabsTrigger>
-                {(isManager || isAccountant) && <TabsTrigger value='requests'>Requests</TabsTrigger>}
-              </TabsList>
+            <TabsList className={`grid w-full ${canAddTransactions ? 'grid-cols-3' : 'grid-cols-2'} bg-gray-100`}>
+              <TabsTrigger value='revenue' className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Revenue</TabsTrigger>
+              <TabsTrigger value='expenditure' className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Expenditure</TabsTrigger>
+              {canAddTransactions && <TabsTrigger value='requests' className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Requests</TabsTrigger>}
+            </TabsList>
 
-              {activeTab !== 'requests' && (
-                <PaymentFiltersToolbar
-                  searchTerm={searchTerm}
-                  onSearchChange={setSearchTerm}
-                  methodFilter={methodFilter}
-                  onMethodFilterChange={setMethodFilter}
-                  categoryFilter={categoryFilter}
-                  onCategoryFilterChange={setCategoryFilter}
-                  date={date}
-                  onDateChange={setDate}
-                  paymentMethods={paymentMethods}
-                  paymentCategories={paymentCategories}
-                  isMobile={isMobile}
-                />
-              )}
-            </div>
+            {activeTab !== 'requests' && (
+              <PaymentFiltersToolbar
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                methodFilter={methodFilter}
+                onMethodFilterChange={setMethodFilter}
+                categoryFilter={categoryFilter}
+                onCategoryFilterChange={setCategoryFilter}
+                paymentMethods={paymentMethods}
+                paymentCategories={paymentCategories}
+                isMobile={isMobile}
+              />
+            )}
 
             <TabsContent value='revenue'>
               <PaymentsTable
@@ -160,9 +182,11 @@ export function PaymentsOverview() {
               />
             </TabsContent>
 
-            <TabsContent value='requests'>
-              <ExpenditureRequestsList />
-            </TabsContent>
+            {canAddTransactions && (
+              <TabsContent value='requests'>
+                <TransactionRequestsList />
+              </TabsContent>
+            )}
           </Tabs>
         </CardContent>
       </Card>
@@ -173,7 +197,11 @@ export function PaymentsOverview() {
         onClose={() => setIsFinancialSummaryOpen(false)}
         openingBalance={revenueData?.opening_balance}
       />
-      <AddExpenditureDialog isOpen={isAddExpenditureOpen} onClose={() => setIsAddExpenditureOpen(false)} />
+      <AddTransactionDialog
+        isOpen={transactionDialog.isOpen}
+        onClose={closeTransactionDialog}
+        defaultType={transactionDialog.type}
+      />
     </div>
   )
 }

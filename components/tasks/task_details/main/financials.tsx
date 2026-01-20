@@ -14,6 +14,7 @@ import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { CostBreakdown } from "@/components/tasks/task_details/main/cost-breakdown"
 import { CurrencyInput } from "@/components/ui/core/currency-input"
+import { format } from "date-fns"
 import { AddExpenditureDialog } from "@/components/financials/add-expenditure-dialog"
 
 interface FinancialsProps {
@@ -58,7 +59,7 @@ export default function Financials({ taskId }: FinancialsProps) {
     addTaskPaymentMutation.mutate({
       amount: newPaymentAmount,
       method: parseInt(newPaymentMethod, 10),
-      date: new Date().toISOString().split("T")[0],
+      date: format(new Date(), "yyyy-MM-dd"),
     })
     setNewPaymentAmount("")
     setNewPaymentMethod("")
@@ -118,7 +119,7 @@ export default function Financials({ taskId }: FinancialsProps) {
                 <Plus className="h-4 w-4 mr-1" />
                 Add Payment
               </Button>
-              {isAccountant && (
+              {(isAccountant || isManager) && (
                 <Button
                   onClick={() => setIsAddExpenditureOpen(true)}
                   className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"

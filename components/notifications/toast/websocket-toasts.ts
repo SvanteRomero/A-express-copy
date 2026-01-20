@@ -151,6 +151,22 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
             });
             break;
 
+        case 'debt_request_approved':
+            toast({
+                title: '✅ Debt Request Approved',
+                description: `${data.task_title} marked as debt by ${data.approver_name}`,
+                className: 'bg-green-600 text-white border-green-600',
+            });
+            break;
+
+        case 'debt_request_rejected':
+            toast({
+                title: '❌ Debt Request Rejected',
+                description: `${data.task_title} was not marked as debt`,
+                className: 'bg-red-600 text-white border-red-600',
+            });
+            break;
+
         default:
             // Unknown toast type - log for debugging
             console.warn('Unknown WebSocket toast type:', toast_type);

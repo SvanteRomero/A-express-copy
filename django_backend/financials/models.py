@@ -4,7 +4,7 @@ from users.models import User
 from django.utils import timezone
 
 def get_current_date():
-    return timezone.now().date()
+    return timezone.localdate()
 
 class PaymentMethod(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -108,23 +108,43 @@ class Account(models.Model):
         ordering = ['name']
 
 
-class ExpenditureRequest(models.Model):
+class TransactionRequest(models.Model):
+    """
+    Unified model for both Expenditure and Revenue requests.
+    - Expenditure: Money going out (creates negative Payment)
+    - Revenue: Money coming in (creates positive Payment)
+    """
+    class TransactionType(models.TextChoices):
+        EXPENDITURE = 'Expenditure', _('Expenditure')
+        REVENUE = 'Revenue', _('Revenue')
+    
     class Status(models.TextChoices):
         PENDING = 'Pending', _('Pending')
         APPROVED = 'Approved', _('Approved')
         REJECTED = 'Rejected', _('Rejected')
 
+    transaction_type = models.CharField(
+        max_length=20, 
+        choices=TransactionType.choices, 
+        default=TransactionType.EXPENDITURE
+    )
     description = models.TextField()
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    task = models.ForeignKey('Eapp.Task', on_delete=models.SET_NULL, null=True, blank=True, related_name='expenditure_requests')
+    task = models.ForeignKey('Eapp.Task', on_delete=models.SET_NULL, null=True, blank=True, related_name='transaction_requests')
     category = models.ForeignKey(PaymentCategory, on_delete=models.PROTECT)
     payment_method = models.ForeignKey(PaymentMethod, on_delete=models.SET_NULL, null=True, blank=True)
     
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
-    cost_type = models.CharField(max_length=20, choices=CostBreakdown.CostType.choices, default=CostBreakdown.CostType.INCLUSIVE)
+    # cost_type only applies to Expenditures linked to tasks
+    cost_type = models.CharField(
+        max_length=20, 
+        choices=CostBreakdown.CostType.choices, 
+        null=True, 
+        blank=True
+    )
 
-    requester = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='expenditure_requests_made')
-    approver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='expenditure_requests_approved')
+    requester = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='transaction_requests_made')
+    approver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='transaction_requests_approved')
     
     # Snapshot fields to preserve names if entities are deleted
     requester_name = models.CharField(max_length=150, blank=True, null=True)
@@ -144,8 +164,12 @@ class ExpenditureRequest(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f'Expenditure request for {self.amount} by {self.requester.username}'
+        return f'{self.transaction_type} request for {self.amount} by {self.requester_name or "Unknown"}'
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name_plural = 'Expenditure Requests'
+        verbose_name_plural = 'Transaction Requests'
+
+
+# Backwards compatibility alias
+ExpenditureRequest = TransactionRequest

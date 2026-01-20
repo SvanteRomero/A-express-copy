@@ -101,6 +101,70 @@ export function showExpenditureCancellationErrorToast(errorMessage?: string) {
     });
 }
 
+// =====================================================
+// Transaction Request Toasts (Unified for Revenue/Expenditure)
+// =====================================================
+
+/**
+ * Show success toast when transaction request is created
+ */
+export function showTransactionRequestCreatedToast(
+    transactionType: 'Expenditure' | 'Revenue',
+    autoApproved: boolean
+) {
+    const action = autoApproved ? 'created and approved' : 'submitted for approval';
+    toast({
+        title: 'Success',
+        description: `${transactionType} request ${action} successfully.`,
+    });
+}
+
+/**
+ * Show error toast when transaction request creation fails
+ */
+export function showTransactionRequestErrorToast(
+    transactionType: 'Expenditure' | 'Revenue',
+    errorMessage?: string
+) {
+    toast({
+        title: 'Error',
+        description: errorMessage || `Failed to create ${transactionType.toLowerCase()} request.`,
+        variant: 'destructive',
+    });
+}
+
+/**
+ * Show success toast when transaction request is approved
+ */
+export function showTransactionApprovedToast(transactionType?: 'Expenditure' | 'Revenue') {
+    toast({
+        title: 'Success',
+        description: `${transactionType || 'Transaction'} request approved.`,
+    });
+}
+
+/**
+ * Show success toast when transaction request is rejected
+ */
+export function showTransactionRejectedToast(transactionType?: 'Expenditure' | 'Revenue') {
+    toast({
+        title: 'Success',
+        description: `${transactionType || 'Transaction'} request rejected.`,
+    });
+}
+
+/**
+ * Show success toast when transaction request is cancelled
+ */
+export function showTransactionCancelledToast(transactionType?: 'Expenditure' | 'Revenue') {
+    toast({
+        title: 'Success',
+        description: `${transactionType || 'Transaction'} request cancelled.`,
+    });
+}
+
+
+
 /**
  * Show success toast when payment method is created
  */

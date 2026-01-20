@@ -1,16 +1,17 @@
 'use client';
 
 /**
- * Interactive toast for expenditure request approval.
+ * Interactive toast for transaction request approval (unified for Expenditure and Revenue).
  * Shows approve/reject buttons and stays until dismissed.
  */
 
 import { toast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/feedback/toast';
-import { approveExpenditureRequest, rejectExpenditureRequest } from '@/lib/api-client';;
+import { approveTransactionRequest, rejectTransactionRequest } from '@/lib/api-client';
 
-interface ExpenditureRequestData {
+interface TransactionRequestData {
     request_id: number;
+    transaction_type: 'Expenditure' | 'Revenue';
     description: string;
     amount: string;
     requester_name: string;
@@ -20,14 +21,20 @@ interface ExpenditureRequestData {
 const dismissFunctions = new Map<number, () => void>();
 
 /**
- * Show an interactive toast for expenditure request approval.
+ * Show an interactive toast for transaction request approval.
  * Toast stays until user takes action or dismisses manually.
  */
-export function showExpenditureRequestToast(
-    data: ExpenditureRequestData,
+export function showTransactionRequestToast(
+    data: TransactionRequestData,
     onAction?: () => void
 ) {
-    const { request_id, description, amount, requester_name } = data;
+    const { request_id, transaction_type, description, amount, requester_name } = data;
+
+    // Determine icon based on type
+    const icon = transaction_type === 'Revenue' ? '💵' : '💰';
+    const colorClass = transaction_type === 'Revenue'
+        ? 'text-green-600'
+        : 'text-amber-600';
 
     // Truncate description if too long
     const shortDescription = description.length > 50
@@ -36,7 +43,7 @@ export function showExpenditureRequestToast(
 
     const handleApprove = async () => {
         try {
-            await approveExpenditureRequest(request_id);
+            await approveTransactionRequest(request_id);
             // Dismiss this toast
             const dismiss = dismissFunctions.get(request_id);
             if (dismiss) dismiss();
@@ -45,7 +52,7 @@ export function showExpenditureRequestToast(
             // Show success toast
             toast({
                 title: '✅ Request Approved',
-                description: `Expenditure for TSH ${amount} has been approved.`,
+                description: `${transaction_type} for TSH ${Number(amount).toLocaleString()} has been approved.`,
                 className: 'bg-green-600 text-white border-green-600',
             });
 
@@ -61,7 +68,7 @@ export function showExpenditureRequestToast(
 
     const handleReject = async () => {
         try {
-            await rejectExpenditureRequest(request_id);
+            await rejectTransactionRequest(request_id);
             // Dismiss this toast
             const dismiss = dismissFunctions.get(request_id);
             if (dismiss) dismiss();
@@ -70,7 +77,7 @@ export function showExpenditureRequestToast(
             // Show success toast
             toast({
                 title: '❌ Request Rejected',
-                description: `Expenditure request has been rejected.`,
+                description: `${transaction_type} request has been rejected.`,
             });
 
             if (onAction) onAction();
@@ -84,12 +91,12 @@ export function showExpenditureRequestToast(
     };
 
     const { dismiss } = toast({
-        title: '💰 Expenditure Request',
+        title: `${icon} ${transaction_type} Request`,
         description: (
             <div className="flex flex-col gap-2">
                 <span className="font-medium">{requester_name}</span>
                 <span>{shortDescription}</span>
-                <span className="font-bold">TSH {Number(amount).toLocaleString()}</span>
+                <span className={`font-bold ${colorClass}`}>TSH {Number(amount).toLocaleString()}</span>
             </div>
         ),
         duration: Infinity, // Stay until dismissed

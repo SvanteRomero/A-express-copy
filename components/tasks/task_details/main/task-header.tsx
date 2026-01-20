@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/core/button"
 import { ArrowLeft, AlertTriangle, CheckCircle, MessageSquare } from "lucide-react"
 import { StatusBadge, UrgencyBadge, PaymentStatusBadge, WorkshopStatusBadge } from "@/components/tasks/task_utils/task-badges"
 import { useAuth } from "@/hooks/use-auth"
-import { addTaskActivity } from "@/lib/api-client"
+import { addTaskActivity, requestDebt } from "@/lib/api-client"
 import { useTask, useUpdateTask } from "@/hooks/use-tasks"
 import { useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
+import { toast } from "@/hooks/use-toast"
 import {
   showTaskMarkedAsDebtToast,
   showPaymentRequiredToast,
@@ -25,6 +26,7 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
   const queryClient = useQueryClient()
   const { data: taskData, isLoading, isError, error } = useTask(taskId)
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
+  const [isRequestingDebt, setIsRequestingDebt] = useState(false)
 
   const updateTaskMutation = useUpdateTask()
 
@@ -48,12 +50,33 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
     updateTaskMutation.mutate({ id: taskId, updates: { status: "Picked Up" } })
   }
 
+  const handleRequestDebt = async () => {
+    setIsRequestingDebt(true)
+    try {
+      await requestDebt(taskId)
+      toast({
+        title: '📤 Debt Request Sent',
+        description: 'Waiting for manager approval...',
+        className: 'bg-blue-600 text-white border-blue-600',
+      })
+    } catch (error) {
+      toast({
+        title: '❌ Error',
+        description: 'Failed to send debt request. Please try again.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsRequestingDebt(false)
+    }
+  }
+
 
 
   const isAdmin = user?.role === "Administrator"
   const isManager = user?.role === "Manager"
   const isTechnician = user?.role === "Technician"
   const isFrontDesk = user?.role === "Front Desk"
+  const isAccountant = user?.role === "Accountant"
 
   const canMarkComplete = isAdmin || isTechnician
   const canMarkPickedUp = isAdmin || isFrontDesk
@@ -95,6 +118,16 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
             <Button className="bg-yellow-500 hover:bg-yellow-600 text-white" onClick={handleMarkAsDebt}>
               <AlertTriangle className="h-4 w-4 mr-2" />
               Mark as Debt
+            </Button>
+          )}
+          {(isFrontDesk || isAccountant) && taskData.payment_status !== "Fully Paid" && !taskData.is_debt && (
+            <Button
+              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+              onClick={handleRequestDebt}
+              disabled={isRequestingDebt}
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              {isRequestingDebt ? 'Requesting...' : 'Request Debt'}
             </Button>
           )}
           <Button

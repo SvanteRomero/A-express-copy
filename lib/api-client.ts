@@ -174,16 +174,36 @@ export const createPaymentCategory = (data: { name: string }) => apiClient.post<
 export const updatePaymentCategory = (categoryId: number, data: { name: string }) => apiClient.patch<PaymentCategory>(`/payment-categories/${categoryId}/`, data);
 export const deletePaymentCategory = (categoryId: number) => apiClient.delete(`/payment-categories/${categoryId}/`);
 
-// Expenditure Requests
+// Expenditure Requests (legacy endpoints - still work via backwards compat)
 export const getExpenditureRequests = async (params: { page?: number; page_size?: number;[key: string]: any } = {}): Promise<PaginatedResponse<ExpenditureRequest>> => {
   const response = await apiClient.get('/expenditure-requests/', { params });
   return response.data;
 };
 export const createExpenditureRequest = (data: any) => apiClient.post('/expenditure-requests/', data);
-export const createAndApproveExpenditureRequest = (data: any) => apiClient.post('/expenditure-requests/create_and_approve/', data);
+export const createAndApproveExpenditureRequest = (data: any) => apiClient.post('/expenditure-requests/', data);
 export const approveExpenditureRequest = (id: number) => apiClient.post(`/expenditure-requests/${id}/approve/`);
 export const rejectExpenditureRequest = (id: number) => apiClient.post(`/expenditure-requests/${id}/reject/`);
 export const deleteExpenditureRequest = (id: number) => apiClient.delete(`/expenditure-requests/${id}/`);
+
+// Transaction Requests (unified endpoint for both Expenditure and Revenue)
+export interface TransactionRequestParams {
+  page?: number;
+  page_size?: number;
+  status?: string;
+  transaction_type?: 'Expenditure' | 'Revenue';
+  [key: string]: any;
+}
+export const getTransactionRequests = async (params: TransactionRequestParams = {}): Promise<PaginatedResponse<any>> => {
+  const response = await apiClient.get('/transaction-requests/', { params });
+  return response.data;
+};
+export const createTransactionRequest = (data: any) => apiClient.post('/transaction-requests/', data);
+export const approveTransactionRequest = (id: number) => apiClient.post(`/transaction-requests/${id}/approve/`);
+export const rejectTransactionRequest = (id: number) => apiClient.post(`/transaction-requests/${id}/reject/`);
+export const deleteTransactionRequest = (id: number) => apiClient.delete(`/transaction-requests/${id}/`);
+
+// List managers for approver selection
+export const listManagers = () => apiClient.get('/list/managers/');
 
 // Customer Stats & Acquisition
 export const getCustomerStats = () => apiClient.get('/customers/stats/');
@@ -284,3 +304,19 @@ export const getSchedulerNotifications = () =>
   apiClient.get<SchedulerNotification[]>('/messaging/scheduler-notifications/').then(res => res.data);
 export const acknowledgeSchedulerNotification = (id: number) =>
   apiClient.post(`/messaging/scheduler-notifications/${id}/acknowledge/`);
+
+// Debt Request (for Front Desk/Accountant to request, Manager to approve/reject)
+export const requestDebt = (taskId: string) =>
+  apiClient.post(`/tasks/${taskId}/request-debt/`).then(res => res.data);
+export const approveDebt = (taskId: string, requesterId: number, requestId: string, requesterName: string) =>
+  apiClient.post(`/tasks/${taskId}/approve-debt/`, {
+    requester_id: requesterId,
+    request_id: requestId,
+    requester_name: requesterName
+  }).then(res => res.data);
+export const rejectDebt = (taskId: string, requesterId: number, requestId: string) =>
+  apiClient.post(`/tasks/${taskId}/reject-debt/`, {
+    requester_id: requesterId,
+    request_id: requestId
+  }).then(res => res.data);
+

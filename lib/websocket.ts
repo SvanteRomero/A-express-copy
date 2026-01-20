@@ -26,7 +26,7 @@ export interface PongMessage {
 export interface ToastNotificationMessage {
     type: 'toast_notification';
     id: string;
-    toast_type: 'task_created' | 'task_approved' | 'task_picked_up' | 'payment_added' | 'task_updated' | 'task_completed' | 'task_sent_to_workshop' | 'workshop_task_solved' | 'workshop_task_not_solved' | 'task_assigned' | 'payment_method_created' | 'payment_method_updated' | 'payment_method_deleted';
+    toast_type: 'task_created' | 'task_approved' | 'task_picked_up' | 'payment_added' | 'task_updated' | 'task_completed' | 'task_sent_to_workshop' | 'workshop_task_solved' | 'workshop_task_not_solved' | 'task_assigned' | 'payment_method_created' | 'payment_method_updated' | 'payment_method_deleted' | 'debt_request_approved' | 'debt_request_rejected';
     data: {
         task_title?: string;
         customer_name?: string;
@@ -41,6 +41,7 @@ export interface ToastNotificationMessage {
         assigner_name?: string;
         payment_method_name?: string;
         user_name?: string;
+        approver_name?: string;
     };
 }
 
@@ -52,21 +53,39 @@ export interface TaskStatusUpdateMessage {
 }
 
 export interface DataUpdateMessage {
-    type: 'payment_update' | 'customer_update' | 'account_update' | 'expenditure_update' | 'payment_method_update';
+    type: 'payment_update' | 'customer_update' | 'account_update' | 'transaction_update' | 'payment_method_update';
     task_id?: string;
     customer_id?: number;
 }
 
-export interface ExpenditureRequestMessage {
-    type: 'expenditure_request';
+// Transaction request message (for both Expenditure and Revenue)
+export interface TransactionRequestMessage {
+    type: 'transaction_request';
     request_id: number;
+    transaction_type: 'Expenditure' | 'Revenue';
     description: string;
     amount: string;
     requester_name: string;
     requester_id: number;
 }
 
-export type WebSocketMessage = SchedulerNotificationMessage | ConnectionMessage | PongMessage | ToastNotificationMessage | TaskStatusUpdateMessage | DataUpdateMessage | ExpenditureRequestMessage;
+// Debt request message (from Front Desk/Accountant to Managers)
+export interface DebtRequestMessage {
+    type: 'debt_request';
+    request_id: string;
+    task_id: string;
+    task_title: string;
+    requester_name: string;
+    requester_id: number;
+}
+
+// Debt request resolved message (dismisses toast for all managers)
+export interface DebtRequestResolvedMessage {
+    type: 'debt_request_resolved';
+    request_id: string;
+}
+
+export type WebSocketMessage = SchedulerNotificationMessage | ConnectionMessage | PongMessage | ToastNotificationMessage | TaskStatusUpdateMessage | DataUpdateMessage | TransactionRequestMessage | DebtRequestMessage | DebtRequestResolvedMessage;
 
 export type MessageHandler = (message: WebSocketMessage) => void;
 export type ConnectionStatusHandler = (isConnected: boolean) => void;

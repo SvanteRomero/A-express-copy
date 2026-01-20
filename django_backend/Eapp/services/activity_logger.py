@@ -198,19 +198,20 @@ class ActivityLogger:
         )
     
     @staticmethod
-    def log_debt_marking(task, user):
+    def log_debt_marking(task, user, message=None):
         """
         Log task marked as debt activity.
         
         Args:
             task: Task instance
             user: User who performed the action
+            message: Optional custom message (default: "Task marked as debt.")
         """
         return TaskActivity.objects.create(
             task=task,
             user=user,
             type=TaskActivity.ActivityType.STATUS_UPDATE,
-            message="Task marked as debt."
+            message=message or "Task marked as debt."
         )
     
     @staticmethod

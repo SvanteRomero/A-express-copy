@@ -16,11 +16,14 @@ import {
     ToastNotificationMessage,
     TaskStatusUpdateMessage,
     DataUpdateMessage,
-    ExpenditureRequestMessage,
+    TransactionRequestMessage,
+    DebtRequestMessage,
+    DebtRequestResolvedMessage,
 } from '@/lib/websocket';
 import { showSchedulerNotificationToast } from '@/components/notifications/toast';
 import { dispatchWebSocketToast } from '@/components/notifications/toast/websocket-toasts';
-import { showExpenditureRequestToast } from '@/components/notifications/toast/expenditure-request-toast';
+import { showTransactionRequestToast } from '@/components/notifications/toast/transaction-request-toast';
+import { showDebtRequestToast, dismissDebtRequestToast } from '@/components/notifications/toast/debt-request-toast';
 
 interface WebSocketContextType {
     isConnected: boolean;
@@ -93,34 +96,57 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             queryClient.invalidateQueries({ queryKey: ['accounts'] });
         }
 
-        // Handle expenditure updates
-        if (message.type === 'expenditure_update') {
-            queryClient.invalidateQueries({ queryKey: ['expenditureRequests'] });
-            queryClient.invalidateQueries({ queryKey: ['financial-summary'] }); // Likely affects summary too
+        // Handle transaction updates
+        if (message.type === 'transaction_update') {
+            queryClient.invalidateQueries({ queryKey: ['transactionRequests'] });
+            queryClient.invalidateQueries({ queryKey: ['expenditureRequests'] }); // Legacy query key alias
+            queryClient.invalidateQueries({ queryKey: ['financial-summary'] });
+            queryClient.invalidateQueries({ queryKey: ['payments'] });
+            queryClient.invalidateQueries({ queryKey: ['accounts'] });
         }
 
         // Handle payment method updates
         if (message.type === 'payment_method_update') {
             queryClient.invalidateQueries({ queryKey: ['paymentMethods'] });
-            queryClient.invalidateQueries({ queryKey: ['paymentCategories'] }); // May affect categories too
+            queryClient.invalidateQueries({ queryKey: ['paymentCategories'] });
         }
 
-        // Handle expenditure request notifications - show interactive toast to managers
-        if (message.type === 'expenditure_request') {
-            const data = message as ExpenditureRequestMessage;
+        // Handle transaction request notifications - show interactive toast to managers
+        if (message.type === 'transaction_request') {
+            const data = message as TransactionRequestMessage;
 
             // Validate: Don't show toast to the person who made the request
-            // They already got a success toast from the mutation
             if (user && user.id === data.requester_id) {
                 return;
             }
 
-            showExpenditureRequestToast(data, () => {
-                // Invalidate expenditure requests cache after action
+            showTransactionRequestToast(data, () => {
+                queryClient.invalidateQueries({ queryKey: ['transactionRequests'] });
                 queryClient.invalidateQueries({ queryKey: ['expenditureRequests'] });
             });
         }
-    }, [queryClient]);
+
+        // Handle debt request notifications - show interactive toast to managers
+        if (message.type === 'debt_request') {
+            const data = message as DebtRequestMessage;
+
+            // Validate: Don't show toast to the person who made the request
+            if (user && user.id === data.requester_id) {
+                return;
+            }
+
+            showDebtRequestToast(data, () => {
+                queryClient.invalidateQueries({ queryKey: ['tasks'] });
+                queryClient.invalidateQueries({ queryKey: ['task', data.task_id] });
+            });
+        }
+
+        // Handle debt request resolved - dismiss toast for all managers
+        if (message.type === 'debt_request_resolved') {
+            const data = message as DebtRequestResolvedMessage;
+            dismissDebtRequestToast(data.request_id);
+        }
+    }, [queryClient, user]);
 
     // Handle connection status changes
     const handleStatusChange = useCallback((connected: boolean) => {

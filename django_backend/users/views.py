@@ -468,6 +468,13 @@ class UserListViewSet(viewsets.ViewSet):
         serializer = UserSerializer(users, many=True, context={'request': request})
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'], url_path='managers')
+    def list_managers(self, request):
+        """Returns active managers for approver selection in transaction requests."""
+        managers = User.objects.filter(role='Manager', is_active=True)
+        serializer = UserSerializer(managers, many=True, context={'request': request})
+        return Response(serializer.data)
+
 
 # =============================================================================
 # Cookie Authentication Endpoints

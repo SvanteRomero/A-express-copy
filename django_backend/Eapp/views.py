@@ -225,6 +225,118 @@ class TaskViewSet(viewsets.ModelViewSet):
         serializer = TaskListSerializer(tasks, many=True)
         return Response(serializer.data)
 
+    @action(detail=True, methods=['post'], url_path='request-debt')
+    def request_debt(self, request, task_id=None):
+        """
+        Front Desk/Accountant requests debt marking.
+        Broadcasts an interactive approval toast to all managers.
+        """
+        user = request.user
+        if user.role not in ['Front Desk', 'Accountant']:
+            return Response(
+                {"error": "Only Front Desk and Accountant can request debt marking."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        task = self.get_object()
+        
+        # Validate task state
+        if task.payment_status == 'Fully Paid':
+            return Response(
+                {"error": "Cannot request debt for fully paid task."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if task.is_debt:
+            return Response(
+                {"error": "Task is already marked as debt."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Broadcast to managers
+        from .broadcasts import broadcast_debt_request
+        request_id = broadcast_debt_request(task, user)
+        
+        if request_id:
+            return Response({'status': 'request_sent', 'request_id': request_id})
+        return Response(
+            {"error": "Failed to send debt request."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    @action(detail=True, methods=['post'], url_path='approve-debt')
+    def approve_debt(self, request, task_id=None):
+        """
+        Manager approves a debt request.
+        Marks the task as debt, logs activity, and dismisses all manager toasts.
+        """
+        user = request.user
+        if user.role != 'Manager' and not user.is_superuser:
+            return Response(
+                {"error": "Only Managers can approve debt requests."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        task = self.get_object()
+        requester_id = request.data.get('requester_id')
+        request_id = request.data.get('request_id')
+        requester_name = request.data.get('requester_name', 'Unknown')
+        
+        if not request_id:
+            return Response(
+                {"error": "request_id is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Mark task as debt
+        task.is_debt = True
+        task.save(update_fields=['is_debt'])
+        
+        # Log activity
+        ActivityLogger.log_debt_marking(
+            task, 
+            user, 
+            f"Debt requested by {requester_name}, approved by {user.get_full_name() or user.username}"
+        )
+        
+        # Dismiss toast for all managers and notify requester
+        from .broadcasts import broadcast_debt_resolved
+        broadcast_debt_resolved(task, approved=True, approver=user, requester_id=requester_id, request_id=request_id)
+        
+        # Broadcast task update for live cache invalidation
+        from .services.notification_handler import TaskNotificationHandler
+        TaskNotificationHandler.broadcast_task_update(task, ['is_debt'])
+        
+        return Response({'status': 'approved'})
+
+    @action(detail=True, methods=['post'], url_path='reject-debt')
+    def reject_debt(self, request, task_id=None):
+        """
+        Manager rejects a debt request.
+        Dismisses all manager toasts and notifies the requester.
+        """
+        user = request.user
+        if user.role != 'Manager' and not user.is_superuser:
+            return Response(
+                {"error": "Only Managers can reject debt requests."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        task = self.get_object()
+        requester_id = request.data.get('requester_id')
+        request_id = request.data.get('request_id')
+        
+        if not request_id:
+            return Response(
+                {"error": "request_id is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Dismiss toast for all managers and notify requester
+        from .broadcasts import broadcast_debt_resolved
+        broadcast_debt_resolved(task, approved=False, approver=user, requester_id=requester_id, request_id=request_id)
+        
+        return Response({'status': 'rejected'})
+
 
 
     @action(detail=True, methods=['get'])

@@ -109,6 +109,12 @@ export {
     showExpenditureRequestErrorToast,
     showExpenditureCancelledToast,
     showExpenditureCancellationErrorToast,
+    // Transaction toasts (unified for Revenue/Expenditure)
+    showTransactionRequestCreatedToast,
+    showTransactionRequestErrorToast,
+    showTransactionApprovedToast,
+    showTransactionRejectedToast,
+    showTransactionCancelledToast,
     showPaymentMethodCreatedToast,
     showPaymentMethodUpdatedToast,
     showPaymentMethodDeletedToast,
