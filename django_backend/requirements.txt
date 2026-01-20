@@ -50,3 +50,6 @@ cloudinary
 
 # Background task scheduling
 django-apscheduler
+
+django-debug-toolbar
+django-silk
