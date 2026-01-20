@@ -8,11 +8,17 @@ Year character starts at 'A' from the first task ever created,
 incrementing by one letter each year.
 
 Configuration:
-    Set TASK_ID_YEAR_OFFSET environment variable to offset the starting year character.
-    - 0 (default): Start at 'A'
-    - 1: Start at 'B'
-    - 2: Start at 'C'
-    - etc.
+    TASK_ID_YEAR_OFFSET: Offset the starting year character.
+        - 0 (default): Start at 'A'
+        - 1: Start at 'B'
+        - 2: Start at 'C'
+        - etc.
+    
+    TASK_ID_SEQUENCE_OFFSET: Offset the starting sequence number.
+        - 0 (default): Start at 001
+        - 50: Start at 051 (for clients already at 050)
+        - etc.
+        Only applies when no tasks exist for the current month prefix.
 """
 import os
 from django.utils import timezone
@@ -91,7 +97,8 @@ class TaskIDGenerator:
             last_seq = int(last_task.title.split('-')[-1])
             new_seq = last_seq + 1
         else:
-            # Start a new sequence for the month
-            new_seq = 1
+            # Start a new sequence for the month, with optional offset
+            offset = int(os.environ.get('TASK_ID_SEQUENCE_OFFSET', 0))
+            new_seq = offset + 1
         
         return new_seq
