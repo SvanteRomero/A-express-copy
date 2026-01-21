@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { searchCustomers, getCustomerStats, getCustomerMonthlyAcquisition, apiClient } from '@/lib/api-client';
+import { searchCustomers, getCustomerStats, apiClient } from '@/lib/api-client';
 import { PaginatedResponse } from '@/lib/api';
 import { Customer, PhoneNumber } from '@/components/customers/types';
 
@@ -7,13 +7,14 @@ import { Customer, PhoneNumber } from '@/components/customers/types';
 // Types
 // ============================================================================
 
-interface CustomerStats {
-  credit_customers_count: number;
-}
-
 interface MonthlyAcquisitionData {
   month: string;
   customers: number;
+}
+
+interface CustomerStats {
+  credit_customers_count: number;
+  monthly_acquisition: MonthlyAcquisitionData[];
 }
 
 // This allows for phone numbers that don't have an ID yet
@@ -43,7 +44,7 @@ export function useCustomers({ query, page }: { query: string; page: number }) {
 }
 
 /**
- * Fetch customer statistics (e.g., credit customers count)
+ * Fetch customer statistics (credit customers count and monthly acquisition data)
  */
 export function useCustomerStats() {
   const { data, isError, isLoading } = useQuery<CustomerStats>({
@@ -63,18 +64,19 @@ export function useCustomerStats() {
 
 /**
  * Fetch monthly customer acquisition data for charts
+ * Uses the same stats endpoint for efficiency
  */
 export function useCustomerAcquisition() {
-  const { data, isError, isLoading } = useQuery<MonthlyAcquisitionData[]>({
-    queryKey: ['customer-acquisition'],
+  const { data, isError, isLoading } = useQuery<CustomerStats>({
+    queryKey: ['customer-stats'],
     queryFn: async () => {
-      const response = await getCustomerMonthlyAcquisition();
+      const response = await getCustomerStats();
       return response.data;
     },
   });
 
   return {
-    data,
+    data: data?.monthly_acquisition,
     isLoading,
     isError,
   };

@@ -205,9 +205,8 @@ export const deleteTransactionRequest = (id: number) => apiClient.delete(`/trans
 // List managers for approver selection
 export const listManagers = () => apiClient.get('/list/managers/');
 
-// Customer Stats & Acquisition
+// Customer Stats (includes credit_customers_count and monthly_acquisition)
 export const getCustomerStats = () => apiClient.get('/customers/stats/');
-export const getCustomerMonthlyAcquisition = () => apiClient.get('/customers/monthly_acquisition/');
 
 export const searchCustomers = (params: { search?: string; page?: number }) => {
   const urlParams = new URLSearchParams();

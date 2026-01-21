@@ -23,58 +23,52 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
-        credit_customers_count = self.get_queryset().filter(has_debt=True).count()
-        data = {
-            'credit_customers_count': credit_customers_count
-        }
-        return Response(data)
-
-    @action(detail=False, methods=['get'])
-    def monthly_acquisition(self, request):
         """
-        Provides monthly customer acquisition data for the last 12 months.
+        Returns customer statistics including:
+        - credit_customers_count: Number of customers with outstanding debt
+        - monthly_acquisition: Customer acquisition data for the last 12 months (for charts)
         """
-        from django.db.models.functions import TruncMonth
         from django.utils import timezone
+        from collections import Counter
         import calendar
         import datetime
 
-        # Get the last 12 months
+        # 1. Credit customers count
+        credit_customers_count = self.get_queryset().filter(has_debt=True).count()
+
+        # 2. Monthly acquisition data for the last 12 months
         today = timezone.now()
-        months = [(today - datetime.timedelta(days=30 * i)).strftime('%Y-%m-01') for i in range(12)]
-        months.reverse()
+        
+        # Calculate start date (12 months ago, first of that month)
+        start_date = (today - datetime.timedelta(days=365)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-        # Fix for naive datetime warning: Create a timezone-aware datetime for the start date
-        start_date_str = months[0]
-        start_date_naive = datetime.datetime.strptime(start_date_str, '%Y-%m-%d')
-        start_date = timezone.make_aware(start_date_naive)
+        # Fetch customers created in the last 12 months (simple filter, no TruncMonth)
+        customers_in_range = Customer.objects.filter(
+            created_at__gte=start_date
+        ).values_list('created_at', flat=True)
 
-        # Query to get monthly customer counts
-        acquisition_data = (
-            Customer.objects
-            .filter(created_at__gte=start_date)
-            .annotate(month=TruncMonth('created_at'))
-            .values('month')
-            .annotate(customers=Count('id'))
-            .order_by('month')
-        )
+        # Group by month in Python (avoids SQLite timezone issues)
+        month_counts = Counter()
+        for created_at in customers_in_range:
+            if created_at:
+                month_key = calendar.month_abbr[created_at.month]
+                month_counts[month_key] += 1
 
-        # Create a dictionary for quick lookup
-        data_map = {item['month'].strftime('%b'): item['customers'] for item in acquisition_data}
-
-        # Format the data for the chart
-        chart_data = []
-        for i in range(12):
+        # Build the chart data for the last 12 months
+        monthly_acquisition = []
+        for i in range(11, -1, -1):  # Go from 11 months ago to current month
             month_date = today - datetime.timedelta(days=30 * i)
             month_abbr = calendar.month_abbr[month_date.month]
-            chart_data.append({
+            monthly_acquisition.append({
                 'month': month_abbr,
-                'customers': data_map.get(month_abbr, 0)
+                'customers': month_counts.get(month_abbr, 0)
             })
-        
-        chart_data.reverse() # To have the current month at the end
 
-        return Response(chart_data)
+        data = {
+            'credit_customers_count': credit_customers_count,
+            'monthly_acquisition': monthly_acquisition
+        }
+        return Response(data)
 
     @action(detail=False, methods=['get'])
     def for_messaging(self, request):
