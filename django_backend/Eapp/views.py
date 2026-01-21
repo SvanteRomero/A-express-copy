@@ -384,7 +384,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         task = self.get_object()
         serializer = PaymentSerializer(data=request.data)
         if serializer.is_valid():
-            tech_support_category, _ = PaymentCategory.objects.get_or_create(name='Tech Support')
+            tech_support_category, _ = PaymentCategory.objects.get_or_create(name='TECH SUPPORT')
 
             payment = serializer.save(task=task, description=f"{task.customer.name} - {task.title}", category=tech_support_category)
             
