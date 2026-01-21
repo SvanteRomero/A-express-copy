@@ -37,16 +37,16 @@ class WorkshopHandler:
         """
         workshop_location = get_object_or_404(Location, id=location_id)
         
+        # Populate snapshot fields (first send) BEFORE changing location
+        if not task.original_technician_snapshot:
+            task.original_technician_snapshot = user
+        if not task.original_location_snapshot:
+            task.original_location_snapshot = task.current_location  # Save CURRENT location before workshop
+        
         # Update task workshop fields
         task.workshop_status = 'In Workshop'
         task.workshop_location = workshop_location
         task.current_location = workshop_location.name
-        
-        # Populate snapshot fields (first send) for performance and data-proofing
-        if not task.original_technician_snapshot:
-            task.original_technician_snapshot = user
-        if not task.original_location_snapshot:
-            task.original_location_snapshot = workshop_location.name
         
         task.save(update_fields=[
             'workshop_status',
@@ -83,12 +83,17 @@ class WorkshopHandler:
         if task.original_technician:
             task.assigned_to = task.original_technician
         
+        # Restore original location from snapshot
+        if task.original_location_snapshot:
+            task.current_location = task.original_location_snapshot
+        
         # Clear workshop fields
         task.workshop_location = None
         task.workshop_status = None
         
         task.save(update_fields=[
             'assigned_to',
+            'current_location',
             'workshop_location',
             'workshop_status'
         ])
