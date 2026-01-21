@@ -52,7 +52,7 @@ export function PaymentStatusBadge({ status }: { status: string }) {
 export function WorkshopStatusBadge({ status }: { status: string }) {
     switch (status) {
         case "In Workshop":
-            return <Badge className="bg-indigo-100 text-indigo-800 hover:bg-indigo-100">{status}</Badge>
+            return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">{status}</Badge>
         case "Solved":
             return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{status}</Badge>
         case "Not Solved":
