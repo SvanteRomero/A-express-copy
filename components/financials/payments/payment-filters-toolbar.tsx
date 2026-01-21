@@ -2,6 +2,8 @@
 
 import { Input } from "@/components/ui/core/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select"
+import { Button } from "@/components/ui/core/button"
+import { X } from "lucide-react"
 
 interface PaymentMethod {
     id: number;
@@ -20,6 +22,7 @@ interface PaymentFiltersToolbarProps {
     onMethodFilterChange: (value: string) => void;
     categoryFilter: string;
     onCategoryFilterChange: (value: string) => void;
+    onClearFilters: () => void;
     paymentMethods?: PaymentMethod[];
     paymentCategories?: PaymentCategory[];
     isMobile: boolean;
@@ -32,10 +35,13 @@ export function PaymentFiltersToolbar({
     onMethodFilterChange,
     categoryFilter,
     onCategoryFilterChange,
+    onClearFilters,
     paymentMethods,
     paymentCategories,
     isMobile,
 }: PaymentFiltersToolbarProps) {
+    const hasActiveFilters = searchTerm || methodFilter !== 'all' || categoryFilter !== 'all';
+
     return (
         <div className={`flex ${isMobile ? 'flex-col gap-2 w-full' : 'flex-row items-center gap-3'}`}>
             <Input
@@ -68,6 +74,18 @@ export function PaymentFiltersToolbar({
                     ))}
                 </SelectContent>
             </Select>
+
+            {hasActiveFilters && (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onClearFilters}
+                    className={`text-muted-foreground hover:text-foreground ${isMobile ? 'w-full' : ''}`}
+                >
+                    <X className="h-4 w-4 mr-1" />
+                    Clear
+                </Button>
+            )}
         </div>
     );
 }

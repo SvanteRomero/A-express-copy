@@ -150,6 +150,11 @@ export function PaymentsOverview() {
                 onMethodFilterChange={setMethodFilter}
                 categoryFilter={categoryFilter}
                 onCategoryFilterChange={setCategoryFilter}
+                onClearFilters={() => {
+                  setSearchTerm('');
+                  setMethodFilter('all');
+                  setCategoryFilter('all');
+                }}
                 paymentMethods={paymentMethods}
                 paymentCategories={paymentCategories}
                 isMobile={isMobile}

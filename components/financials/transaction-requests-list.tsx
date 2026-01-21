@@ -127,6 +127,15 @@ export function TransactionRequestsList() {
     );
   }
 
+  const hasActiveFilters = searchTerm || statusFilter !== 'all' || typeFilter !== 'all';
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setTypeFilter('all');
+    setPage(1);
+  };
+
   return (
     <div className='space-y-4'>
       {/* Filter Toolbar */}
@@ -164,6 +173,17 @@ export function TransactionRequestsList() {
             <SelectItem value="Expenditure">Expenditure</SelectItem>
           </SelectContent>
         </Select>
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearFilters}
+            className={`text-muted-foreground hover:text-foreground ${isMobile ? 'w-full' : ''}`}
+          >
+            <X className="h-4 w-4 mr-1" />
+            Clear
+          </Button>
+        )}
       </div>
 
       {/* Table/Cards */}
