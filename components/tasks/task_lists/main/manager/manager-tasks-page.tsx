@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/core/button";
 import { Plus } from "lucide-react";
@@ -68,22 +68,60 @@ export function ManagerTasksPage() {
     status: "Pending,In Progress,Awaiting Parts,Assigned - Not Accepted,Diagnostic",
   });
 
+
   const { data: completedTasksData, isLoading: isLoadingCompleted } = useTasks({
     page: pages.completed,
     status: "Completed,Ready for Pickup",
   });
 
   // My Tasks - tasks assigned to this manager
-  // For workshop managers, filter by workshop_technician instead of assigned_to
   const isWorkshopManager = user?.is_workshop || false;
-  const { data: myTasksData, isLoading: isLoadingMyTasks } = useTasks({
+
+  // For workshop managers, fetch both assigned tasks AND workshop queue tasks
+  const { data: assignedTasksData, isLoading: isLoadingAssigned } = useTasks({
     page: pages.myTasks,
-    ...(isWorkshopManager
-      ? { workshop_status: 'In Workshop' }
-      : { assigned_to: user?.id }
-    ),
+    assigned_to: user?.id,
     status: "In Progress,Pending,Awaiting Parts,Assigned - Not Accepted,Diagnostic",
   });
+
+  // Workshop queue tasks (only for workshop managers)
+  const shouldFetchWorkshopQueue = isWorkshopManager;
+  const { data: workshopQueueData, isLoading: isLoadingWorkshop } = useTasks(
+    shouldFetchWorkshopQueue ? {
+      page: pages.myTasks,
+      workshop_status: 'In Workshop',
+      status: "In Progress,Pending,Awaiting Parts,Assigned - Not Accepted,Diagnostic",
+    } : { page: 1 }  // Dummy query when not needed
+  );
+
+  // Merge tasks for workshop managers, or just use assigned tasks for regular managers
+  const myTasksData = React.useMemo(() => {
+    if (isWorkshopManager) {
+      // Merge both assigned and workshop queue tasks
+      if (!assignedTasksData && !workshopQueueData) return undefined;
+
+      const assignedResults = assignedTasksData?.results || [];
+      const workshopResults = workshopQueueData?.results || [];
+
+      // Use Map to deduplicate by task ID
+      const taskMap = new Map();
+      [...assignedResults, ...workshopResults].forEach(task => {
+        taskMap.set(task.id, task);
+      });
+
+      return {
+        count: taskMap.size,
+        results: Array.from(taskMap.values()),
+        next: null,
+        previous: null,
+      };
+    }
+    return assignedTasksData;
+  }, [isWorkshopManager, assignedTasksData, workshopQueueData]);
+
+  const isLoadingMyTasks = isWorkshopManager
+    ? (isLoadingAssigned || isLoadingWorkshop)
+    : isLoadingAssigned;
 
   const { data: technicians } = useAssignableUsers();
 
