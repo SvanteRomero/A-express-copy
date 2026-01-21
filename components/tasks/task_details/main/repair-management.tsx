@@ -53,7 +53,8 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
     const activityMessages: string[] = []
 
     if (repairManagementData.assigned_to !== (taskData.assigned_to?.toString() || "")) {
-      changes.assigned_to = repairManagementData.assigned_to
+      // Convert empty string to null for unassigned tasks
+      changes.assigned_to = repairManagementData.assigned_to || null
       const oldTech =
         technicians?.find(t => t.id.toString() === (taskData.assigned_to?.toString() || ""))?.full_name || "Unassigned"
       const newTech =
@@ -163,6 +164,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">Unassigned</SelectItem>
                   {technicians?.map(tech => (
                     <SelectItem key={tech.id} value={tech.id.toString()}>
                       {tech.full_name}{tech.role === 'Manager' ? ' (Manager)' : ''}
