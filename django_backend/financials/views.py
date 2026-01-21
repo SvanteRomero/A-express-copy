@@ -241,6 +241,8 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
                 status=TransactionRequest.Status.APPROVED
             )
             self._create_payment(instance)
+            # Delete auto-approved request - no longer needed
+            instance.delete()
         elif approver:
             # Accountant selected specific manager → auto-approved with that manager
             instance = serializer.save(
@@ -248,6 +250,8 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
                 status=TransactionRequest.Status.APPROVED
             )
             self._create_payment(instance)
+            # Delete auto-approved request - no longer needed
+            instance.delete()
         else:
             # Accountant left blank → pending, broadcast to all managers
             instance = serializer.save(
@@ -312,11 +316,17 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
         # Create payment and optionally cost breakdown
         self._create_payment(transaction)
 
+        # Serialize before deletion for the response
+        serializer = self.get_serializer(transaction)
+        response_data = serializer.data
+
+        # Delete the processed request - no longer needed
+        transaction.delete()
+
         from .broadcasts import broadcast_transaction_update
         broadcast_transaction_update()
 
-        serializer = self.get_serializer(transaction)
-        return Response(serializer.data)
+        return Response(response_data)
 
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):
@@ -331,11 +341,17 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
         transaction.approver = request.user
         transaction.save()
 
+        # Serialize before deletion for the response
+        serializer = self.get_serializer(transaction)
+        response_data = serializer.data
+
+        # Delete rejected request immediately - serves no purpose
+        transaction.delete()
+
         from .broadcasts import broadcast_transaction_update
         broadcast_transaction_update()
 
-        serializer = self.get_serializer(transaction)
-        return Response(serializer.data)
+        return Response(response_data)
 
     def perform_destroy(self, instance):
         super().perform_destroy(instance)
