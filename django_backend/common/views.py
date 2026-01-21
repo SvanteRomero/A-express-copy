@@ -1,7 +1,7 @@
 from rest_framework import permissions, viewsets, filters
 from .models import Brand, Location, Model
 from .serializers import BrandSerializer, LocationSerializer, ModelSerializer
-from users.permissions import IsManager
+from users.permissions import IsManager, IsAdminOrManagerOrFrontDesk
 from rest_framework.response import Response
 
 
@@ -35,7 +35,7 @@ class BrandViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             self.permission_classes = [permissions.IsAuthenticated]
         else:
-            self.permission_classes = [IsManager]
+            self.permission_classes = [IsAdminOrManagerOrFrontDesk]
         return super().get_permissions()
 
 from django_filters.rest_framework import DjangoFilterBackend
