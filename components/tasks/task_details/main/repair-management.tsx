@@ -28,7 +28,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
   const { data: urgencyOptions } = useTaskUrgencyOptions()
 
   const [repairManagementData, setRepairManagementData] = useState({
-    assigned_to: "",
+    assigned_to: "unassigned",
     status: "",
     current_location: "",
     urgency: "",
@@ -37,7 +37,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
   useEffect(() => {
     if (taskData) {
       setRepairManagementData({
-        assigned_to: taskData.assigned_to?.toString() || "",
+        assigned_to: taskData.assigned_to?.toString() || "unassigned",
         status: taskData.status || "",
         current_location: taskData.current_location || "",
         urgency: taskData.urgency || "",
@@ -52,9 +52,9 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
     const changes: { [key: string]: any } = {}
     const activityMessages: string[] = []
 
-    if (repairManagementData.assigned_to !== (taskData.assigned_to?.toString() || "")) {
-      // Convert empty string to null for unassigned tasks
-      changes.assigned_to = repairManagementData.assigned_to || null
+    if (repairManagementData.assigned_to !== (taskData.assigned_to?.toString() || "unassigned")) {
+      // Convert "unassigned" sentinel value to null for backend
+      changes.assigned_to = repairManagementData.assigned_to === "unassigned" ? null : repairManagementData.assigned_to
       const oldTech =
         technicians?.find(t => t.id.toString() === (taskData.assigned_to?.toString() || ""))?.full_name || "Unassigned"
       const newTech =
@@ -97,7 +97,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
   const hasRepairManagementChanges = useMemo(() => {
     if (!taskData) return false
     return (
-      repairManagementData.assigned_to !== (taskData.assigned_to?.toString() || "") ||
+      repairManagementData.assigned_to !== (taskData.assigned_to?.toString() || "unassigned") ||
       repairManagementData.status !== taskData.status ||
       repairManagementData.current_location !== taskData.current_location ||
       repairManagementData.urgency !== taskData.urgency
@@ -164,7 +164,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
                   {technicians?.map(tech => (
                     <SelectItem key={tech.id} value={tech.id.toString()}>
                       {tech.full_name}{tech.role === 'Manager' ? ' (Manager)' : ''}
