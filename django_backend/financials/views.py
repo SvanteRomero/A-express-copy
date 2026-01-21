@@ -149,9 +149,35 @@ class CostBreakdownViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
+        from Eapp.services import ActivityLogger
         task_id = self.kwargs.get("task_id")
         task = get_object_or_404(Task, title=task_id)
-        serializer.save(task=task)
+        instance = serializer.save(task=task)
+        
+        # Log the activity
+        ActivityLogger.log_cost_breakdown_add(
+            task=task,
+            user=self.request.user,
+            description=instance.description,
+            amount=instance.amount,
+            cost_type=instance.cost_type
+        )
+
+    def perform_destroy(self, instance):
+        from Eapp.services import ActivityLogger
+        task = instance.task
+        description = instance.description
+        amount = instance.amount
+        
+        super().perform_destroy(instance)
+        
+        # Log the activity
+        ActivityLogger.log_cost_breakdown_delete(
+            task=task,
+            user=self.request.user,
+            description=description,
+            amount=amount
+        )
 
 
 class TransactionRequestViewSet(viewsets.ModelViewSet):

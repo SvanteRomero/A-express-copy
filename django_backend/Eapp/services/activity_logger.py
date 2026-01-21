@@ -232,3 +232,55 @@ class ActivityLogger:
             type=TaskActivity.ActivityType.ASSIGNMENT,
             message=message
         )
+    
+    @staticmethod
+    def log_cost_breakdown_add(task, user, description, amount, cost_type):
+        """
+        Log cost breakdown item added activity.
+        
+        Args:
+            task: Task instance
+            user: User who performed the action
+            description: Description/category of the cost item
+            amount: Amount of the cost item
+            cost_type: Type of cost (Inclusive/Additive/Subtractive)
+        """
+        message = f"Cost breakdown item added: {description} - TSh {amount} ({cost_type}) by {user.get_full_name()}."
+        
+        return TaskActivity.objects.create(
+            task=task,
+            user=user,
+            type=TaskActivity.ActivityType.STATUS_UPDATE,
+            message=message,
+            details={
+                'action': 'cost_breakdown_add',
+                'description': description,
+                'amount': str(amount),
+                'cost_type': cost_type
+            }
+        )
+    
+    @staticmethod
+    def log_cost_breakdown_delete(task, user, description, amount):
+        """
+        Log cost breakdown item deleted activity.
+        
+        Args:
+            task: Task instance
+            user: User who performed the action
+            description: Description/category of the deleted cost item
+            amount: Amount of the deleted cost item
+        """
+        message = f"Cost breakdown item removed: {description} - TSh {amount} by {user.get_full_name()}."
+        
+        return TaskActivity.objects.create(
+            task=task,
+            user=user,
+            type=TaskActivity.ActivityType.STATUS_UPDATE,
+            message=message,
+            details={
+                'action': 'cost_breakdown_delete',
+                'description': description,
+                'amount': str(amount)
+            }
+        )
