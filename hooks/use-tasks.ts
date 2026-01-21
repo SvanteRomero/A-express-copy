@@ -36,6 +36,7 @@ export function useTasks(filters?: {
   unpaid_tasks?: boolean
   payment_status?: string
   assigned_to?: number
+  workshop_technician?: number
 }) {
   return useQuery<PaginatedTasks>({
     queryKey: ['tasks', filters],

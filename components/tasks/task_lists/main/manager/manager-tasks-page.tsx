@@ -74,9 +74,14 @@ export function ManagerTasksPage() {
   });
 
   // My Tasks - tasks assigned to this manager
+  // For workshop managers, filter by workshop_technician instead of assigned_to
+  const isWorkshopManager = user?.is_workshop || false;
   const { data: myTasksData, isLoading: isLoadingMyTasks } = useTasks({
     page: pages.myTasks,
-    assigned_to: user?.id,
+    ...(isWorkshopManager
+      ? { workshop_technician: user?.id }
+      : { assigned_to: user?.id }
+    ),
     status: "In Progress,Pending,Awaiting Parts,Assigned - Not Accepted,Diagnostic",
   });
 
