@@ -12,6 +12,7 @@ type ToasterToast = ToastProps & {
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  playSound?: boolean  // Optional flag to play notification sound
 }
 
 const actionTypes = {
@@ -136,14 +137,17 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
-function toast({ ...props }: Toast) {
+function toast({ playSound = false, ...props }: Toast) {
   const id = genId()
 
-  try {
-    const audio = new Audio("/notification.wav")
-    audio.play().catch((error) => console.error("Failed to play notification sound:", error))
-  } catch (error) {
-    console.error("Audio initialization failed:", error)
+  // Only play sound if explicitly requested (for financial toasts)
+  if (playSound) {
+    try {
+      const audio = new Audio("/notification.wav")
+      audio.play().catch((error) => console.error("Failed to play notification sound:", error))
+    } catch (error) {
+      console.error("Audio initialization failed:", error)
+    }
   }
 
   const update = (props: ToasterToast) =>
