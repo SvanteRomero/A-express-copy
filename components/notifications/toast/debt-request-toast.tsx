@@ -30,6 +30,11 @@ export function showDebtRequestToast(
 ) {
     const { request_id, task_id, task_title, requester_name, requester_id } = data;
 
+    // Prevent duplicate toasts for the same request
+    if (dismissFunctions.has(request_id)) {
+        return;
+    }
+
     const handleApprove = async () => {
         try {
             await approveDebt(task_id, requester_id, request_id, requester_name);

@@ -40,8 +40,21 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     const wsClient = useRef<NotificationWebSocket | null>(null);
     const isConnecting = useRef(false);
 
-    // Handle incoming messages
+    // Store latest values in refs to use in stable handler
+    const userRef = useRef(user);
+    const queryClientRef = useRef(queryClient);
+
+    // Keep refs up to date
+    useEffect(() => {
+        userRef.current = user;
+        queryClientRef.current = queryClient;
+    }, [user, queryClient]);
+
+    // Handle incoming messages - use refs for stable reference
     const handleMessage = useCallback((message: WebSocketMessage) => {
+        const currentUser = userRef.current;
+        const currentQueryClient = queryClientRef.current;
+
         setLastMessage(message);
 
         // Handle scheduler notifications - show toast
@@ -67,48 +80,48 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         // Handle task status updates - invalidate React Query caches for live updates
         if (message.type === 'task_status_update') {
             const { task_id } = message as TaskStatusUpdateMessage;
-            queryClient.invalidateQueries({ queryKey: ['tasks'] });
-            queryClient.invalidateQueries({ queryKey: ['task', task_id] });
-            queryClient.invalidateQueries({ queryKey: ['technicianTasks'] });
-            queryClient.invalidateQueries({ queryKey: ['technicianHistoryTasks'] });
+            currentQueryClient.invalidateQueries({ queryKey: ['tasks'] });
+            currentQueryClient.invalidateQueries({ queryKey: ['task', task_id] });
+            currentQueryClient.invalidateQueries({ queryKey: ['technicianTasks'] });
+            currentQueryClient.invalidateQueries({ queryKey: ['technicianHistoryTasks'] });
         }
 
         // Handle payment updates
         if (message.type === 'payment_update') {
             const data = message as DataUpdateMessage;
-            queryClient.invalidateQueries({ queryKey: ['payments'] });
-            queryClient.invalidateQueries({ queryKey: ['revenue-overview'] });
-            queryClient.invalidateQueries({ queryKey: ['tasks'] }); // Update lists
-            queryClient.invalidateQueries({ queryKey: ['technicianTasks'] }); // Update technician lists
+            currentQueryClient.invalidateQueries({ queryKey: ['payments'] });
+            currentQueryClient.invalidateQueries({ queryKey: ['revenue-overview'] });
+            currentQueryClient.invalidateQueries({ queryKey: ['tasks'] }); // Update lists
+            currentQueryClient.invalidateQueries({ queryKey: ['technicianTasks'] }); // Update technician lists
             if (data.task_id) {
-                queryClient.invalidateQueries({ queryKey: ['task', data.task_id] });
+                currentQueryClient.invalidateQueries({ queryKey: ['task', data.task_id] });
             }
         }
 
         // Handle customer updates
         if (message.type === 'customer_update') {
-            queryClient.invalidateQueries({ queryKey: ['customers'] });
-            queryClient.invalidateQueries({ queryKey: ['customer-stats'] });
+            currentQueryClient.invalidateQueries({ queryKey: ['customers'] });
+            currentQueryClient.invalidateQueries({ queryKey: ['customer-stats'] });
         }
 
         // Handle account updates
         if (message.type === 'account_update') {
-            queryClient.invalidateQueries({ queryKey: ['accounts'] });
+            currentQueryClient.invalidateQueries({ queryKey: ['accounts'] });
         }
 
         // Handle transaction updates
         if (message.type === 'transaction_update') {
-            queryClient.invalidateQueries({ queryKey: ['transactionRequests'] });
-            queryClient.invalidateQueries({ queryKey: ['expenditureRequests'] }); // Legacy query key alias
-            queryClient.invalidateQueries({ queryKey: ['financial-summary'] });
-            queryClient.invalidateQueries({ queryKey: ['payments'] });
-            queryClient.invalidateQueries({ queryKey: ['accounts'] });
+            currentQueryClient.invalidateQueries({ queryKey: ['transactionRequests'] });
+            currentQueryClient.invalidateQueries({ queryKey: ['expenditureRequests'] }); // Legacy query key alias
+            currentQueryClient.invalidateQueries({ queryKey: ['financial-summary'] });
+            currentQueryClient.invalidateQueries({ queryKey: ['payments'] });
+            currentQueryClient.invalidateQueries({ queryKey: ['accounts'] });
         }
 
         // Handle payment method updates
         if (message.type === 'payment_method_update') {
-            queryClient.invalidateQueries({ queryKey: ['paymentMethods'] });
-            queryClient.invalidateQueries({ queryKey: ['paymentCategories'] });
+            currentQueryClient.invalidateQueries({ queryKey: ['paymentMethods'] });
+            currentQueryClient.invalidateQueries({ queryKey: ['paymentCategories'] });
         }
 
         // Handle transaction request notifications - show interactive toast to managers
@@ -116,13 +129,13 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             const data = message as TransactionRequestMessage;
 
             // Validate: Don't show toast to the person who made the request
-            if (user && user.id === data.requester_id) {
+            if (currentUser && currentUser.id === data.requester_id) {
                 return;
             }
 
             showTransactionRequestToast(data, () => {
-                queryClient.invalidateQueries({ queryKey: ['transactionRequests'] });
-                queryClient.invalidateQueries({ queryKey: ['expenditureRequests'] });
+                currentQueryClient.invalidateQueries({ queryKey: ['transactionRequests'] });
+                currentQueryClient.invalidateQueries({ queryKey: ['expenditureRequests'] });
             });
         }
 
@@ -131,13 +144,13 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             const data = message as DebtRequestMessage;
 
             // Validate: Don't show toast to the person who made the request
-            if (user && user.id === data.requester_id) {
+            if (currentUser && currentUser.id === data.requester_id) {
                 return;
             }
 
             showDebtRequestToast(data, () => {
-                queryClient.invalidateQueries({ queryKey: ['tasks'] });
-                queryClient.invalidateQueries({ queryKey: ['task', data.task_id] });
+                currentQueryClient.invalidateQueries({ queryKey: ['tasks'] });
+                currentQueryClient.invalidateQueries({ queryKey: ['task', data.task_id] });
             });
         }
 
@@ -146,7 +159,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             const data = message as DebtRequestResolvedMessage;
             dismissDebtRequestToast(data.request_id);
         }
-    }, [queryClient, user]);
+    }, []); // Empty deps - uses refs for stable reference
 
     // Handle connection status changes
     const handleStatusChange = useCallback((connected: boolean) => {
@@ -193,7 +206,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
                 wsClient.current = null;
             }
         }
-    }, [user, isAuthenticated, connectWebSocket, handleMessage, handleStatusChange]);
+    }, [user, isAuthenticated, connectWebSocket]);
 
     return (
         <WebSocketContext.Provider value={{ isConnected, lastMessage }}>

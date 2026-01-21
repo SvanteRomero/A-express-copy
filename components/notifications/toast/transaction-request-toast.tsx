@@ -30,6 +30,11 @@ export function showTransactionRequestToast(
 ) {
     const { request_id, transaction_type, description, amount, requester_name } = data;
 
+    // Prevent duplicate toasts for the same request
+    if (dismissFunctions.has(request_id)) {
+        return;
+    }
+
     // Determine icon based on type
     const icon = transaction_type === 'Revenue' ? '💵' : '💰';
     const colorClass = transaction_type === 'Revenue'
