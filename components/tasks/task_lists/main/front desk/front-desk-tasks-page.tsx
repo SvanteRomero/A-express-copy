@@ -5,7 +5,15 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/core/button";
 import { Plus } from "lucide-react";
 import { TasksDisplay } from "@/components/tasks/task_utils/tasks-display";
+import { BrandManager } from "@/components/brands/brand-manager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/feedback/dialog";
 import { useTasks, useUpdateTask } from "@/hooks/use-tasks";
 import {
   showTaskApprovalErrorToast,
@@ -48,6 +56,7 @@ export function FrontDeskTasksPage() {
   const { data: technicians } = useTechnicians();
   const updateTaskMutation = useUpdateTask();
   const [approvingTaskId, setApprovingTaskId] = useState<string | null>(null);
+  const [isBrandModalOpen, setIsBrandModalOpen] = useState(false);
 
   const handleRowClick = useCallback((task: any) => {
     router.push(`/dashboard/tasks/${task.title}`);
@@ -137,12 +146,26 @@ export function FrontDeskTasksPage() {
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Front Desk Tasks</h1>
           <p className="text-gray-600 mt-2">Manage tasks assigned to the front desk.</p>
         </div>
         <div className="flex gap-4">
+          <Dialog open={isBrandModalOpen} onOpenChange={setIsBrandModalOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Plus className="mr-2 h-4 w-4" />
+                Brands
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Manage Brands</DialogTitle>
+              </DialogHeader>
+              <BrandManager />
+            </DialogContent>
+          </Dialog>
           <Button asChild className="bg-red-600 hover:bg-red-700 text-white">
             <a href="/dashboard/tasks/new">
               <Plus className="mr-2 h-4 w-4" />
