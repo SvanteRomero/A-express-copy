@@ -129,7 +129,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
   const isTechnician = user?.role === "Technician"
   const isFrontDesk = user?.role === "Front Desk"
 
-  const canEditTechnician = isAdmin || isManager
+  const canEditTechnician = isAdmin || isManager || isFrontDesk
   const canEditStatus = isAdmin || isTechnician
   const canEditLocation = isAdmin || isManager
   const canEditUrgency = isAdmin || isManager || isFrontDesk
