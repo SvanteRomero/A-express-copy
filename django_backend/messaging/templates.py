@@ -40,7 +40,7 @@ DEFAULT_MESSAGE_TEMPLATES = [
 
 # Ready for pickup templates (Solved/Not Solved variants)
 TEMPLATE_READY_SOLVED = (
-    "Habari {customer}, kifaa chako {device} imeyosajiliwa kwenye mfumo wetu (Job No.: {taskId}). "
+    "Habari {customer}, kifaa chako {device} iliyosajiliwa kwenye mfumo wetu (Job No.: {taskId}). "
     "Kompyuta yako imefanyiwa kazi, IMEPONA na ipo tayari kuchukuliwa, na gharama yake ni TSH {amount}. "
     "Unatakiwa kuichukua ndani ya siku 7 kuanzia leo; baada ya hapo, utatozwa gharama za uhifadhi TSH 3,000/siku. "
     "Asante kwa kushirikiana,{contact_info} – {company_name}."
