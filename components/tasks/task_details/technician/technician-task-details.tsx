@@ -53,7 +53,6 @@ import {
 } from "@/components/notifications/toast"
 import { useTask, useUpdateTask } from "@/hooks/use-tasks";
 import { useWorkshopLocations } from "@/hooks/use-locations";
-import { useWorkshopTechnicians } from "@/hooks/use-users";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface TechnicianTaskDetailsProps {
@@ -67,14 +66,12 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
 
   const { data: task, isLoading, isError, error } = useTask(taskId);
   const { data: workshopLocations } = useWorkshopLocations();
-  const { data: workshopTechnicians } = useWorkshopTechnicians();
 
   const [updating, setUpdating] = useState(false)
   const [newNote, setNewNote] = useState("")
   const [noteType, setNoteType] = useState("note")
   const [isSendToWorkshopDialogOpen, setIsSendToWorkshopDialogOpen] = useState(false)
   const [selectedWorkshopLocation, setSelectedWorkshopLocation] = useState<string | undefined>(undefined)
-  const [selectedWorkshopTechnician, setSelectedWorkshopTechnician] = useState<string | undefined>(undefined)
 
   const updateTaskMutation = useUpdateTask();
 
@@ -100,7 +97,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   }
 
   const handleSendToWorkshop = async () => {
-    if (!selectedWorkshopLocation || !selectedWorkshopTechnician) {
+    if (!selectedWorkshopLocation) {
       showWorkshopSelectionErrorToast()
       return
     }
@@ -108,7 +105,6 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
       id: taskId,
       updates: {
         workshop_location: selectedWorkshopLocation,
-        workshop_technician: selectedWorkshopTechnician,
       }
     });
     setIsSendToWorkshopDialogOpen(false)
@@ -288,19 +284,6 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="grid gap-2">
-                          <label htmlFor="workshop-technician">Workshop Technician</label>
-                          <Select value={selectedWorkshopTechnician} onValueChange={setSelectedWorkshopTechnician}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a technician" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {workshopTechnicians?.map(technician => (
-                                <SelectItem key={technician.id} value={String(technician.id)}>{technician.full_name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
                       </div>
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setIsSendToWorkshopDialogOpen(false)}>Cancel</Button>
@@ -413,7 +396,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
           </Card>
         </div>
       </div>
-    </div>
+    </div >
   )
 }
 

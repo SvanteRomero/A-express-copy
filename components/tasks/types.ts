@@ -74,7 +74,6 @@ export interface Task {
     referred_by: string;
     referred_by_details: Referrer;
     workshop_location?: number | null;
-    workshop_technician?: number | null;
 }
 
 export interface TaskActivity {

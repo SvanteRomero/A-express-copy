@@ -160,9 +160,9 @@ class TaskNotificationHandler:
         )
 
     @staticmethod
-    def notify_sent_to_workshop(task, workshop_technician, sender):
+    def notify_sent_to_workshop(task, sender):
         """
-        Broadcast toast to workshop technician when task is sent to them.
+        Broadcast toast to workshop technicians when task is sent to workshop.
         """
         sender_name = sender.get_full_name() if hasattr(sender, 'get_full_name') else str(sender)
         broadcast_toast_notification(
@@ -175,11 +175,11 @@ class TaskNotificationHandler:
         )
 
     @staticmethod
-    def notify_workshop_status_changed(task, workshop_status, workshop_technician):
+    def notify_workshop_status_changed(task, workshop_status, user):
         """
         Broadcast toast to original technician when workshop marks task as Solved/Not Solved.
         """
-        tech_name = workshop_technician.get_full_name() if hasattr(workshop_technician, 'get_full_name') else str(workshop_technician)
+        tech_name = user.get_full_name() if hasattr(user, 'get_full_name') else str(user)
         toast_type = 'workshop_task_solved' if workshop_status == 'Solved' else 'workshop_task_not_solved'
         broadcast_toast_notification(
             roles=['technician'],  # Notify the original technician

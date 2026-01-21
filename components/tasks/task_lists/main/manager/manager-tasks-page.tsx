@@ -79,7 +79,7 @@ export function ManagerTasksPage() {
   const { data: myTasksData, isLoading: isLoadingMyTasks } = useTasks({
     page: pages.myTasks,
     ...(isWorkshopManager
-      ? { workshop_technician: user?.id }
+      ? { workshop_status: 'In Workshop' }
       : { assigned_to: user?.id }
     ),
     status: "In Progress,Pending,Awaiting Parts,Assigned - Not Accepted,Diagnostic",

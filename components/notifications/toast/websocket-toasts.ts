@@ -99,7 +99,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
         case 'task_sent_to_workshop':
             toast({
                 title: '🔧 New Workshop Task',
-                description: `${data.task_title} assigned to you by ${data.sender_name}`,
+                description: `${data.task_title} sent to workshop by ${data.sender_name}`,
                 className: 'bg-indigo-600 text-white border-indigo-600',
             });
             break;
@@ -107,7 +107,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
         case 'workshop_task_solved':
             toast({
                 title: '✅ Workshop Task Solved',
-                description: `${data.task_title} solved by ${data.workshop_technician_name}`,
+                description: `${data.task_title} solved by workshop`,
                 className: 'bg-green-600 text-white border-green-600',
             });
             break;
@@ -115,7 +115,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
         case 'workshop_task_not_solved':
             toast({
                 title: '⚠️ Workshop Task Not Solved',
-                description: `${data.task_title} returned by ${data.workshop_technician_name}`,
+                description: `${data.task_title} returned by workshop`,
                 className: 'bg-orange-600 text-white border-orange-600',
             });
             break;

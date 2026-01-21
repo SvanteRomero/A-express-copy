@@ -92,9 +92,6 @@ class Task(models.Model):
     workshop_location = models.ForeignKey(
         'common.Location', on_delete=models.SET_NULL, null=True, blank=True, related_name='workshop_tasks'
     )
-    workshop_technician = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='workshop_assigned_tasks'
-    )
     # Snapshot fields for performance and data-proofing
     original_technician_snapshot = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='original_technician_snapshot_tasks'

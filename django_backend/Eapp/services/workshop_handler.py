@@ -16,13 +16,13 @@ class WorkshopHandler:
     """Handles workshop-specific operations for tasks."""
     
     @staticmethod
-    def send_to_workshop(task, location_id, technician_id, user):
+    def send_to_workshop(task, location_id, user):
         """
         Send a task to the workshop.
         
         This method:
         - Sets workshop_status to 'In Workshop'
-        - Assigns workshop location and technician
+        - Assigns workshop location
         - Updates current_location
         - Populates snapshot fields (on first send)
         - Creates activity log
@@ -30,19 +30,16 @@ class WorkshopHandler:
         Args:
             task: Task instance
             location_id: Workshop location ID
-            technician_id: Workshop technician ID
             user: User performing the action
             
         Returns:
             Task: Updated task instance
         """
         workshop_location = get_object_or_404(Location, id=location_id)
-        workshop_technician = get_object_or_404(User, id=technician_id)
         
         # Update task workshop fields
         task.workshop_status = 'In Workshop'
         task.workshop_location = workshop_location
-        task.workshop_technician = workshop_technician
         task.current_location = workshop_location.name
         
         # Populate snapshot fields (first send) for performance and data-proofing
@@ -54,14 +51,13 @@ class WorkshopHandler:
         task.save(update_fields=[
             'workshop_status',
             'workshop_location',
-            'workshop_technician',
             'current_location',
             'original_technician_snapshot',
             'original_location_snapshot'
         ])
         
         # Log the activity
-        ActivityLogger.log_workshop_send(task, user, workshop_location, workshop_technician)
+        ActivityLogger.log_workshop_send(task, user, workshop_location)
         
         return task
     
@@ -89,13 +85,11 @@ class WorkshopHandler:
         
         # Clear workshop fields
         task.workshop_location = None
-        task.workshop_technician = None
         task.workshop_status = None
         
         task.save(update_fields=[
             'assigned_to',
             'workshop_location',
-            'workshop_technician',
             'workshop_status'
         ])
         

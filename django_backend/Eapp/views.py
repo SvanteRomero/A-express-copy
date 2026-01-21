@@ -58,7 +58,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         # For detail view, prefetch all related data
         return queryset.select_related(
             'assigned_to', 'created_by', 'negotiated_by', 'brand', 'referred_by', 'customer', 
-            'workshop_location', 'workshop_technician', 'laptop_model'
+            'workshop_location', 'laptop_model'
         ).prefetch_related(
             'activities', 'payments', 'cost_breakdowns'
         )
@@ -181,11 +181,10 @@ class TaskViewSet(viewsets.ModelViewSet):
             # Generic updates (only if not covered by a status-specific handler above)
             TaskNotificationHandler.notify_task_updated(updated_task, data, request.user)
 
-        # Notify workshop technician when task is assigned to workshop
-        if data.get('workshop_technician') and updated_task.workshop_technician:
+        # Notify workshop technicians when task is assigned to workshop
+        if data.get('workshop_location'):
             TaskNotificationHandler.notify_sent_to_workshop(
                 updated_task, 
-                updated_task.workshop_technician, 
                 request.user
             )
 

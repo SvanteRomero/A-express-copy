@@ -11,7 +11,7 @@ import {
     showCustomerCreatedToast,
     showTaskCreatedWithSmsToast,
 } from '@/components/notifications/toast'
-import { useTechnicians, useManagers, useWorkshopTechnicians, useAssignableUsers } from '@/hooks/use-users'
+import { useTechnicians, useManagers, useAssignableUsers } from '@/hooks/use-users'
 import { useBrands, useModels } from '@/hooks/use-brands-models'
 import { useLocations } from '@/hooks/use-locations'
 import { useCustomers } from '@/hooks/use-customers'
@@ -94,7 +94,7 @@ export function useNewTaskForm() {
 
     // Data hooks
     const { data: technicians, isLoading: isLoadingTechnicians } = useAssignableUsers()
-    const { data: workshopTechnicians, isLoading: isLoadingWorkshopTechnicians } = useWorkshopTechnicians()
+    // data: workshopTechnicians REMOVED - not needed for selection, tech type is part of user object
     const { data: managers, isLoading: isLoadingManagers } = useManagers()
     const { data: brands, isLoading: isLoadingBrands } = useBrands()
     const { data: locations, isLoading: isLoadingLocations } = useLocations()
@@ -108,7 +108,7 @@ export function useNewTaskForm() {
     useEffect(() => {
         if (locations) {
             const selectedTechnicianId = formData.assigned_to
-            const allTechnicians = [...(technicians || []), ...(workshopTechnicians || [])]
+            const allTechnicians = technicians || []
             const selectedTechnician = allTechnicians.find(t => t.id.toString() === selectedTechnicianId)
 
             if (selectedTechnician?.is_workshop) {
@@ -117,7 +117,7 @@ export function useNewTaskForm() {
                 setFilteredLocations(locations)
             }
         }
-    }, [formData.assigned_to, locations, technicians, workshopTechnicians])
+    }, [formData.assigned_to, locations, technicians])
 
     // Set default location
     useEffect(() => {
@@ -342,7 +342,6 @@ export function useNewTaskForm() {
 
         // Data
         technicians,
-        workshopTechnicians,
         managers,
         brands,
         locations,
@@ -353,7 +352,6 @@ export function useNewTaskForm() {
 
         // Loading states
         isLoadingTechnicians,
-        isLoadingWorkshopTechnicians,
         isLoadingManagers,
         isLoadingBrands,
         isLoadingLocations,

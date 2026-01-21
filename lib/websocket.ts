@@ -37,7 +37,6 @@ export interface ToastNotificationMessage {
         fields_changed?: string[];
         technician_name?: string;
         sender_name?: string;
-        workshop_technician_name?: string;
         assigner_name?: string;
         payment_method_name?: string;
         user_name?: string;

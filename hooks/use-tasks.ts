@@ -36,7 +36,6 @@ export function useTasks(filters?: {
   unpaid_tasks?: boolean
   payment_status?: string
   assigned_to?: number
-  workshop_technician?: number
 }) {
   return useQuery<PaginatedTasks>({
     queryKey: ['tasks', filters],
@@ -260,9 +259,9 @@ export function useTechnicianTasks(
         params.status = "In Progress";
         if (!isWorkshopTech) {
           params.assigned_to = userId;
-        } else {
-          params.workshop_technician = userId;
         }
+        // If workshop tech, show ALL "In Workshop" tasks (no filtering by specific technician)
+        // This allows them to see everything in the queue.
       }
 
       // Specific overrides for Workshop Techs who have a different "In Progress" view

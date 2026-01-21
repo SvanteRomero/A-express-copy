@@ -27,7 +27,6 @@ class TaskFilter(django_filters.FilterSet):
             'customer': ['exact'],
             'created_by': ['exact'],
             'is_debt': ['exact'],
-            'workshop_technician': ['exact'],
             'workshop_status': ['exact', 'in'],
             'payment_status': ['exact'],
         }

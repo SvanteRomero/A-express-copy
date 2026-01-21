@@ -62,9 +62,6 @@ class TaskDetailSerializer(serializers.ModelSerializer):
     workshop_location_details = LocationSerializer(
         source="workshop_location", read_only=True
     )
-    workshop_technician_details = UserSerializer(
-        source="workshop_technician", read_only=True
-    )
     original_technician_snapshot_details = UserSerializer(
         source="original_technician_snapshot", read_only=True
     )
@@ -96,15 +93,15 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             'current_location', 'date_in', 'approved_at', 'approved_by',
             'date_out', 'negotiated_by', 'negotiated_by_details',
             'activities', 'payments', 'outstanding_balance', 'is_referred', 'is_debt', 'referred_by', 'referred_by_details',
-            'workshop_status', 'workshop_location', 'workshop_technician', 'original_technician_snapshot', 'original_location_snapshot', 'original_technician', 'original_technician_details',
-            'workshop_location_details', 'workshop_technician_details', 'original_technician_snapshot_details', 'approved_by_details',
+            'workshop_status', 'workshop_location', 'original_technician_snapshot', 'original_location_snapshot', 'original_technician', 'original_technician_details',
+            'workshop_location_details', 'original_technician_snapshot_details', 'approved_by_details',
             'latest_pickup_at', 'latest_pickup_by', 'latest_pickup_by_details',
             'sent_out_by', 'sent_out_by_details',
             'qc_notes', 'qc_rejected_at', 'qc_rejected_by',
             'cost_breakdowns'
         )
         read_only_fields = ('created_at', 'updated_at', 'assigned_to_details', 'created_by_details', 'activities', 'payments',
-                    'workshop_location_details', 'workshop_technician_details', 'original_technician_snapshot_details', 'approved_by_details', 'sent_out_by_details')
+                    'workshop_location_details', 'original_technician_snapshot_details', 'approved_by_details', 'sent_out_by_details')
         extra_kwargs = {
             "estimated_cost": {"validators": [MinValueValidator(Decimal("0.00"))]},
         }

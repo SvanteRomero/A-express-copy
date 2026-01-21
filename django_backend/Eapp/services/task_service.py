@@ -202,11 +202,10 @@ class TaskUpdateService:
         Returns Response object if there's an error, None otherwise.
         """
         # Handle workshop send
-        if 'workshop_location' in data and 'workshop_technician' in data:
+        if 'workshop_location' in data:
             WorkshopHandler.send_to_workshop(
                 task,
                 data.get('workshop_location'),
-                data.get('workshop_technician'),
                 user
             )
         

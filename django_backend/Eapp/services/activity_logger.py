@@ -127,7 +127,7 @@ class ActivityLogger:
         )
     
     @staticmethod
-    def log_workshop_send(task, user, location, technician):
+    def log_workshop_send(task, user, location):
         """
         Log workshop send activity.
         
@@ -135,19 +135,13 @@ class ActivityLogger:
             task: Task instance
             user: User who performed the action
             location: Workshop location instance
-            technician: Workshop technician instance
         """
         details = {
-            'workshop_technician_id': technician.id,
-            'workshop_technician_name': technician.get_full_name(),
             'workshop_location_id': location.id,
             'workshop_location_name': location.name,
         }
         
-        message = (
-            f"Task sent to workshop technician {technician.get_full_name()} "
-            f"at {location.name}."
-        )
+        message = f"Task sent to workshop at {location.name}."
         
         return TaskActivity.objects.create(
             task=task,
