@@ -47,6 +47,7 @@ export function CostBreakdown({ task }: CostBreakdownProps) {
   };
 
   const isManager = user?.role === 'Manager';
+  const canAddItem = ['Manager', 'Front Desk', 'Accountant'].includes(user?.role || '');
 
   return (
     <Card className="border-gray-200">
@@ -56,7 +57,7 @@ export function CostBreakdown({ task }: CostBreakdownProps) {
             <DollarSign className="h-5 w-5 text-red-600" />
             Cost Breakdown
           </CardTitle>
-          {isManager && (
+          {canAddItem && (
             <Button variant="outline" size="sm" onClick={() => {
               setIsAdding(!isAdding);
               if (isAdding) {
