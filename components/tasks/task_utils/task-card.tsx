@@ -2,7 +2,7 @@
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/layout/card"
 import { Badge } from "@/components/ui/core/badge"
 import { Laptop, MapPin, User as UserIcon } from "lucide-react"
-import { StatusBadge, PaymentStatusBadge } from "./task-badges"
+import { StatusBadge, PaymentStatusBadge, WorkshopStatusBadge } from "./task-badges"
 import { TaskActions } from "./task-actions"
 
 interface TaskCardProps {
@@ -43,10 +43,8 @@ export function TaskCard({
                     <div className="font-semibold text-red-600">#{task.title}</div>
                     <div className="text-sm font-medium">{task.customer_details?.name}</div>
                 </div>
-                {task.workshop_status === 'In Workshop' ? (
-                    <Badge className="bg-pink-100 text-pink-800 hover:bg-pink-100">
-                        In Workshop
-                    </Badge>
+                {task.workshop_status ? (
+                    <WorkshopStatusBadge status={task.workshop_status} />
                 ) : (
                     <StatusBadge status={task.status} />
                 )}

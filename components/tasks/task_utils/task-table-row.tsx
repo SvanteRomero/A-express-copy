@@ -2,7 +2,7 @@
 import { TableCell, TableRow } from "@/components/ui/layout/table"
 import { Badge } from "@/components/ui/core/badge"
 import { Laptop, User as UserIcon } from "lucide-react"
-import { StatusBadge, PaymentStatusBadge } from "./task-badges"
+import { StatusBadge, PaymentStatusBadge, WorkshopStatusBadge } from "./task-badges"
 import { TaskActions } from "./task-actions"
 import { Button } from "@/components/ui/core/button"
 
@@ -72,10 +72,8 @@ export function TaskTableRow({
                 </TableCell>
             )}
             <TableCell>
-                {task.workshop_status === 'In Workshop' ? (
-                    <Badge className="bg-pink-100 text-pink-800 hover:bg-pink-100">
-                        In Workshop
-                    </Badge>
+                {task.workshop_status ? (
+                    <WorkshopStatusBadge status={task.workshop_status} />
                 ) : (
                     <StatusBadge status={task.status} />
                 )}
