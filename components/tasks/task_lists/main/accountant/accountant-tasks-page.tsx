@@ -27,7 +27,7 @@ export default function AccountantTasksPage() {
 
   const addTaskPaymentMutation = useMutation({
     mutationFn: ({ taskId, amount, methodId }: { taskId: string; amount: number; methodId: number }) =>
-      addTaskPayment(taskId, { amount, method: methodId, date: new Date().toISOString().split('T')[0], category: 1 }),
+      addTaskPayment(taskId, { amount, method: methodId, date: new Date().toISOString().split('T')[0] }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       toast({
