@@ -22,7 +22,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageSkeleton } from "@/components/ui/core/loaders";
 
 type Tab = 'pending' | 'completed' | 'myTasks';
-const TABS_ORDER: Tab[] = ['pending', 'completed', 'myTasks'];
+const TABS_ORDER: Tab[] = ['pending', 'myTasks', 'completed'];
 
 export function ManagerTasksPage() {
   const { user } = useAuth();
@@ -211,8 +211,8 @@ export function ManagerTasksPage() {
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as Tab)}>
         <TabsList className="grid w-full grid-cols-3 bg-gray-100">
           <TabsTrigger value="pending" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Current Tasks</TabsTrigger>
-          <TabsTrigger value="completed" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Completed</TabsTrigger>
           <TabsTrigger value="myTasks" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">My Tasks</TabsTrigger>
+          <TabsTrigger value="completed" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Completed</TabsTrigger>
         </TabsList>
 
         {/* Swipeable content area */}
@@ -237,6 +237,19 @@ export function ManagerTasksPage() {
               <Button onClick={() => handlePageChange('pending', 'next')} disabled={!pendingTasksData?.next}>Next</Button>
             </div>
           </TabsContent>
+          <TabsContent value="myTasks">
+            <TasksDisplay
+              tasks={myTasksData?.results || []}
+              technicians={technicians || []}
+              onRowClick={handleMyTaskRowClick}
+              showActions={false}
+              isManagerView={false}
+            />
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button onClick={() => handlePageChange('myTasks', 'previous')} disabled={!myTasksData?.previous}>Previous</Button>
+              <Button onClick={() => handlePageChange('myTasks', 'next')} disabled={!myTasksData?.next}>Next</Button>
+            </div>
+          </TabsContent>
           <TabsContent value="completed">
             <TasksDisplay
               tasks={completedTasksData?.results || []}
@@ -251,19 +264,6 @@ export function ManagerTasksPage() {
             <div className="flex justify-end space-x-2 mt-4">
               <Button onClick={() => handlePageChange('completed', 'previous')} disabled={!completedTasksData?.previous}>Previous</Button>
               <Button onClick={() => handlePageChange('completed', 'next')} disabled={!completedTasksData?.next}>Next</Button>
-            </div>
-          </TabsContent>
-          <TabsContent value="myTasks">
-            <TasksDisplay
-              tasks={myTasksData?.results || []}
-              technicians={technicians || []}
-              onRowClick={handleMyTaskRowClick}
-              showActions={false}
-              isManagerView={false}
-            />
-            <div className="flex justify-end space-x-2 mt-4">
-              <Button onClick={() => handlePageChange('myTasks', 'previous')} disabled={!myTasksData?.previous}>Previous</Button>
-              <Button onClick={() => handlePageChange('myTasks', 'next')} disabled={!myTasksData?.next}>Next</Button>
             </div>
           </TabsContent>
         </div>

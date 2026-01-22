@@ -197,7 +197,11 @@ export function TasksDisplay({
                 )}
                 <TableHead className="font-semibold text-gray-900">Status</TableHead>
                 <TableHead className="font-semibold text-gray-900">Technician</TableHead>
-                <TableHead className="font-semibold text-gray-900">Payment</TableHead>
+                {isManagerView && !isCompletedTab ? (
+                  <TableHead className="font-semibold text-gray-900">Task Urgency</TableHead>
+                ) : (
+                  <TableHead className="font-semibold text-gray-900">Payment</TableHead>
+                )}
                 {showActions && (
                   <TableHead className="font-semibold text-gray-900">Actions</TableHead>
                 )}

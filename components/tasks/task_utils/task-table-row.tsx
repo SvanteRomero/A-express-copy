@@ -2,7 +2,7 @@
 import { TableCell, TableRow } from "@/components/ui/layout/table"
 import { Badge } from "@/components/ui/core/badge"
 import { Laptop, User as UserIcon } from "lucide-react"
-import { StatusBadge, PaymentStatusBadge, WorkshopStatusBadge } from "./task-badges"
+import { StatusBadge, PaymentStatusBadge, WorkshopStatusBadge, UrgencyBadge } from "./task-badges"
 import { TaskActions } from "./task-actions"
 import { Button } from "@/components/ui/core/button"
 
@@ -35,6 +35,7 @@ export function TaskTableRow({
     onRowClick,
     isManagerView,
     isAccountantView,
+    isCompletedTab,
     ...actionProps
 }: TaskTableRowProps) {
     return (
@@ -86,7 +87,13 @@ export function TaskTableRow({
                     </span>
                 </div>
             </TableCell>
-            <TableCell><PaymentStatusBadge status={task.payment_status} /></TableCell>
+            <TableCell>
+                {isManagerView && !isCompletedTab ? (
+                    <UrgencyBadge urgency={task.urgency} />
+                ) : (
+                    <PaymentStatusBadge status={task.payment_status} />
+                )}
+            </TableCell>
             {actionProps.showActions && (
                 <TableCell onClick={(e) => e.stopPropagation()}>
                     <TaskActions
