@@ -193,11 +193,11 @@ export function FrontDeskTasksPage() {
       <Dialog open={!!statusDialogTask} onOpenChange={(open) => !open && setStatusDialogTask(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Select Workshop Status</DialogTitle>
+            <DialogTitle>Specify Final Task Status</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <p className="text-sm text-gray-500 mb-4">
-                 Is this task solved or not solved. Please specify the outcome of the repair.
+                 Is this task solved or not solved? Please specify the outcome of the repair.
             </p>
             <div className="flex gap-4 justify-center">
               <Button 
