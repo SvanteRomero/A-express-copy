@@ -64,6 +64,9 @@ export function TasksDisplay({
   const isMobile = useIsMobile()
   const [statusOptions, setStatusOptions] = useState<string[]>([])
 
+  const isCurrentTasks = isManagerView && !isCompletedTab
+
+
   // Payment Dialog State
   const [isAddPaymentDialogOpen, setIsAddPaymentDialogOpen] = useState(false)
   const [selectedTaskToPay, setSelectedTaskToPay] = useState<any | null>(null)
@@ -74,6 +77,7 @@ export function TasksDisplay({
     technicianFilter, setTechnicianFilter,
     urgencyFilter, setUrgencyFilter,
     deviceStatusFilter, setDeviceStatusFilter,
+    locationFilter, setLocationFilter,
     sortField,
     sortDirection,
     handleSort,
@@ -81,7 +85,8 @@ export function TasksDisplay({
     filteredAndSortedTasks,
     uniqueTechnicians,
     uniqueUrgencies,
-    uniqueDeviceStatuses
+    uniqueDeviceStatuses,
+    uniqueLocations
   } = useTaskFiltering(tasks, technicians)
 
   useEffect(() => {
@@ -122,11 +127,16 @@ export function TasksDisplay({
         setUrgencyFilter={setUrgencyFilter}
         deviceStatusFilter={deviceStatusFilter}
         setDeviceStatusFilter={setDeviceStatusFilter}
+        locationFilter={locationFilter}
+        setLocationFilter={setLocationFilter}
         uniqueStatuses={statusOptions}
         uniqueTechnicians={uniqueTechnicians}
         uniqueUrgencies={uniqueUrgencies}
         uniqueDeviceStatuses={uniqueDeviceStatuses}
+        uniqueLocations={uniqueLocations}
         clearAllFilters={clearAllFilters}
+        showDeviceStatusFilter={!isCurrentTasks}
+        showLocationFilter={isCurrentTasks}
       />
 
       {isMobile ? (
@@ -189,7 +199,7 @@ export function TasksDisplay({
                 </TableHead>
                 <TableHead className="font-semibold text-gray-900">Device</TableHead>
                 {isManagerView ? (
-                  <TableHead className="font-semibold text-gray-900">Device Status</TableHead>
+                  <TableHead className="font-semibold text-gray-900">{isCurrentTasks ? "Location" : "Device Status"}</TableHead>
                 ) : isAccountantView ? (
                   <TableHead className="font-semibold text-gray-900">Outstanding Balance</TableHead>
                 ) : (

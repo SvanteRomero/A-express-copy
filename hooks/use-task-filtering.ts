@@ -12,6 +12,7 @@ export interface TaskFiltersState {
     technicianFilter: string
     urgencyFilter: string
     deviceStatusFilter: string
+    locationFilter: string
 }
 
 export function useTaskFiltering(tasks: any[], technicians: any[]) {
@@ -20,6 +21,7 @@ export function useTaskFiltering(tasks: any[], technicians: any[]) {
     const [technicianFilter, setTechnicianFilter] = useState<string>("all")
     const [urgencyFilter, setUrgencyFilter] = useState<string>("all")
     const [deviceStatusFilter, setDeviceStatusFilter] = useState<string>("all")
+    const [locationFilter, setLocationFilter] = useState<string>("all")
     const [sortField, setSortField] = useState<string | null>(null)
     const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(null)
 
@@ -29,6 +31,7 @@ export function useTaskFiltering(tasks: any[], technicians: any[]) {
 
     const uniqueUrgencies = useMemo(() => [...new Set(tasks.map((task) => task?.urgency || "").filter((urgency) => urgency))], [tasks])
     const uniqueDeviceStatuses = useMemo(() => [...new Set(tasks.map((task) => task?.workshop_status || "").filter((status) => status))], [tasks])
+    const uniqueLocations = useMemo(() => [...new Set(tasks.map((task) => task?.current_location || "").filter((location) => location))], [tasks])
 
     const filteredAndSortedTasks = useMemo(() => {
         const filtered = tasks.filter((task) => {
@@ -44,8 +47,9 @@ export function useTaskFiltering(tasks: any[], technicians: any[]) {
             const matchesTechnician = technicianFilter === "all" || task.assigned_to_details?.full_name === technicianFilter
             const matchesUrgency = urgencyFilter === "all" || task.urgency === urgencyFilter
             const matchesDeviceStatus = deviceStatusFilter === "all" || task.workshop_status === deviceStatusFilter
+            const matchesLocation = locationFilter === "all" || task.current_location === locationFilter
 
-            return matchesSearch && matchesTaskStatus && matchesTechnician && matchesUrgency && matchesDeviceStatus
+            return matchesSearch && matchesTaskStatus && matchesTechnician && matchesUrgency && matchesDeviceStatus && matchesLocation
         })
 
         if (sortField && sortDirection) {
@@ -70,7 +74,7 @@ export function useTaskFiltering(tasks: any[], technicians: any[]) {
         }
 
         return filtered
-    }, [searchQuery, taskStatusFilter, technicianFilter, urgencyFilter, deviceStatusFilter, sortField, sortDirection, tasks])
+    }, [searchQuery, taskStatusFilter, technicianFilter, urgencyFilter, deviceStatusFilter, locationFilter, sortField, sortDirection, tasks])
 
     const handleSort = (field: string) => {
         if (sortField === field) {
@@ -104,6 +108,7 @@ export function useTaskFiltering(tasks: any[], technicians: any[]) {
         technicianFilter, setTechnicianFilter,
         urgencyFilter, setUrgencyFilter,
         deviceStatusFilter, setDeviceStatusFilter,
+        locationFilter, setLocationFilter,
         sortField,
         sortDirection,
         handleSort,
@@ -111,6 +116,7 @@ export function useTaskFiltering(tasks: any[], technicians: any[]) {
         filteredAndSortedTasks,
         uniqueTechnicians,
         uniqueUrgencies,
-        uniqueDeviceStatuses
+        uniqueDeviceStatuses,
+        uniqueLocations
     }
 }

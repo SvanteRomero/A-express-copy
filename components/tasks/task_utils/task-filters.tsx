@@ -14,16 +14,21 @@ interface TaskFiltersProps {
   setTechnicianFilter: (technician: string) => void
   urgencyFilter: string
   setUrgencyFilter: (urgency: string) => void
-  deviceStatusFilter: string
-  setDeviceStatusFilter: (status: string) => void
+  deviceStatusFilter?: string
+  setDeviceStatusFilter?: (status: string) => void
+  locationFilter?: string
+  setLocationFilter?: (location: string) => void
   uniqueStatuses: string[]
   uniqueTechnicians: { id: number; full_name: string }[]
   uniqueUrgencies: string[]
-  uniqueDeviceStatuses: string[]
+  uniqueDeviceStatuses?: string[]
+  uniqueLocations?: string[]
   clearAllFilters: () => void
+  showDeviceStatusFilter?: boolean
+  showLocationFilter?: boolean
 }
 
-export function TaskFilters({ searchQuery, setSearchQuery, taskStatusFilter, setTaskStatusFilter, technicianFilter, setTechnicianFilter, urgencyFilter, setUrgencyFilter, deviceStatusFilter, setDeviceStatusFilter, uniqueStatuses, uniqueTechnicians, uniqueUrgencies, uniqueDeviceStatuses, clearAllFilters, }: TaskFiltersProps) {
+export function TaskFilters({ searchQuery, setSearchQuery, taskStatusFilter, setTaskStatusFilter, technicianFilter, setTechnicianFilter, urgencyFilter, setUrgencyFilter, deviceStatusFilter, setDeviceStatusFilter, locationFilter, setLocationFilter, uniqueStatuses, uniqueTechnicians, uniqueUrgencies, uniqueDeviceStatuses, uniqueLocations, clearAllFilters, showDeviceStatusFilter = true, showLocationFilter = false }: TaskFiltersProps) {
   return (
     <div className="space-y-4">
       {/* Search Bar */}
@@ -81,19 +86,37 @@ export function TaskFilters({ searchQuery, setSearchQuery, taskStatusFilter, set
           </SelectContent>
         </Select>
 
-        <Select value={deviceStatusFilter} onValueChange={setDeviceStatusFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="All Device Statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Device Statuses</SelectItem>
-            {uniqueDeviceStatuses.map((status) => (
-              <SelectItem key={status} value={status}>
-                {status}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {showDeviceStatusFilter && deviceStatusFilter && setDeviceStatusFilter && uniqueDeviceStatuses && (
+          <Select value={deviceStatusFilter} onValueChange={setDeviceStatusFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Device Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Device Statuses</SelectItem>
+              {uniqueDeviceStatuses.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {status}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {showLocationFilter && locationFilter && setLocationFilter && uniqueLocations && (
+          <Select value={locationFilter} onValueChange={setLocationFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Locations" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Locations</SelectItem>
+              {uniqueLocations.map((location) => (
+                <SelectItem key={location} value={location}>
+                  {location}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         <Button
           variant="outline"
