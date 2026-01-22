@@ -6,8 +6,9 @@ ALLOWED_TRANSITIONS = {
         'Completed': ['Ready for Pickup', 'In Progress', 'Pending'],
         'Ready for Pickup': ['Picked Up', 'Pending', 'In Progress'],
         'Picked Up': ['In Progress'],
-        'Pending': ['Terminated'],
-        'In Progress': ['Terminated', 'Pending'],
+        'Pending': ['Terminated', 'In Progress'],
+        'In Progress': ['Terminated', 'Pending', 'In Progress'],
+        'Awaiting Parts': ['In Progress'],
     },
     'Technician': {
         'Pending': ['In Progress'],
