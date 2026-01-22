@@ -1,7 +1,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/core/button"
-import { Edit, Trash2, CheckCircle, MessageSquare } from "lucide-react"
+import { CheckCircle, MessageSquare } from "lucide-react"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/feedback/alert-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/feedback/dialog"
 import { Textarea } from "@/components/ui/core/textarea"
@@ -185,6 +185,9 @@ export function TaskActions({
     }
 
     if (isCompletedTab) {
+        if (task.status === 'Completed') {
+            return <div className="flex gap-2 w-full justify-end" onClick={stopProp}></div>;
+        }
         return (
             <div className="flex gap-2 w-full justify-end" onClick={stopProp}>
                 {task.status !== 'Completed' && (
@@ -251,45 +254,5 @@ export function TaskActions({
         )
     }
 
-    return (
-        <div className="flex gap-2 w-full justify-end" onClick={stopProp}>
-            <Button
-                size="sm"
-                variant="outline"
-                className="border-gray-300 text-gray-600 hover:bg-gray-50 bg-transparent flex-1 sm:flex-none"
-                onClick={() => onRowClick?.(task)}
-            >
-                <Edit className="h-3 w-3 mr-1" />
-                Edit
-            </Button>
-            {onDeleteTask && (
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button
-                            size="sm"
-                            variant="destructive"
-                            className="flex-1 sm:flex-none"
-                        >
-                            <Trash2 className="h-3 w-3 mr-1" />
-                            Delete
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the task.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => onDeleteTask(task.title)}>
-                                Delete
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            )}
-        </div>
-    )
+    return null
 }
