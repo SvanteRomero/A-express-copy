@@ -8,18 +8,18 @@ export interface TaskSorting {
 
 export interface TaskFiltersState {
     searchQuery: string
-    statusFilter: string
+    taskStatusFilter: string
     technicianFilter: string
     urgencyFilter: string
-    locationFilter: string
+    deviceStatusFilter: string
 }
 
 export function useTaskFiltering(tasks: any[], technicians: any[]) {
     const [searchQuery, setSearchQuery] = useState("")
-    const [statusFilter, setStatusFilter] = useState<string>("all")
+    const [taskStatusFilter, setTaskStatusFilter] = useState<string>("all")
     const [technicianFilter, setTechnicianFilter] = useState<string>("all")
     const [urgencyFilter, setUrgencyFilter] = useState<string>("all")
-    const [locationFilter, setLocationFilter] = useState<string>("all")
+    const [deviceStatusFilter, setDeviceStatusFilter] = useState<string>("all")
     const [sortField, setSortField] = useState<string | null>(null)
     const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(null)
 
@@ -28,7 +28,7 @@ export function useTaskFiltering(tasks: any[], technicians: any[]) {
     }, [technicians])
 
     const uniqueUrgencies = useMemo(() => [...new Set(tasks.map((task) => task?.urgency || "").filter((urgency) => urgency))], [tasks])
-    const uniqueLocations = useMemo(() => [...new Set(tasks.map((task) => task?.current_location || "").filter((location) => location))], [tasks])
+    const uniqueDeviceStatuses = useMemo(() => [...new Set(tasks.map((task) => task?.workshop_status || "").filter((status) => status))], [tasks])
 
     const filteredAndSortedTasks = useMemo(() => {
         const filtered = tasks.filter((task) => {
@@ -40,12 +40,12 @@ export function useTaskFiltering(tasks: any[], technicians: any[]) {
                 (task.laptop_model_details?.name && task.laptop_model_details.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
                 task.description.toLowerCase().includes(searchQuery.toLowerCase())
 
-            const matchesStatus = statusFilter === "all" || task.status === statusFilter
+            const matchesTaskStatus = taskStatusFilter === "all" || task.status === taskStatusFilter
             const matchesTechnician = technicianFilter === "all" || task.assigned_to_details?.full_name === technicianFilter
             const matchesUrgency = urgencyFilter === "all" || task.urgency === urgencyFilter
-            const matchesLocation = locationFilter === "all" || task.current_location === locationFilter
+            const matchesDeviceStatus = deviceStatusFilter === "all" || task.workshop_status === deviceStatusFilter
 
-            return matchesSearch && matchesStatus && matchesTechnician && matchesUrgency && matchesLocation
+            return matchesSearch && matchesTaskStatus && matchesTechnician && matchesUrgency && matchesDeviceStatus
         })
 
         if (sortField && sortDirection) {
@@ -70,7 +70,7 @@ export function useTaskFiltering(tasks: any[], technicians: any[]) {
         }
 
         return filtered
-    }, [searchQuery, statusFilter, technicianFilter, urgencyFilter, locationFilter, sortField, sortDirection, tasks])
+    }, [searchQuery, taskStatusFilter, technicianFilter, urgencyFilter, deviceStatusFilter, sortField, sortDirection, tasks])
 
     const handleSort = (field: string) => {
         if (sortField === field) {
@@ -90,20 +90,20 @@ export function useTaskFiltering(tasks: any[], technicians: any[]) {
 
     const clearAllFilters = () => {
         setSearchQuery("")
-        setStatusFilter("all")
+        setTaskStatusFilter("all")
         setTechnicianFilter("all")
         setUrgencyFilter("all")
-        setLocationFilter("all")
+        setDeviceStatusFilter("all")
         setSortField(null)
         setSortDirection(null)
     }
 
     return {
         searchQuery, setSearchQuery,
-        statusFilter, setStatusFilter,
+        taskStatusFilter, setTaskStatusFilter,
         technicianFilter, setTechnicianFilter,
         urgencyFilter, setUrgencyFilter,
-        locationFilter, setLocationFilter,
+        deviceStatusFilter, setDeviceStatusFilter,
         sortField,
         sortDirection,
         handleSort,
@@ -111,6 +111,6 @@ export function useTaskFiltering(tasks: any[], technicians: any[]) {
         filteredAndSortedTasks,
         uniqueTechnicians,
         uniqueUrgencies,
-        uniqueLocations
+        uniqueDeviceStatuses
     }
 }

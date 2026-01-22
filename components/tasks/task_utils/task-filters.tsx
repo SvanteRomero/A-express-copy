@@ -8,22 +8,22 @@ import { Search, Filter } from "lucide-react"
 interface TaskFiltersProps {
   searchQuery: string
   setSearchQuery: (query: string) => void
-  statusFilter: string
-  setStatusFilter: (status: string) => void
+  taskStatusFilter: string
+  setTaskStatusFilter: (status: string) => void
   technicianFilter: string
   setTechnicianFilter: (technician: string) => void
   urgencyFilter: string
   setUrgencyFilter: (urgency: string) => void
-  locationFilter: string
-  setLocationFilter: (location: string) => void
+  deviceStatusFilter: string
+  setDeviceStatusFilter: (status: string) => void
   uniqueStatuses: string[]
   uniqueTechnicians: { id: number; full_name: string }[]
   uniqueUrgencies: string[]
-  uniqueLocations: string[]
+  uniqueDeviceStatuses: string[]
   clearAllFilters: () => void
 }
 
-export function TaskFilters({  searchQuery,  setSearchQuery,  statusFilter,  setStatusFilter,  technicianFilter,  setTechnicianFilter,  urgencyFilter,  setUrgencyFilter,  locationFilter,  setLocationFilter,  uniqueStatuses,  uniqueTechnicians,  uniqueUrgencies,  uniqueLocations,  clearAllFilters,}: TaskFiltersProps) {
+export function TaskFilters({ searchQuery, setSearchQuery, taskStatusFilter, setTaskStatusFilter, technicianFilter, setTechnicianFilter, urgencyFilter, setUrgencyFilter, deviceStatusFilter, setDeviceStatusFilter, uniqueStatuses, uniqueTechnicians, uniqueUrgencies, uniqueDeviceStatuses, clearAllFilters, }: TaskFiltersProps) {
   return (
     <div className="space-y-4">
       {/* Search Bar */}
@@ -39,12 +39,12 @@ export function TaskFilters({  searchQuery,  setSearchQuery,  statusFilter,  set
 
       {/* Filter Dropdowns */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={taskStatusFilter} onValueChange={setTaskStatusFilter}>
           <SelectTrigger>
-            <SelectValue placeholder="All Statuses" />
+            <SelectValue placeholder="All Task Statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="all">All Task Statuses</SelectItem>
             {uniqueStatuses.map((status) => (
               <SelectItem key={status} value={status}>
                 {status}
@@ -81,15 +81,15 @@ export function TaskFilters({  searchQuery,  setSearchQuery,  statusFilter,  set
           </SelectContent>
         </Select>
 
-        <Select value={locationFilter} onValueChange={setLocationFilter}>
+        <Select value={deviceStatusFilter} onValueChange={setDeviceStatusFilter}>
           <SelectTrigger>
-            <SelectValue placeholder="All Locations" />
+            <SelectValue placeholder="All Device Statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Locations</SelectItem>
-            {uniqueLocations.map((location) => (
-              <SelectItem key={location} value={location}>
-                {location}
+            <SelectItem value="all">All Device Statuses</SelectItem>
+            {uniqueDeviceStatuses.map((status) => (
+              <SelectItem key={status} value={status}>
+                {status}
               </SelectItem>
             ))}
           </SelectContent>

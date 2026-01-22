@@ -70,10 +70,10 @@ export function TasksDisplay({
 
   const {
     searchQuery, setSearchQuery,
-    statusFilter, setStatusFilter,
+    taskStatusFilter, setTaskStatusFilter,
     technicianFilter, setTechnicianFilter,
     urgencyFilter, setUrgencyFilter,
-    locationFilter, setLocationFilter,
+    deviceStatusFilter, setDeviceStatusFilter,
     sortField,
     sortDirection,
     handleSort,
@@ -81,7 +81,7 @@ export function TasksDisplay({
     filteredAndSortedTasks,
     uniqueTechnicians,
     uniqueUrgencies,
-    uniqueLocations
+    uniqueDeviceStatuses
   } = useTaskFiltering(tasks, technicians)
 
   useEffect(() => {
@@ -114,18 +114,18 @@ export function TasksDisplay({
       <TaskFilters
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
+        taskStatusFilter={taskStatusFilter}
+        setTaskStatusFilter={setTaskStatusFilter}
         technicianFilter={technicianFilter}
         setTechnicianFilter={setTechnicianFilter}
         urgencyFilter={urgencyFilter}
         setUrgencyFilter={setUrgencyFilter}
-        locationFilter={locationFilter}
-        setLocationFilter={setLocationFilter}
+        deviceStatusFilter={deviceStatusFilter}
+        setDeviceStatusFilter={setDeviceStatusFilter}
         uniqueStatuses={statusOptions}
         uniqueTechnicians={uniqueTechnicians}
         uniqueUrgencies={uniqueUrgencies}
-        uniqueLocations={uniqueLocations}
+        uniqueDeviceStatuses={uniqueDeviceStatuses}
         clearAllFilters={clearAllFilters}
       />
 
@@ -189,13 +189,13 @@ export function TasksDisplay({
                 </TableHead>
                 <TableHead className="font-semibold text-gray-900">Device</TableHead>
                 {isManagerView ? (
-                  <TableHead className="font-semibold text-gray-900">Location</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Device Status</TableHead>
                 ) : isAccountantView ? (
                   <TableHead className="font-semibold text-gray-900">Outstanding Balance</TableHead>
                 ) : (
                   <TableHead className="font-semibold text-gray-900">Issue</TableHead>
                 )}
-                <TableHead className="font-semibold text-gray-900">Status</TableHead>
+                <TableHead className="font-semibold text-gray-900">Task Status</TableHead>
                 <TableHead className="font-semibold text-gray-900">Technician</TableHead>
                 {isManagerView && !isCompletedTab ? (
                   <TableHead className="font-semibold text-gray-900">Task Urgency</TableHead>

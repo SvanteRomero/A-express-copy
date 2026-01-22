@@ -60,8 +60,8 @@ export function TaskTableRow({
                 </div>
             </TableCell>
             {isManagerView ? (
-                <TableCell className="text-gray-600 max-w-xs truncate">
-                    {task.current_location}
+                <TableCell>
+                    <WorkshopStatusBadge status={task.workshop_status || "N/A"} />
                 </TableCell>
             ) : isAccountantView ? (
                 <TableCell className="text-gray-600 max-w-xs truncate">
@@ -73,11 +73,7 @@ export function TaskTableRow({
                 </TableCell>
             )}
             <TableCell>
-                {task.workshop_status ? (
-                    <WorkshopStatusBadge status={task.workshop_status} />
-                ) : (
-                    <StatusBadge status={task.status} />
-                )}
+                <StatusBadge status={task.status} />
             </TableCell>
             <TableCell>
                 <div className="flex items-center gap-2">
