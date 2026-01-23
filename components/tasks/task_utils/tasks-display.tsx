@@ -210,7 +210,7 @@ export function TasksDisplay({
                 ) : (
                   <TableHead className="font-semibold text-gray-900">Issue</TableHead>
                 )}
-                <TableHead className="font-semibold text-gray-900">Task Status</TableHead>
+                <TableHead className="font-semibold text-gray-900">{isPickupView ? "Device Status" : "Task Status"}</TableHead>
                 {(isCurrentTasks || isMyTasksTab) && (
                   <TableHead className="font-semibold text-gray-900">Device Status</TableHead>
                 )}

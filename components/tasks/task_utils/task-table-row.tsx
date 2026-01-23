@@ -36,6 +36,7 @@ export function TaskTableRow({
     onRowClick,
     isManagerView,
     isAccountantView,
+    isPickupView,
     isCompletedTab,
     isMyTasksTab,
     ...actionProps
@@ -80,7 +81,11 @@ export function TaskTableRow({
                 </TableCell>
             )}
             <TableCell>
-                <StatusBadge status={task.status} />
+                {isPickupView ? (
+                    <WorkshopStatusBadge status={task.workshop_status || "N/A"} />
+                ) : (
+                    <StatusBadge status={task.status} />
+                )}
             </TableCell>
             {(isCurrentTasks || isMyTasksTab) && (
                 <TableCell>
@@ -116,6 +121,7 @@ export function TaskTableRow({
                         onRowClick={onRowClick}
                         isManagerView={isManagerView}
                         isAccountantView={isAccountantView}
+                        isPickupView={isPickupView}
                         {...actionProps}
                     />
                 </TableCell>
