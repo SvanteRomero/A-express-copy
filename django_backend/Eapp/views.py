@@ -9,7 +9,7 @@ from common.models import Location, Model
 from customers.models import Customer, Referrer
 from customers.serializers import CustomerSerializer
 from financials.serializers import PaymentSerializer, CostBreakdownSerializer
-from financials.models import Payment, PaymentMethod, PaymentCategory
+from financials.models import Payment, PaymentMethod, PaymentCategory, CostBreakdown
 from users.permissions import IsAdminOrManagerOrAccountant
 from users.models import User
 from .models import Task, TaskActivity
@@ -404,6 +404,35 @@ class TaskViewSet(viewsets.ModelViewSet):
             serializer.save(task=task)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['delete'], url_path='cost-breakdowns/(?P<breakdown_id>[^/.]+)')
+    def delete_cost_breakdown(self, request, task_id=None, breakdown_id=None):
+        """Delete a specific cost breakdown item for a task."""
+        task = self.get_object()
+        
+        # Get the cost breakdown and ensure it belongs to this task
+        cost_breakdown = get_object_or_404(CostBreakdown, id=breakdown_id, task=task)
+        
+        # Store details for logging before deletion
+        description = cost_breakdown.description
+        amount = cost_breakdown.amount
+        
+        # Delete the cost breakdown
+        cost_breakdown.delete()
+        
+        # Log the activity
+        ActivityLogger.log_cost_breakdown_delete(
+            task=task,
+            user=request.user,
+            description=description,
+            amount=amount
+        )
+        
+        # Broadcast task update for live cache invalidation
+        from .services.notification_handler import TaskNotificationHandler
+        TaskNotificationHandler.broadcast_task_update(task, ['cost_breakdowns'])
+        
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ModelViewSet(viewsets.ReadOnlyModelViewSet):

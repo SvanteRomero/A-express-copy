@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/core/input";
 import { Label } from "@/components/ui/core/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table";
-import { DollarSign, Edit, Plus, Trash2 } from "lucide-react";
+import { DollarSign, Edit, Plus, Trash2, Loader2 } from "lucide-react";
 import { Task, CostBreakdown as CostBreakdownType } from '@/components/tasks/types';
 
 interface CostBreakdownProps {
@@ -22,6 +22,7 @@ export function CostBreakdown({ task }: CostBreakdownProps) {
   const queryClient = useQueryClient();
   const [isAdding, setIsAdding] = useState(false);
   const [isOtherCategory, setIsOtherCategory] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [newBreakdown, setNewBreakdown] = useState({ amount: '', cost_type: 'Inclusive', category: '' });
 
   const costBreakdowns = task.cost_breakdowns?.filter(item => item.status === 'Approved') || [];
@@ -36,9 +37,16 @@ export function CostBreakdown({ task }: CostBreakdownProps) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteCostBreakdown(task.title, id),
+    mutationFn: (id: number) => {
+      setDeletingId(id);
+      return deleteCostBreakdown(task.title, id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task', task.title] });
+      setDeletingId(null);
+    },
+    onError: () => {
+      setDeletingId(null);
     },
   });
 
@@ -95,8 +103,23 @@ export function CostBreakdown({ task }: CostBreakdownProps) {
                   </TableCell>
                   {isManager && (
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(item.id)}>
-                        <Trash2 className="h-4 w-4" />
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteMutation.mutate(item.id)}
+                        disabled={deletingId === item.id}
+                      >
+                        {deletingId === item.id ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </>
+                        )}
                       </Button>
                     </TableCell>
                   )}
@@ -157,7 +180,20 @@ export function CostBreakdown({ task }: CostBreakdownProps) {
                     />
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" onClick={handleAdd}>Add</Button>
+                    <Button
+                      size="sm"
+                      onClick={handleAdd}
+                      disabled={createMutation.isPending}
+                    >
+                      {createMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        'Add'
+                      )}
+                    </Button>
                   </TableCell>
                 </TableRow>
               )}
