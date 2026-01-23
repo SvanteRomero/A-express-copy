@@ -42,7 +42,7 @@ def migrate_original_location_to_fk(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Eapp', '0004_remove_task_workshop_technician'),
+        ('Eapp', '0005_convert_current_location'),
         ('common', '0004_add_location_is_active'),
     ]
 
