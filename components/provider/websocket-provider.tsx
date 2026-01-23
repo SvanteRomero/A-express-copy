@@ -74,7 +74,18 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
         // Handle toast notifications - dispatch to appropriate toast
         if (message.type === 'toast_notification') {
-            dispatchWebSocketToast(message as ToastNotificationMessage);
+            const toastMessage = message as ToastNotificationMessage;
+            dispatchWebSocketToast(toastMessage);
+
+            // Invalidate queries for debt-related toasts to update UI in real-time
+            if (toastMessage.toast_type === 'debt_request_approved' || toastMessage.toast_type === 'debt_request_rejected') {
+                // Extract task_id from the task_title if needed, or invalidate all tasks
+                currentQueryClient.invalidateQueries({ queryKey: ['tasks'] });
+                // If we can extract task_id from data, invalidate specific task
+                if (toastMessage.data.task_title) {
+                    currentQueryClient.invalidateQueries({ queryKey: ['task', toastMessage.data.task_title] });
+                }
+            }
         }
 
         // Handle task status updates - invalidate React Query caches for live updates
