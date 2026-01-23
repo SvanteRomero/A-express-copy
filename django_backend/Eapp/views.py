@@ -160,32 +160,50 @@ class TaskViewSet(viewsets.ModelViewSet):
         return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
 
     def update(self, request, *args, **kwargs):
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.warning(f"[UPDATE DEBUG] Starting update method")
         partial = kwargs.pop('partial', False)
         task = self.get_object()
+        
+        logger.warning(f"[UPDATE DEBUG] Got task object: {task.title}")
+        logger.warning(f"[UPDATE DEBUG] Request data: {request.data}")
         
         # Use service layer for business logic
         from .services import TaskUpdateService
         
+        logger.warning(f"[UPDATE DEBUG] Calling TaskUpdateService.update_task")
         # Service returns either a Response (error) or a dict with processed data
         result = TaskUpdateService.update_task(task, request.data.copy(), request.user)
         
+        logger.warning(f"[UPDATE DEBUG] Service result type: {type(result).__name__}")
         if isinstance(result, Response):
+            logger.warning(f"[UPDATE DEBUG] Service returned Response with status: {result.status_code}")
             return result
             
+        logger.warning(f"[UPDATE DEBUG] Extracting data from result")
         data = result['data']
         referrer_obj = result['referrer_obj']
         original_assigned_to = result['original_assigned_to']
 
+        logger.warning(f"[UPDATE DEBUG] Creating serializer with data: {list(data.keys())}")
         serializer = self.get_serializer(task, data=data, partial=partial)
+        
+        logger.warning(f"[UPDATE DEBUG] Validating serializer")
         serializer.is_valid(raise_exception=True)
 
+        logger.warning(f"[UPDATE DEBUG] Saving task")
         updated_task = serializer.save(referred_by=referrer_obj)
 
+        logger.warning(f"[UPDATE DEBUG] Creating activity logs")
         # Create activity logs (using service layer)
         TaskUpdateService.create_update_activities(updated_task, data, request.user, original_assigned_to)
 
+        logger.warning(f"[UPDATE DEBUG] Getting response serializer")
         response_data = self.get_serializer(updated_task).data
         
+        logger.warning(f"[UPDATE DEBUG] Handling notifications")
         # Handle notifications (SMS and Toast)
         from .services.notification_handler import TaskNotificationHandler
         
