@@ -26,26 +26,34 @@ from .services import (
 
 class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.warning(f"[QUERYSET DEBUG] Action: {self.action}, Method: {self.request.method if hasattr(self, 'request') else 'NO REQUEST'}")
+        
         queryset = Task.objects.all().order_by('-created_at')
 
-        # Annotate total_cost and paid_amount
-        queryset = queryset.annotate(
-            calculated_total_cost=Coalesce(
-                F('estimated_cost'), Value(0, output_field=DecimalField())
-            ) + Coalesce(
-                Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Additive')),
-                Value(0, output_field=DecimalField())
-            ) - Coalesce(
-                Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Subtractive')),
-                Value(0, output_field=DecimalField())
-            ),
-            calculated_paid_amount=Coalesce(Sum('payments__amount'), Value(0, output_field=DecimalField()))
-        )
+        # Only add annotations for list and retrieve actions
+        # Skip for update/partial_update to avoid potential query issues
+        if self.action in ['list', 'retrieve', None]:
+            # Annotate total_cost and paid_amount
+            queryset = queryset.annotate(
+                calculated_total_cost=Coalesce(
+                    F('estimated_cost'), Value(0, output_field=DecimalField())
+                ) + Coalesce(
+                    Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Additive')),
+                    Value(0, output_field=DecimalField())
+                ) - Coalesce(
+                    Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Subtractive')),
+                    Value(0, output_field=DecimalField())
+                ),
+                calculated_paid_amount=Coalesce(Sum('payments__amount'), Value(0, output_field=DecimalField()))
+            )
 
-        # Annotate outstanding_balance
-        queryset = queryset.annotate(
-            outstanding_balance=F('calculated_total_cost') - F('calculated_paid_amount')
-        )
+            # Annotate outstanding_balance
+            queryset = queryset.annotate(
+                outstanding_balance=F('calculated_total_cost') - F('calculated_paid_amount')
+            )
         
         # Prefetch related objects to avoid N+1 queries
         if self.action == 'list':
@@ -54,14 +62,16 @@ class TaskViewSet(viewsets.ModelViewSet):
             ).prefetch_related(
                 'payments', 'cost_breakdowns'
             )
-            
-        # For detail view, prefetch all related data
-        return queryset.select_related(
-            'assigned_to', 'created_by', 'negotiated_by', 'brand', 'referred_by', 'customer', 
-            'workshop_location', 'laptop_model'
-        ).prefetch_related(
-            'activities', 'payments', 'cost_breakdowns'
-        )
+        elif self.action in ['retrieve', 'update', 'partial_update', None]:
+            # For detail view and updates, prefetch all related data
+            return queryset.select_related(
+                'assigned_to', 'created_by', 'negotiated_by', 'brand', 'referred_by', 'customer', 
+                'workshop_location', 'laptop_model'
+            ).prefetch_related(
+                'activities', 'payments', 'cost_breakdowns'
+            )
+        
+        return queryset
 
 
     permission_classes = [permissions.IsAuthenticated]
