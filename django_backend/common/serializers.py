@@ -11,7 +11,7 @@ class BrandSerializer(serializers.ModelSerializer):
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location
-        fields = ['id', 'name', 'is_workshop']
+        fields = ['id', 'name', 'is_workshop', 'is_active']
 
 
 class ModelSerializer(serializers.ModelSerializer):

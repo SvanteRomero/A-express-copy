@@ -73,7 +73,12 @@ class Task(models.Model):
         default=PaymentStatus.UNPAID,
         db_index=True
     )
-    current_location = models.CharField(max_length=100)
+    current_location = models.ForeignKey(
+        'common.Location',
+        on_delete=models.PROTECT,
+        related_name='current_tasks',
+        help_text='Current location of the task'
+    )
     urgency = models.CharField(max_length=20, choices=Urgency.choices, default=Urgency.YUPO)
     date_in = models.DateField(default=get_current_date)
     is_debt = models.BooleanField(default=False)
@@ -96,12 +101,30 @@ class Task(models.Model):
     original_technician_snapshot = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='original_technician_snapshot_tasks'
     )
-    original_location_snapshot = models.CharField(max_length=200, null=True, blank=True)
+    original_location_snapshot = models.ForeignKey(
+        'common.Location',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='original_tasks',
+        help_text='Snapshot of original location before workshop'
+    )
     latest_pickup_at = models.DateTimeField(null=True, blank=True)
     latest_pickup_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='latest_pickup_tasks'
     )
     qc_notes = models.TextField(blank=True, null=True)
+    # Backward compatibility properties
+    @property
+    def current_location_name(self):
+        """Returns the current location name for backward compatibility."""
+        return self.current_location.name if self.current_location else None
+
+    @property
+    def original_location_name(self):
+        """Returns the original location name for backward compatibility."""
+        return self.original_location_snapshot.name if self.original_location_snapshot else None
+
     # Derived properties below supply read-only access to event timestamps/users
     # by querying the TaskActivity history.
 
@@ -159,19 +182,9 @@ class Task(models.Model):
 
     @property
     def original_location(self):
-        # Prefer snapshot if available
-        if getattr(self, 'original_location_snapshot', None):
-            return self.original_location_snapshot
-        acts = self.latest_workshop_activities
-        if not acts.exists():
-            return None
-        msg = acts.first().message or ''
-        if ' at ' in msg:
-            try:
-                return msg.split(' at ')[-1].strip().rstrip('.')
-            except Exception:
-                return None
-        return None
+        """Returns the original location object (before workshop)."""
+        # Return the snapshot FK directly
+        return self.original_location_snapshot
 
     @property
     def qc_rejected_at(self):

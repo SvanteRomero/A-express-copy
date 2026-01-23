@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/core/button";
 import { Input } from "@/components/ui/core/input";
 import { Label } from "@/components/ui/core/label";
 import { Switch } from "@/components/ui/core/switch";
-import { Trash2, Edit, Plus } from "lucide-react";
+import { Trash2, Edit, Plus, RotateCcw } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,7 +33,8 @@ export function LocationsManager() {
 
   const fetchLocations = async () => {
     try {
-      const response = await apiClient.get("/locations/");
+      // Fetch all locations including inactive ones for admin view
+      const response = await apiClient.get("/locations/?include_inactive=true");
       if (response.data) {
         setLocations(response.data);
       }
@@ -73,10 +74,26 @@ export function LocationsManager() {
 
   const handleDeleteLocation = async (id: number) => {
     try {
+      // This will soft delete the location (mark as inactive)
       await apiClient.delete(`/locations/${id}/`);
-      setLocations(locations.filter((loc) => loc.id !== id));
+      // Update local state to reflect inactive status
+      setLocations(locations.map(loc =>
+        loc.id === id ? { ...loc, is_active: false } : loc
+      ));
     } catch (error) {
-      console.error("Error deleting location:", error);
+      console.error("Error deactivating location:", error);
+    }
+  };
+
+  const handleReactivateLocation = async (id: number) => {
+    try {
+      await apiClient.post(`/locations/${id}/reactivate/`);
+      // Update local state to reflect active status
+      setLocations(locations.map(loc =>
+        loc.id === id ? { ...loc, is_active: true } : loc
+      ));
+    } catch (error) {
+      console.error("Error reactivating location:", error);
     }
   };
 
@@ -122,15 +139,29 @@ export function LocationsManager() {
                 </div>
               </div>
             ) : (
-              <span className="flex-grow">{location.name} {location.is_workshop && "(Workshop)"}</span>
+              <span className={`flex-grow ${!location.is_active ? 'text-gray-400 italic' : ''}`}>
+                {location.name} {location.is_workshop && "(Workshop)"} {!location.is_active && "(Inactive)"}
+              </span>
             )}
             <div className="flex gap-2 ml-4">
               {editingLocation?.id === location.id ? (
                 <Button onClick={handleUpdateLocation} size="sm">Save</Button>
               ) : (
-                <Button onClick={() => setEditingLocation(location)} size="sm" variant="ghost">
-                  <Edit className="h-4 w-4" />
-                </Button>
+                <>
+                  <Button onClick={() => setEditingLocation(location)} size="sm" variant="ghost">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  {!location.is_active && (
+                    <Button
+                      onClick={() => handleReactivateLocation(location.id)}
+                      size="sm"
+                      variant="ghost"
+                      className="text-green-600 hover:text-green-700"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  )}
+                </>
               )}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -140,15 +171,16 @@ export function LocationsManager() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogTitle>Deactivate Location?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently delete the location.
+                      This will deactivate "{location.name}". It will no longer appear in dropdown lists,
+                      but will remain visible in historical task records. You can reactivate it later if needed.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={() => handleDeleteLocation(location.id)}>
-                      Delete
+                      Deactivate
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

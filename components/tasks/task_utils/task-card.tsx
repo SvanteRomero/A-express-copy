@@ -61,7 +61,7 @@ export function TaskCard({
                     {isManagerView ? (
                         <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4" />
-                            <span>{task.current_location}</span>
+                            <span>{task.current_location_details?.name}</span>
                         </div>
                     ) : isAccountantView ? (
                         <div className="font-medium">

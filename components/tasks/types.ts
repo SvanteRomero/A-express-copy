@@ -1,6 +1,7 @@
 import { UserResponse } from "@/components/users/types";
 import { Customer, PhoneNumber, Referrer } from "@/components/customers/types";
 import { Brand } from "@/components/brands/types";
+import { Location } from "@/components/locations/types";
 
 export interface PaginatedTasks {
     count: number;
@@ -45,7 +46,9 @@ export interface Task {
     estimated_cost: string;
     total_cost: string;
     payment_status: string;
-    current_location: string;
+    current_location: number;  // FK to Location
+    current_location_details: Location;  // Nested location details
+    current_location_name: string | null;  // Backward compatibility
     urgency: string;
     date_in: string;
     approved_date: string;
@@ -66,7 +69,9 @@ export interface Task {
     workshop_status: string | null;
     sent_out_by: number;
     original_technician_snapshot?: number | null;
-    original_location_snapshot?: string | null;
+    original_location_snapshot?: number | null;  // FK to Location
+    original_location_snapshot_details?: Location | null;  // Nested location details
+    original_location_name?: string | null;  // Backward compatibility
     latest_pickup_at?: string | null;
     latest_pickup_by?: number | null;
     original_technician?: number | null;

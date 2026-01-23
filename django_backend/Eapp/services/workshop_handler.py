@@ -41,12 +41,12 @@ class WorkshopHandler:
         if not task.original_technician_snapshot:
             task.original_technician_snapshot = user
         if not task.original_location_snapshot:
-            task.original_location_snapshot = task.current_location  # Save CURRENT location before workshop
+            task.original_location_snapshot = task.current_location  # Both are now FK references
         
         # Update task workshop fields
         task.workshop_status = 'In Workshop'
         task.workshop_location = workshop_location
-        task.current_location = workshop_location.name
+        task.current_location = workshop_location  # Assign the Location object directly
         
         task.save(update_fields=[
             'workshop_status',
@@ -83,7 +83,7 @@ class WorkshopHandler:
         if task.original_technician:
             task.assigned_to = task.original_technician
         
-        # Restore original location from snapshot
+        # Restore original location from snapshot (both FK references now)
         if task.original_location_snapshot:
             task.current_location = task.original_location_snapshot
         
@@ -125,9 +125,15 @@ class WorkshopHandler:
             task.original_technician_snapshot = activity.user
             updated = True
         
-        if not task.original_location_snapshot and details.get('workshop_location_name'):
-            task.original_location_snapshot = details.get('workshop_location_name')
-            updated = True
+        # For location snapshot, try to get Location object from details
+        if not task.original_location_snapshot and details.get('workshop_location_id'):
+            from common.models import Location
+            try:
+                location = Location.objects.get(id=details.get('workshop_location_id'))
+                task.original_location_snapshot = location
+                updated = True
+            except Location.DoesNotExist:
+                pass  # Skip if location no longer exists
         
         if updated:
             task.save(update_fields=['original_technician_snapshot', 'original_location_snapshot'])

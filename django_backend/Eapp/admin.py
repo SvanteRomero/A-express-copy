@@ -8,7 +8,7 @@ class TaskAdmin(admin.ModelAdmin):
     list_filter = ('status', 'urgency', 'assigned_to', 'created_by')
     search_fields = ('title', 'description')
     autocomplete_fields = ['assigned_to', 'created_by']
-    date_hierarchy = 'created_at'
+    # date_hierarchy = 'created_at'  # Disabled: requires MySQL timezone tables to be loaded
 
 @admin.register(TaskActivity)
 class TaskActivityAdmin(admin.ModelAdmin):

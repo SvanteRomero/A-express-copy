@@ -62,12 +62,20 @@ class TaskDetailSerializer(serializers.ModelSerializer):
     workshop_location_details = LocationSerializer(
         source="workshop_location", read_only=True
     )
+    current_location_details = LocationSerializer(
+        source="current_location", read_only=True
+    )
+    original_location_snapshot_details = LocationSerializer(
+        source="original_location_snapshot", read_only=True
+    )
+    # Backward compatibility - expose location names as strings
+    current_location_name = serializers.CharField(read_only=True)
+    original_location_name = serializers.CharField(read_only=True)
     original_technician_snapshot_details = UserSerializer(
         source="original_technician_snapshot", read_only=True
     )
     original_technician = serializers.PrimaryKeyRelatedField(read_only=True)
     original_technician_details = UserSerializer(source='original_technician', read_only=True)
-    original_location_snapshot = serializers.CharField(read_only=True)
     latest_pickup_at = serializers.DateTimeField(read_only=True)
     latest_pickup_by_details = UserSerializer(source='latest_pickup_by', read_only=True)
     cost_breakdowns = CostBreakdownSerializer(many=True, read_only=True)
@@ -90,10 +98,12 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             'brand', 'brand_details', 'laptop_model', 'laptop_model_details',
             'device_type', 'device_notes',
             'estimated_cost', 'total_cost', 'paid_amount', 'payment_status',
-            'current_location', 'date_in', 'approved_at', 'approved_by',
+            'current_location', 'current_location_details', 'current_location_name',
+            'date_in', 'approved_at', 'approved_by',
             'date_out', 'negotiated_by', 'negotiated_by_details',
             'activities', 'payments', 'outstanding_balance', 'is_referred', 'is_debt', 'referred_by', 'referred_by_details',
-            'workshop_status', 'workshop_location', 'original_technician_snapshot', 'original_location_snapshot', 'original_technician', 'original_technician_details',
+            'workshop_status', 'workshop_location', 'original_technician_snapshot', 'original_location_snapshot', 
+            'original_location_snapshot_details', 'original_location_name', 'original_technician', 'original_technician_details',
             'workshop_location_details', 'original_technician_snapshot_details', 'approved_by_details',
             'latest_pickup_at', 'latest_pickup_by', 'latest_pickup_by_details',
             'sent_out_by', 'sent_out_by_details',
@@ -101,7 +111,8 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             'cost_breakdowns'
         )
         read_only_fields = ('created_at', 'updated_at', 'assigned_to_details', 'created_by_details', 'activities', 'payments',
-                    'workshop_location_details', 'original_technician_snapshot_details', 'approved_by_details', 'sent_out_by_details')
+                    'workshop_location_details', 'current_location_details', 'original_location_snapshot_details',
+                    'original_technician_snapshot_details', 'approved_by_details', 'sent_out_by_details')
         extra_kwargs = {
             "estimated_cost": {"validators": [MinValueValidator(Decimal("0.00"))]},
         }
