@@ -235,7 +235,7 @@ else:
         DATABASES = {
             "default": {
                 "ENGINE": "django.db.backends.mysql",
-                "NAME": "my_django_api_test",
+                "NAME": "my_database_test",
                 "USER": "root",
                 "PASSWORD": "",
                 "HOST": "127.0.0.1",

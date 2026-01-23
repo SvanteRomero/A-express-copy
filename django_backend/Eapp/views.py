@@ -85,12 +85,27 @@ class TaskViewSet(viewsets.ModelViewSet):
         return TaskDetailSerializer
 
     def get_object(self):
+        import logging
+        logger = logging.getLogger(__name__)
+        
         queryset = self.get_queryset()
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
         filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
-        obj = get_object_or_404(queryset, **filter_kwargs)
-        self.check_object_permissions(self.request, obj)
-        return obj
+        
+        # Debug logging
+        logger.warning(f"[TASK DEBUG] User: {self.request.user.username} (Role: {self.request.user.role})")
+        logger.warning(f"[TASK DEBUG] Action: {self.action}, Method: {self.request.method}")
+        logger.warning(f"[TASK DEBUG] Looking up task: {filter_kwargs}")
+        logger.warning(f"[TASK DEBUG] Queryset count: {queryset.count()}")
+        
+        try:
+            obj = get_object_or_404(queryset, **filter_kwargs)
+            logger.warning(f"[TASK DEBUG] Task found: {obj.title}, Status: {obj.status}")
+            self.check_object_permissions(self.request, obj)
+            return obj
+        except Exception as e:
+            logger.error(f"[TASK DEBUG] Error getting object: {type(e).__name__}: {str(e)}")
+            raise
 
     def create(self, request, *args, **kwargs):
         if not (request.user.role in ['Manager', 'Front Desk'] or request.user.is_superuser):
