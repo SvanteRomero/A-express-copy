@@ -27,13 +27,11 @@ export function IssueDetailsSection({ form }: IssueDetailsSectionProps) {
         user,
         managers,
         technicians,
-        workshopTechnicians,
         locations,
         filteredLocations,
         referrerOptions,
         isLoadingManagers,
         isLoadingTechnicians,
-        isLoadingWorkshopTechnicians,
         isLoadingLocations,
         handleInputChange,
         handleReferredChange,
@@ -121,7 +119,7 @@ export function IssueDetailsSection({ form }: IssueDetailsSectionProps) {
                     </SelectTrigger>
                     <SelectContent>
                         {filteredLocations?.map((location) => (
-                            <SelectItem key={location.id} value={location.name}>
+                            <SelectItem key={location.id} value={location.id.toString()}>
                                 {location.name}
                             </SelectItem>
                         ))}
@@ -162,16 +160,19 @@ export function IssueDetailsSection({ form }: IssueDetailsSectionProps) {
                     <Select
                         value={formData.assigned_to}
                         onValueChange={(value) => handleInputChange('assigned_to', value)}
-                        disabled={isLoadingTechnicians || isLoadingWorkshopTechnicians}
+                        disabled={isLoadingTechnicians}
                     >
                         <SelectTrigger>
                             <SelectValue placeholder="Select technician" />
                         </SelectTrigger>
                         <SelectContent>
-                            {(locations?.find(l => l.name === formData.current_location)?.is_workshop
-                                ? workshopTechnicians
-                                : technicians
-                            )?.map((technician) => (
+                            {technicians?.filter(t => {
+                                const isWorkshopLocation = locations?.find(l => l.id.toString() === formData.current_location)?.is_workshop
+                                if (isWorkshopLocation) {
+                                    return t.is_workshop
+                                }
+                                return !t.is_workshop
+                            }).map((technician) => (
                                 <SelectItem key={technician.id} value={technician.id.toString()}>
                                     {technician.first_name} {technician.last_name}{technician.role === 'Manager' ? ' (Manager)' : ''}
                                 </SelectItem>

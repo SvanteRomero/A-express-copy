@@ -114,7 +114,7 @@ export default function LaptopInformation({ taskId }: LaptopInformationProps) {
             <Label className="text-sm font-medium text-gray-600">Current Location</Label>
             <div className="flex items-center gap-2 mt-1">
               <MapPin className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-900">{taskData.current_location}</span>
+              <span className="text-gray-900">{taskData.current_location_name}</span>
             </div>
           </div>
           <div>

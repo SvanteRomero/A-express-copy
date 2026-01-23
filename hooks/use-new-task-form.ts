@@ -122,7 +122,7 @@ export function useNewTaskForm() {
     // Set default location
     useEffect(() => {
         if (locations && locations.length > 0) {
-            setFormData(prev => ({ ...prev, current_location: locations[0].name }))
+            setFormData(prev => ({ ...prev, current_location: locations[0].id.toString() }))
         }
     }, [locations])
 

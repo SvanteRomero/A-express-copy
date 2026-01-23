@@ -39,7 +39,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
       setRepairManagementData({
         assigned_to: taskData.assigned_to?.toString() || "unassigned",
         status: taskData.status || "",
-        current_location: taskData.current_location || "",
+        current_location: taskData.current_location?.toString() || "",
         urgency: taskData.urgency || "",
       })
     }
@@ -65,9 +65,9 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
       changes.status = repairManagementData.status
       activityMessages.push(`Updated Status from "${taskData.status}" to "${repairManagementData.status}"`)
     }
-    if (repairManagementData.current_location !== taskData.current_location) {
+    if (repairManagementData.current_location !== (taskData.current_location?.toString() || "")) {
       changes.current_location = repairManagementData.current_location
-      activityMessages.push(`Updated Location from "${taskData.current_location}" to "${repairManagementData.current_location}"`)
+      activityMessages.push(`Updated Location from "${taskData.current_location_name}" to "${locations?.find(l => l.id.toString() === repairManagementData.current_location)?.name}"`)
     }
     if (repairManagementData.urgency !== taskData.urgency) {
       changes.urgency = repairManagementData.urgency
@@ -99,7 +99,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
     return (
       repairManagementData.assigned_to !== (taskData.assigned_to?.toString() || "unassigned") ||
       repairManagementData.status !== taskData.status ||
-      repairManagementData.current_location !== taskData.current_location ||
+      repairManagementData.current_location !== (taskData.current_location?.toString() || "") ||
       repairManagementData.urgency !== taskData.urgency
     )
   }, [repairManagementData, taskData])
@@ -204,7 +204,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
             <Label className="text-sm font-medium text-gray-600">Current Location</Label>
             {canEditLocation ? (
               <Select
-                value={repairManagementData.current_location}
+                value={repairManagementData.current_location?.toString()}
                 onValueChange={value => setRepairManagementData(prev => ({ ...prev, current_location: value }))}
               >
                 <SelectTrigger>
@@ -212,14 +212,14 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {locations?.map(location => (
-                    <SelectItem key={location.id} value={location.name}>
+                    <SelectItem key={location.id} value={location.id.toString()}>
                       {location.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             ) : (
-              <p className="text-gray-900 p-2 bg-gray-50 rounded border">{taskData.current_location}</p>
+              <p className="text-gray-900 p-2 bg-gray-50 rounded border">{taskData.current_location_name || taskData.current_location}</p>
             )}
           </div>
 
