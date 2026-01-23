@@ -9,6 +9,17 @@ import { addTaskActivity, requestDebt } from "@/lib/api-client"
 import { useTask, useUpdateTask } from "@/hooks/use-tasks"
 import { useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/feedback/alert-dialog"
 import { toast } from "@/hooks/use-toast"
 import {
   showTaskMarkedAsDebtToast,
@@ -43,11 +54,26 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
   }
 
   const handleMarkAsPickedUp = () => {
+    if (taskData?.status === 'Terminated') {
+      // For terminated tasks, allow pickup without payment check
+      updateTaskMutation.mutate({ id: taskId, updates: { status: "Picked Up" } })
+      return
+    }
     if (taskData?.payment_status !== "Fully Paid" && !taskData?.is_debt) {
       showPaymentRequiredToast()
       return
     }
     updateTaskMutation.mutate({ id: taskId, updates: { status: "Picked Up" } })
+  }
+
+  const handleTerminateTask = () => {
+    updateTaskMutation.mutate({
+      id: taskId,
+      updates: {
+        is_terminated: true,
+        status: 'Ready for Pickup'
+      }
+    })
   }
 
   const handleRequestDebt = async () => {
@@ -105,7 +131,7 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
         <div className="flex-grow">
           <h1 className="text-xl md:text-3xl font-bold tracking-tight text-gray-900">Task Details - {taskData.title}</h1>
           <div className="flex items-center gap-2 mt-2">
-            <StatusBadge status={taskData.status} />
+            <StatusBadge status={taskData.status} isTerminated={taskData.is_terminated} />
             {taskData.workshop_status && (
               <WorkshopStatusBadge status={taskData.workshop_status} />
             )}
@@ -143,15 +169,32 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
               Mark as Complete
             </Button>
           )}
-          {canMarkPickedUp && (
-            <Button
-              className="bg-red-600 hover:bg-red-700 text-white"
-              onClick={handleMarkAsPickedUp}
-              disabled={taskData.status !== "Ready for Pickup" || (taskData.payment_status !== "Fully Paid" && !taskData.is_debt)}
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Mark as Picked Up
-            </Button>
+          {canMarkPickedUp && !taskData.is_terminated && taskData.status !== "Picked Up" && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  variant="destructive"
+                >
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Terminate Task
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Terminate Task?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will mark the task as terminated. The customer can then collect their device.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleTerminateTask}>
+                    Terminate
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
           {isAdmin && (
             <Button variant="outline" className="border-gray-300 text-gray-700 bg-transparent">

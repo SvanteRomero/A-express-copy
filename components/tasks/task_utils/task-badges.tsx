@@ -1,6 +1,11 @@
 import { Badge } from "@/components/ui/core/badge"
 
-export function StatusBadge({ status }: { status: string }) {
+export function StatusBadge({ status, isTerminated }: { status: string; isTerminated?: boolean }) {
+    // Override display: show "Terminated" if task is picked up but was terminated
+    if (status === "Picked Up" && isTerminated) {
+        return <Badge className="bg-orange-600 text-red hover:bg-orange-600 border border-orange-700">Terminated</Badge>
+    }
+
     switch (status) {
         case "Assigned - Not Accepted":
             return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">Not Accepted</Badge>

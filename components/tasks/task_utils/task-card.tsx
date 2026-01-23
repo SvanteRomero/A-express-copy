@@ -48,7 +48,7 @@ export function TaskCard({
                 {task.workshop_status ? (
                     <WorkshopStatusBadge status={task.workshop_status} />
                 ) : (
-                    <StatusBadge status={task.status} />
+                    <StatusBadge status={task.status} isTerminated={task.is_terminated} />
                 )}
             </CardHeader>
             <CardContent className="p-4 pt-0 space-y-2">

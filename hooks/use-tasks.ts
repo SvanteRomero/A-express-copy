@@ -37,6 +37,7 @@ export function useTasks(filters?: {
   payment_status?: string
   assigned_to?: number
   workshop_status?: string
+  workshop_tech_user?: number
 }) {
   return useQuery<PaginatedTasks>({
     queryKey: ['tasks', filters],
@@ -238,41 +239,26 @@ export function useTechnicianTasks(
       };
 
       if (activeTab === 'in-progress') {
-        params.assigned_to = userId;
-        params.status = "In Progress";
-        // Convert to string explicit filter for backend if needed, or rely on client/server logic
-        // The previous logic filtered out workshop tasks client side. 
-        // For server side, we might need a specific exclusion or just handle it.
-        // If the backend doesn't support "not_workshop_status", we might fetch and filter,
-        // but for pagination we want server to handle it.
-        // Assuming standard behavior:
-        if (!isWorkshopTech) {
-          // For normal techs, we usually exclude "In Workshop" tasks from their main list
-          // If the API supports exclusion, good. If not, we might view them or mixed.
-          // Given the constraints, we'll query for assigned tasks.
+        // Workshop technicians see tasks assigned to them OR tasks in workshop
+        if (isWorkshopTech) {
+          // Use combined filter - don't pass assigned_to separately!
+          params.workshop_tech_user = userId;  // Combined OR query
+          params.status = "In Progress";
+        } else {
+          // Regular technicians see tasks assigned to them
+          params.assigned_to = userId;
+          params.status = "In Progress";
         }
       } else if (activeTab === 'completed') {
         params.assigned_to = userId;
         params.status = "Completed";
       } else if (activeTab === 'in-workshop') {
+        // This tab is only for regular technicians to see their tasks in workshop
         params.workshop_status = "In Workshop";
-        // Ensure we only show ones currently in progress in workshop?
         params.status = "In Progress";
         if (!isWorkshopTech) {
           params.assigned_to = userId;
         }
-        // If workshop tech, show ALL "In Workshop" tasks (no filtering by specific technician)
-        // This allows them to see everything in the queue.
-      }
-
-      // Specific overrides for Workshop Techs who have a different "In Progress" view
-      if (isWorkshopTech && activeTab === 'in-progress') {
-        // Workshop techs see tasks assigned to them OR where they are workshop tech
-        // This complex OR query might be hard for the simple getTasks.
-        // We'll prioritize the direct assignment for "In Progress" tab or match previous behavior.
-        // Previous behavior: fetched both.
-        // For pagination, we'll stick to 'assigned_to' for standard "In Progress"
-        // and they use "In Workshop" tab for workshop tasks.
       }
 
       const response = await getTasks(params);

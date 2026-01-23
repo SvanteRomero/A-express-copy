@@ -12,7 +12,7 @@ import { useLocations } from "@/hooks/use-locations"
 import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useMemo, useState } from "react"
 import { showRepairManagementSavedToast } from "@/components/notifications/toast"
-import { Badge } from "@/components/ui/core/badge"
+import { StatusBadge } from "@/components/tasks/task_utils/task-badges"
 
 interface RepairManagementProps {
   taskId: string
@@ -104,26 +104,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
     )
   }, [repairManagementData, taskData])
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "Assigned - Not Accepted":
-        return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">Not Accepted</Badge>
-      case "Diagnostic":
-        return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">Diagnostic</Badge>
-      case "In Progress":
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">In Progress</Badge>
-      case "Awaiting Parts":
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Awaiting Parts</Badge>
-      case "Ready for Pickup":
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Ready for Pickup</Badge>
-      case "Completed":
-        return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Completed</Badge>
-      case "Terminated":
-        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Terminated</Badge>
-      default:
-        return <Badge variant="secondary">{status}</Badge>
-    }
-  }
+
 
   const isAdmin = user?.role === "Administrator"
   const isManager = user?.role === "Manager"
@@ -196,7 +177,7 @@ export default function RepairManagement({ taskId }: RepairManagementProps) {
                 </SelectContent>
               </Select>
             ) : (
-              <div className="p-2">{getStatusBadge(taskData.status)}</div>
+              <div className="p-2"><StatusBadge status={taskData.status} isTerminated={taskData.is_terminated} /></div>
             )}
           </div>
 

@@ -278,3 +278,21 @@ class ActivityLogger:
                 'amount': str(amount)
             }
         )
+    
+    @staticmethod
+    def log_task_terminated(task, user):
+        """
+        Log task terminated activity.
+        
+        Args:
+            task: Task instance
+            user: User who performed the action
+        """
+        message = "Task has been terminated. Proceed for pickup."
+        
+        return TaskActivity.objects.create(
+            task=task,
+            user=user,
+            type=TaskActivity.ActivityType.STATUS_UPDATE,
+            message=message
+        )

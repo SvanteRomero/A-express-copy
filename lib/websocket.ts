@@ -26,7 +26,7 @@ export interface PongMessage {
 export interface ToastNotificationMessage {
     type: 'toast_notification';
     id: string;
-    toast_type: 'task_created' | 'task_approved' | 'task_picked_up' | 'payment_added' | 'task_updated' | 'task_completed' | 'task_sent_to_workshop' | 'workshop_task_solved' | 'workshop_task_not_solved' | 'task_assigned' | 'payment_method_created' | 'payment_method_updated' | 'payment_method_deleted' | 'debt_request_approved' | 'debt_request_rejected';
+    toast_type: 'task_created' | 'task_approved' | 'task_picked_up' | 'payment_added' | 'task_updated' | 'task_completed' | 'task_sent_to_workshop' | 'workshop_task_solved' | 'workshop_task_not_solved' | 'task_assigned' | 'payment_method_created' | 'payment_method_updated' | 'payment_method_deleted' | 'debt_request_approved' | 'debt_request_rejected' | 'task_terminated';
     data: {
         task_title?: string;
         customer_name?: string;

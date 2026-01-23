@@ -16,7 +16,6 @@ class Task(models.Model):
         COMPLETED = 'Completed', _('Completed')
         READY_FOR_PICKUP = 'Ready for Pickup', _('Ready for Pickup')
         PICKED_UP = 'Picked Up', _('Picked Up')
-        TERMINATED = 'Terminated', _('Terminated')
 
     class Urgency(models.TextChoices):
         YUPO = 'Yupo', _('Yupo')
@@ -83,6 +82,7 @@ class Task(models.Model):
     date_in = models.DateField(default=get_current_date)
     is_debt = models.BooleanField(default=False)
     is_referred = models.BooleanField(default=False)
+    is_terminated = models.BooleanField(default=False)
     referred_by = models.ForeignKey(
         'customers.Referrer', on_delete=models.SET_NULL, null=True, blank=True, related_name='referred_tasks'
     )

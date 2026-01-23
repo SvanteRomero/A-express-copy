@@ -199,6 +199,28 @@ class TaskUpdateService:
             logger.warning(f"[SERVICE DEBUG] Workshop handler returned response")
             return workshop_response
         
+        logger.warning(f"[SERVICE DEBUG] Handling is_terminated flag")
+        # Handle is_terminated flag
+        if data.get('is_terminated') is True:
+            from notifications.utils import broadcast_toast_notification
+            task.is_terminated = True
+            # Ensure status is set to Ready for Pickup when terminated
+            if 'status' not in data or data['status'] != 'Ready for Pickup':
+                data['status'] = 'Ready for Pickup'
+            task.save(update_fields=['is_terminated'])
+            ActivityLogger.log_task_terminated(task, user)
+            
+            # Broadcast WebSocket notification
+            broadcast_toast_notification(
+                roles=['front_desk', 'manager'],
+                toast_type='task_terminated',
+                data={
+                    'task_title': task.title,
+                    'customer_name': task.customer.name if task.customer else 'Unknown',
+                    'user_name': user.get_full_name() or user.username,
+                }
+            )
+        
         logger.warning(f"[SERVICE DEBUG] Handling status transitions")
         logger.warning(f"[SERVICE DEBUG] Current task status: {task.status}")
         logger.warning(f"[SERVICE DEBUG] New status in data: {data.get('status', 'NOT SET')}")

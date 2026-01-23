@@ -79,7 +79,7 @@ export function TaskActions({
 
     if (isPickupView) {
         const isPickingUp = pickingUpTaskId === task.title;
-        const isPaymentBlocked = task.payment_status !== 'Fully Paid' && !task.is_debt;
+        const isPaymentBlocked = !task.is_terminated && task.payment_status !== 'Fully Paid' && !task.is_debt;
         return (
             <div className="flex gap-2 w-full justify-end" onClick={stopProp}>
                 <AlertDialog>

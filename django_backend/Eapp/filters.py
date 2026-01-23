@@ -19,6 +19,10 @@ class TaskFilter(django_filters.FilterSet):
     
     # For accountant tasks page: filter unpaid tasks
     unpaid_tasks = django_filters.BooleanFilter(method='filter_unpaid_tasks')
+    
+    # For workshop technicians: combined view of assigned tasks OR workshop tasks
+    # Takes user_id as a separate parameter to avoid conflict with assigned_to filter
+    workshop_tech_user = django_filters.NumberFilter(method='filter_workshop_tech_view')
 
     class Meta:
         model = Task
@@ -74,6 +78,20 @@ class TaskFilter(django_filters.FilterSet):
                 status='Picked Up'
             ).exclude(
                 status='Terminated'
+            )
+        return queryset
+    
+    def filter_workshop_tech_view(self, queryset, name, value):
+        """
+        Filter for workshop technicians who need to see:
+        1. Tasks assigned to them directly
+        2. OR tasks currently in the workshop (workshop_status = 'In Workshop')
+        
+        The 'value' parameter IS the user ID (not a boolean).
+        """
+        if value:
+            return queryset.filter(
+                Q(assigned_to=value) | Q(workshop_status='In Workshop')
             )
         return queryset
 

@@ -84,7 +84,7 @@ export function TaskTableRow({
                 {isPickupView ? (
                     <WorkshopStatusBadge status={task.workshop_status || "N/A"} />
                 ) : (
-                    <StatusBadge status={task.status} />
+                    <StatusBadge status={task.status} isTerminated={task.is_terminated} />
                 )}
             </TableCell>
             {(isCurrentTasks || isMyTasksTab) && (

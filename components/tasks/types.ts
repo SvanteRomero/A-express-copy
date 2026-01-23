@@ -65,6 +65,7 @@ export interface Task {
     approved_by: number;
     approved_at: string;
     is_debt: boolean;
+    is_terminated: boolean;
     qc_notes: string;
     workshop_status: string | null;
     sent_out_by: number;

@@ -167,6 +167,14 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
             });
             break;
 
+        case 'task_terminated':
+            toast({
+                title: '⚠️ Task Terminated',
+                description: `${data.task_title} ready for pickup (terminated by ${data.user_name})`,
+                className: 'bg-orange-600 text-white border-orange-600',
+            });
+            break;
+
         default:
             // Unknown toast type - log for debugging
             console.warn('Unknown WebSocket toast type:', toast_type);
