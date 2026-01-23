@@ -21,6 +21,7 @@ class TaskListSerializer(serializers.ModelSerializer):
     outstanding_balance = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     laptop_model_details = ModelSerializer(source='laptop_model', read_only=True)
     total_cost = serializers.DecimalField(source='calculated_total_cost', max_digits=10, decimal_places=2, read_only=True)
+    current_location_details = LocationSerializer(source='current_location', read_only=True)
 
     class Meta:
         model = Task
@@ -32,6 +33,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             'payment_status',
             'workshop_status',
             'current_location',
+            'current_location_details',
             'laptop_model',
             'laptop_model_details',
             'description',
