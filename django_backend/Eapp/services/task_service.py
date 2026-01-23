@@ -133,14 +133,23 @@ class TaskUpdateService:
         Returns:
             dict: Processed data ready for serializer or Response with error
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.warning(f"[SERVICE DEBUG] Starting update_task for {task.title}")
+        logger.warning(f"[SERVICE DEBUG] User: {user.username} ({user.role})")
+        logger.warning(f"[SERVICE DEBUG] Data keys: {list(data.keys())}")
+        
         # Store original values for comparison
         original_assigned_to = task.assigned_to
         
+        logger.warning(f"[SERVICE DEBUG] Handling customer update")
         # Handle customer update
         customer_data = data.pop('customer', None)
         if customer_data:
             CustomerHandler.update_customer(task.customer, customer_data)
         
+        logger.warning(f"[SERVICE DEBUG] Handling partial payment")
         # Handle partial payment
         partial_payment_amount = data.pop("partial_payment_amount", None)
         if partial_payment_amount is not None:
@@ -151,6 +160,7 @@ class TaskUpdateService:
                 method=payment_method
             )
         
+        logger.warning(f"[SERVICE DEBUG] Handling referrer")
         # Handle referrer
         referred_by_name = data.pop("referred_by", None)
         is_referred = data.get("is_referred", task.is_referred)
@@ -162,32 +172,45 @@ class TaskUpdateService:
         else:
             referrer_obj = None
         
+        logger.warning(f"[SERVICE DEBUG] Applying business logic for status based on assignment")
+        logger.warning(f"[SERVICE DEBUG] 'assigned_to' in data: {'assigned_to' in data}")
         # Apply business logic for status based on assignment
         if "assigned_to" in data:
+            logger.warning(f"[SERVICE DEBUG] assigned_to value: {data.get('assigned_to')}")
             if data["assigned_to"]:
+                logger.warning(f"[SERVICE DEBUG] Setting status to 'In Progress'")
                 data["status"] = "In Progress"
             else:
+                logger.warning(f"[SERVICE DEBUG] Setting status to 'Pending'")
                 data["status"] = "Pending"
         
+        logger.warning(f"[SERVICE DEBUG] Handling payment status (accountant only)")
         # Handle payment status update (accountant only)
         if user.role == 'Accountant' and 'payment_status' in data:
             task.payment_status = data['payment_status']
             task.save(update_fields=['payment_status'])
         
+        logger.warning(f"[SERVICE DEBUG] Handling workshop operations")
         # Handle workshop operations
         workshop_response = TaskUpdateService._handle_workshop_operations(
             task, data, user
         )
         if workshop_response:
+            logger.warning(f"[SERVICE DEBUG] Workshop handler returned response")
             return workshop_response
         
+        logger.warning(f"[SERVICE DEBUG] Handling status transitions")
+        logger.warning(f"[SERVICE DEBUG] Current task status: {task.status}")
+        logger.warning(f"[SERVICE DEBUG] New status in data: {data.get('status', 'NOT SET')}")
         # Handle status transitions
         status_response = TaskUpdateService._handle_status_transition(
             task, data, user, original_assigned_to
         )
         if status_response:
+            logger.warning(f"[SERVICE DEBUG] Status transition handler returned response: {status_response.status_code}")
             return status_response
         
+        logger.warning(f"[SERVICE DEBUG] Returning success dict")
         return {
             'data': data,
             'referrer_obj': referrer_obj,
