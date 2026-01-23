@@ -226,7 +226,7 @@ export function ManagerTasksPage() {
               tasks={pendingTasksData?.results || []}
               technicians={technicians || []}
               onRowClick={handleRowClick}
-              showActions={true}
+              showActions={false}
               onDeleteTask={deleteTaskMutation.mutate}
               onProcessPickup={handleProcessPickup}
               onTerminateTask={handleTerminateTask}
@@ -244,6 +244,7 @@ export function ManagerTasksPage() {
               onRowClick={handleMyTaskRowClick}
               showActions={false}
               isManagerView={false}
+              isMyTasksTab={true}
             />
             <div className="flex justify-end space-x-2 mt-4">
               <Button onClick={() => handlePageChange('myTasks', 'previous')} disabled={!myTasksData?.previous}>Previous</Button>

@@ -169,10 +169,13 @@ function toast({ playSound = false, ...props }: Toast) {
     },
   })
 
-  // Auto-dismiss after delay for cascade effect
-  setTimeout(() => {
-    dismiss()
-  }, TOAST_REMOVE_DELAY)
+  // Only auto-dismiss if duration is not Infinity
+  if (props.duration !== Infinity) {
+    const dismissDelay = props.duration !== undefined ? props.duration : TOAST_REMOVE_DELAY
+    setTimeout(() => {
+      dismiss()
+    }, dismissDelay)
+  }
 
   return {
     id: id,

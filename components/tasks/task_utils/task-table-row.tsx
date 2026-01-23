@@ -28,6 +28,7 @@ interface TaskTableRowProps {
     showActions?: boolean
     approvingTaskId?: string | null
     pickingUpTaskId?: string | null
+    isMyTasksTab?: boolean
 }
 
 export function TaskTableRow({
@@ -36,8 +37,10 @@ export function TaskTableRow({
     isManagerView,
     isAccountantView,
     isCompletedTab,
+    isMyTasksTab,
     ...actionProps
 }: TaskTableRowProps) {
+    const isCurrentTasks = isManagerView && !isCompletedTab
     return (
         <TableRow
             className="hover:bg-gray-50 cursor-pointer transition-colors"
@@ -59,7 +62,11 @@ export function TaskTableRow({
                     <span className="text-gray-900">{task.laptop_model_details?.name}</span>
                 </div>
             </TableCell>
-            {isManagerView ? (
+            {isMyTasksTab ? (
+                <TableCell className="text-gray-600 max-w-xs truncate">
+                    {task.description}
+                </TableCell>
+            ) : isManagerView ? (
                 <TableCell className="text-gray-600 max-w-xs truncate">
                     {!isCompletedTab ? task.current_location : <WorkshopStatusBadge status={task.workshop_status || "N/A"} />}
                 </TableCell>
@@ -75,6 +82,11 @@ export function TaskTableRow({
             <TableCell>
                 <StatusBadge status={task.status} />
             </TableCell>
+            {(isCurrentTasks || isMyTasksTab) && (
+                <TableCell>
+                    <WorkshopStatusBadge status={task.workshop_status || "N/A"} />
+                </TableCell>
+            )}
             <TableCell>
                 <div className="flex items-center gap-2">
                     <UserIcon className="h-4 w-4 text-gray-400" />
@@ -84,12 +96,19 @@ export function TaskTableRow({
                 </div>
             </TableCell>
             <TableCell>
-                {isManagerView && !isCompletedTab ? (
+                {isMyTasksTab ? (
+                    <UrgencyBadge urgency={task.urgency} />
+                ) : isManagerView && !isCompletedTab ? (
                     <UrgencyBadge urgency={task.urgency} />
                 ) : (
                     <PaymentStatusBadge status={task.payment_status} />
                 )}
             </TableCell>
+            {isMyTasksTab && (
+                <TableCell className="text-gray-900">
+                    TSh {task.total_cost ? Number(task.total_cost).toLocaleString() : '0'}
+                </TableCell>
+            )}
             {actionProps.showActions && (
                 <TableCell onClick={(e) => e.stopPropagation()}>
                     <TaskActions

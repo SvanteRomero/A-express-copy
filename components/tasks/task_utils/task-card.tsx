@@ -2,7 +2,7 @@
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/layout/card"
 import { Badge } from "@/components/ui/core/badge"
 import { Laptop, MapPin, User as UserIcon } from "lucide-react"
-import { StatusBadge, PaymentStatusBadge, WorkshopStatusBadge } from "./task-badges"
+import { StatusBadge, PaymentStatusBadge, WorkshopStatusBadge, UrgencyBadge } from "./task-badges"
 import { TaskActions } from "./task-actions"
 
 interface TaskCardProps {
@@ -27,6 +27,7 @@ interface TaskCardProps {
     showActions?: boolean
     approvingTaskId?: string | null
     pickingUpTaskId?: string | null
+    isMyTasksTab?: boolean
 }
 
 export function TaskCard({
@@ -34,6 +35,7 @@ export function TaskCard({
     onRowClick,
     isManagerView,
     isAccountantView,
+    isMyTasksTab,
     ...actionProps
 }: TaskCardProps) {
     return (
@@ -77,6 +79,19 @@ export function TaskCard({
                     </div>
                     <div><PaymentStatusBadge status={task.payment_status} /></div>
                 </div>
+
+                {isMyTasksTab && (
+                    <>
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-500">Device Status:</span>
+                            <WorkshopStatusBadge status={task.workshop_status || "N/A"} />
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-500">Total Cost:</span>
+                            <span className="font-medium">TSh {task.total_cost ? Number(task.total_cost).toLocaleString() : '0'}</span>
+                        </div>
+                    </>
+                )}
             </CardContent>
             {actionProps.showActions && (
                 <CardFooter className="p-4 bg-gray-50 flex flex-wrap gap-2 justify-end">

@@ -35,6 +35,7 @@ interface TasksDisplayProps {
   onRemindDebt?: (taskId: string) => void
   approvingTaskId?: string | null
   pickingUpTaskId?: string | null
+  isMyTasksTab?: boolean
 }
 
 export function TasksDisplay({
@@ -59,7 +60,8 @@ export function TasksDisplay({
   onAddPayment,
   onRemindDebt,
   approvingTaskId,
-  pickingUpTaskId
+  pickingUpTaskId,
+  isMyTasksTab
 }: TasksDisplayProps) {
   const isMobile = useIsMobile()
   const [statusOptions, setStatusOptions] = useState<string[]>([])
@@ -164,6 +166,7 @@ export function TasksDisplay({
               isCompletedTab={isCompletedTab}
               approvingTaskId={approvingTaskId}
               pickingUpTaskId={pickingUpTaskId}
+              isMyTasksTab={isMyTasksTab}
             />
           ))}
           {filteredAndSortedTasks.length === 0 && (
@@ -198,7 +201,9 @@ export function TasksDisplay({
                   </Button>
                 </TableHead>
                 <TableHead className="font-semibold text-gray-900">Device</TableHead>
-                {isManagerView ? (
+                {isMyTasksTab ? (
+                  <TableHead className="font-semibold text-gray-900">Issue</TableHead>
+                ) : isManagerView ? (
                   <TableHead className="font-semibold text-gray-900">{isCurrentTasks ? "Location" : "Device Status"}</TableHead>
                 ) : isAccountantView ? (
                   <TableHead className="font-semibold text-gray-900">Outstanding Balance</TableHead>
@@ -206,11 +211,19 @@ export function TasksDisplay({
                   <TableHead className="font-semibold text-gray-900">Issue</TableHead>
                 )}
                 <TableHead className="font-semibold text-gray-900">Task Status</TableHead>
+                {(isCurrentTasks || isMyTasksTab) && (
+                  <TableHead className="font-semibold text-gray-900">Device Status</TableHead>
+                )}
                 <TableHead className="font-semibold text-gray-900">Technician</TableHead>
-                {isManagerView && !isCompletedTab ? (
+                {isMyTasksTab ? (
+                  <TableHead className="font-semibold text-gray-900">Task Urgency</TableHead>
+                ) : isManagerView && !isCompletedTab ? (
                   <TableHead className="font-semibold text-gray-900">Task Urgency</TableHead>
                 ) : (
                   <TableHead className="font-semibold text-gray-900">Payment</TableHead>
+                )}
+                {isMyTasksTab && (
+                  <TableHead className="font-semibold text-gray-900">Total Cost</TableHead>
                 )}
                 {showActions && (
                   <TableHead className="font-semibold text-gray-900">Actions</TableHead>
@@ -241,6 +254,7 @@ export function TasksDisplay({
                   isCompletedTab={isCompletedTab}
                   approvingTaskId={approvingTaskId}
                   pickingUpTaskId={pickingUpTaskId}
+                  isMyTasksTab={isMyTasksTab}
                 />
               ))}
             </TableBody>
