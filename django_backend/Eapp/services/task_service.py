@@ -267,8 +267,9 @@ class TaskUpdateService:
             
             # Handle returned task assignment
             if user.role == 'Front Desk' and data.get('assigned_to'):
-                technician = get_object_or_404(User, id=data.get('assigned_to'), role='Technician')
-                ActivityLogger.log_returned_task_assignment(task, user, technician)
+                # Note: Don't filter by role='Technician' - Managers can also be assigned
+                assignee = get_object_or_404(User, id=data.get('assigned_to'))
+                ActivityLogger.log_returned_task_assignment(task, user, assignee)
             
             return None  # Prevent other status update logs
         
@@ -279,9 +280,10 @@ class TaskUpdateService:
         if new_status == 'In Progress' and user.role == 'Front Desk':
             technician_id = data.get('assigned_to')
             if technician_id:
-                technician = get_object_or_404(User, id=technician_id, role='Technician')
-                task.assigned_to = technician
-                ActivityLogger.log_returned_task_assignment(task, user, technician)
+                # Note: Don't filter by role='Technician' - Managers can also be assigned
+                assignee = get_object_or_404(User, id=technician_id)
+                task.assigned_to = assignee
+                ActivityLogger.log_returned_task_assignment(task, user, assignee)
         
         return None
     
