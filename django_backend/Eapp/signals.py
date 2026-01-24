@@ -74,6 +74,23 @@ def update_task_execution_metrics(sender, instance, created, **kwargs):
             'reassigned_at': None  # Will be filled when reassigned
         })
     
+    # Handle WORKSHOP
+    elif instance.type == TaskActivity.ActivityType.WORKSHOP:
+        details = instance.details or {}
+        # If sending to workshop (has location_id)
+        if details.get('workshop_location_id'):
+            task.workshop_periods.append({
+                'sent_at': instance.timestamp.isoformat(),
+                'returned_at': None
+            })
+        # If returning from workshop (has workshop_status)
+        elif details.get('workshop_status'):
+            if task.workshop_periods:
+                last_period = task.workshop_periods[-1]
+                if last_period.get('returned_at') is None:
+                    last_period['returned_at'] = instance.timestamp.isoformat()
+                    task.workshop_periods[-1] = last_period
+    
     # Handle COMPLETION
     elif instance.type == TaskActivity.ActivityType.STATUS_UPDATE:
         details = instance.details or {}
@@ -97,5 +114,6 @@ def update_task_execution_metrics(sender, instance, created, **kwargs):
         'completed_at', 
         'return_count', 
         'return_periods',
+        'workshop_periods',
         'execution_technicians'
     ])

@@ -135,6 +135,11 @@ class Task(models.Model):
         blank=True,
         help_text='List of {returned_at, reassigned_at} ISO timestamp pairs for net execution calculation'
     )
+    workshop_periods = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='List of {sent_at, returned_at} ISO timestamp pairs excluding external workshop time'
+    )
     execution_technicians = models.JSONField(
         default=list,
         blank=True,

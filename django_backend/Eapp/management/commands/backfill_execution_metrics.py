@@ -112,9 +112,40 @@ class Command(BaseCommand):
                         return_periods.append(current_return)
                         current_return = None
             
-            # If a return is still open at the end
             if current_return:
                 return_periods.append(current_return)
+
+            # 6. Workshop Periods
+            workshop_periods = []
+            current_workshop = None
+            
+            workshop_acts = activities.filter(type=TaskActivity.ActivityType.WORKSHOP).order_by('timestamp')
+            for act in workshop_acts:
+                details = act.details or {}
+                message = act.message or ""
+                
+                # Start: Sending (has location OR message indicates send)
+                if details.get('workshop_location_id') or "Task sent to workshop" in message:
+                    if current_workshop:
+                         # Ensure we capture the earliest start, or maybe extend?
+                         # If we send again, we are still at workshop. Ignore.
+                         pass 
+                    else:
+                        current_workshop = {'sent_at': act.timestamp.isoformat(), 'returned_at': None}
+                
+                # End: Returning (has status OR message indicates return)
+                elif details.get('workshop_status') or "Task returned from workshop" in message:
+                    if current_workshop:
+                        current_workshop['returned_at'] = act.timestamp.isoformat()
+                        workshop_periods.append(current_workshop)
+                        current_workshop = None
+                    else:
+                        # Robustness: Found a return without a start?
+                        # Could infer start time? No, unreliable. Ignore.
+                        pass
+            
+            if current_workshop:
+                workshop_periods.append(current_workshop)
 
             # Update fields
             # Check if any changes needed to avoid unnecessary database writes
@@ -140,6 +171,10 @@ class Command(BaseCommand):
             if len(task.return_periods) != len(return_periods) or has_changes:
                 task.return_periods = return_periods
                 has_changes = True
+
+            if len(task.workshop_periods) != len(workshop_periods) or has_changes:
+                task.workshop_periods = workshop_periods
+                has_changes = True
             
             if has_changes:
                 task.save(update_fields=[
@@ -147,6 +182,7 @@ class Command(BaseCommand):
                     'completed_at', 
                     'return_count', 
                     'return_periods',
+                    'workshop_periods',
                     'execution_technicians'
                 ])
                 updated_count += 1

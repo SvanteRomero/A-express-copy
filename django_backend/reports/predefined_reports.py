@@ -514,8 +514,28 @@ class PredefinedReportGenerator:
                             
                         return_duration = reassigned_at - returned_at
                         total_return_hours += return_duration.total_seconds() / 3600
+
+            # Subtract workshop periods (Option A implementation)
+            total_workshop_hours = 0
+            if task.workshop_periods:
+                for period in task.workshop_periods:
+                    if period.get('sent_at'):
+                        sent_at = datetime.fromisoformat(period['sent_at'])
+                        if timezone.is_naive(sent_at):
+                            sent_at = timezone.make_aware(sent_at)
+                            
+                        if period.get('returned_at'):
+                            returned_at = datetime.fromisoformat(period['returned_at'])
+                            if timezone.is_naive(returned_at):
+                                returned_at = timezone.make_aware(returned_at)
+                        else:
+                            # If still at workshop logic or just not returned yet, use completed_at limit
+                            returned_at = task.completed_at
+                            
+                        workshop_duration = returned_at - sent_at
+                        total_workshop_hours += workshop_duration.total_seconds() / 3600
             
-            net_hours = max(0, gross_hours - total_return_hours)
+            net_hours = max(0, gross_hours - total_return_hours - total_workshop_hours)
             
             # Group by period
             local_completion = task.completed_at.astimezone(utc_plus_3)
