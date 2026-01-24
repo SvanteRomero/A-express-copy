@@ -468,7 +468,7 @@ class UserListViewSet(viewsets.ViewSet):
         ).annotate(
             active_task_count=Count(
                 'tasks', 
-                filter=Q(tasks__status__in=['Pending', 'In Progress', 'Awaiting Parts'])
+                filter=Q(tasks__status__in=['Pending', 'In Progress', 'Awaiting Parts']) & ~Q(tasks__workshop_status='In Workshop')
             )
         )
         serializer = UserSerializer(users, many=True, context={'request': request})
