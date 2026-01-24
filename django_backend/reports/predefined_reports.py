@@ -477,18 +477,19 @@ class PredefinedReportGenerator:
             }
         
         # Determine period type automatically if not specified
-        if not period_type or period_type == 'auto':
-            if duration_days <= 7:
-                period_type = 'daily'
-            elif duration_days <= 30:
-                period_type = 'weekly'
-            elif duration_days <= 90:
-                period_type = 'monthly'
-            else:
-                period_type = 'quarterly'
+        if duration_days <= 7:
+            period_type = 'daily'
+        elif duration_days <= 30:
+            period_type = 'weekly'
+        elif duration_days <= 90:
+            period_type = 'monthly'
+        else:
+            period_type = 'quarterly'
 
-        grouped_tasks = {}
+        grouped_data = {}
         task_details = []
+        all_execution_hours = []
+        all_workshop_hours = []
         utc_plus_3 = pytz.timezone('Etc/GMT-3')
         
         for task in tasks:
@@ -552,9 +553,13 @@ class PredefinedReportGenerator:
             else:
                 period_key = "overall"
             
-            if period_key not in grouped_tasks:
-                grouped_tasks[period_key] = []
-            grouped_tasks[period_key].append(net_hours)
+            if period_key not in grouped_data:
+                grouped_data[period_key] = {'execution': [], 'workshop': []}
+            grouped_data[period_key]['execution'].append(net_hours)
+            grouped_data[period_key]['workshop'].append(total_workshop_hours)
+            
+            all_execution_hours.append(net_hours)
+            all_workshop_hours.append(total_workshop_hours)
             
             # Format technicians list
             technicians_str = "Unassigned"
@@ -569,28 +574,37 @@ class PredefinedReportGenerator:
             
             # Build task detail
             task_details.append({
-                "title": task.title,
+                "task_title": task.title,
                 "customer_name": task.customer.name if task.customer else "N/A",
                 "execution_start": local_start.strftime("%Y-%m-%d %I:%M %p"),
                 "execution_end": local_end.strftime("%Y-%m-%d %I:%M %p"),
                 "technicians": technicians_str,
                 "technician_count": len(task.execution_technicians),
                 "execution_hours": round(net_hours, 1),
+                "workshop_hours": round(total_workshop_hours, 1),
                 "return_count": task.return_count,
             })
         
         # Calculate period statistics
         periods_data = []
-        all_execution_hours = []
         
-        for period, hours_list in grouped_tasks.items():
-            avg_hours = sum(hours_list) / len(hours_list) if hours_list else 0
+        for period, metrics in grouped_data.items():
+            exec_hours = metrics['execution']
+            workshop_hours = metrics['workshop']
+            
+            avg_exec = sum(exec_hours) / len(exec_hours) if exec_hours else 0
+            
+            # Calculate workshop metrics for period
+            workshop_tasks = [h for h in workshop_hours if h > 0]
+            avg_workshop = sum(workshop_tasks) / len(workshop_tasks) if workshop_tasks else 0
+            
             periods_data.append({
                 "period": period,
-                "average_execution_hours": round(avg_hours, 1),
-                "tasks_completed": len(hours_list),
+                "average_execution_hours": round(avg_exec, 1),
+                "average_workshop_hours": round(avg_workshop, 1),
+                "workshop_count": len(workshop_tasks),
+                "tasks_completed": len(exec_hours),
             })
-            all_execution_hours.extend(hours_list)
         
         periods_data.sort(key=lambda x: x["period"])
         
@@ -603,6 +617,12 @@ class PredefinedReportGenerator:
         
         # Calculate summary
         overall_avg = sum(all_execution_hours) / len(all_execution_hours) if all_execution_hours else 0
+        
+        # Workshop summary
+        tasks_with_workshop = [h for h in all_workshop_hours if h > 0]
+        overall_avg_workshop = sum(tasks_with_workshop) / len(tasks_with_workshop) if tasks_with_workshop else 0
+        total_tasks_workshop = len(tasks_with_workshop)
+        
         total_returns = sum(t["return_count"] for t in task_details)
         tasks_with_returns = sum(1 for t in task_details if t["return_count"] > 0)
         
@@ -618,6 +638,8 @@ class PredefinedReportGenerator:
             "task_details": list(paginated_tasks),
             "summary": {
                 "overall_average_hours": round(overall_avg, 1),
+                "overall_average_workshop_hours": round(overall_avg_workshop, 1),
+                "total_tasks_workshop": total_tasks_workshop,
                 "fastest_task_hours": round(min(all_execution_hours), 1) if all_execution_hours else 0,
                 "slowest_task_hours": round(max(all_execution_hours), 1) if all_execution_hours else 0,
                 "best_period": best_period,
