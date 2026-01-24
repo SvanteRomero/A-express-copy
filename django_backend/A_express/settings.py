@@ -158,12 +158,13 @@ INSTALLED_APPS = [
     "notifications",  # WebSocket notifications
     'django_extensions',
     'django_apscheduler',  # Background task scheduling
-    'debug_toolbar',  # Django Debug Toolbar for development
-    'silk',  # Django Silk for API profiling
+    # Debug tools - only enabled in development
+    *(['debug_toolbar', 'silk'] if DEBUG else []),
 ]
 
 MIDDLEWARE = [
-    "debug_toolbar.middleware.DebugToolbarMiddleware",  # Debug Toolbar (should be early)
+    # Debug tools - only in development
+    *(['debug_toolbar.middleware.DebugToolbarMiddleware'] if DEBUG else []),
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",  # Serve static files in production
@@ -171,7 +172,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "silk.middleware.SilkyMiddleware",  # Silk profiling (after auth)
+    *(['silk.middleware.SilkyMiddleware'] if DEBUG else []),  # Silk profiling (after auth)
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "axes.middleware.AxesMiddleware",  # Account lockout after failed attempts
@@ -217,14 +218,21 @@ CHANNEL_LAYERS = {
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Use DATABASE_URL from Railway if available
+# Support for PgBouncer: If PGBOUNCER_URL is set, use it instead for better connection pooling
+PGBOUNCER_URL = os.environ.get("PGBOUNCER_URL")
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
-if DATABASE_URL:
-    # Production: Use PostgreSQL from Railway
+# Prefer PgBouncer for connection pooling if available
+ACTIVE_DB_URL = PGBOUNCER_URL if PGBOUNCER_URL else DATABASE_URL
+
+if ACTIVE_DB_URL:
+    # Production: Use PostgreSQL (via PgBouncer if PGBOUNCER_URL is set)
     DATABASES = {
         "default": dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
+            default=ACTIVE_DB_URL,
+            # Disable Django's connection pooling when using PgBouncer (conn_max_age=0)
+            # Otherwise use 10-minute pooling for direct PostgreSQL connections
+            conn_max_age=0 if PGBOUNCER_URL else 600,
             conn_health_checks=True,
         )
     }
