@@ -586,6 +586,13 @@ class PredefinedReportGenerator:
         total_returns = sum(t["return_count"] for t in task_details)
         tasks_with_returns = sum(1 for t in task_details if t["return_count"] > 0)
         
+        # Calculate best period (fastest average execution)
+        best_period = None
+        if periods_data:
+            # Sort by average execution hours (asc)
+            sorted_by_speed = sorted(periods_data, key=lambda x: x["average_execution_hours"])
+            best_period = sorted_by_speed[0]["period"]
+
         return {
             "periods": periods_data,
             "task_details": list(paginated_tasks),
@@ -593,6 +600,7 @@ class PredefinedReportGenerator:
                 "overall_average_hours": round(overall_avg, 1),
                 "fastest_task_hours": round(min(all_execution_hours), 1) if all_execution_hours else 0,
                 "slowest_task_hours": round(max(all_execution_hours), 1) if all_execution_hours else 0,
+                "best_period": best_period,
                 "total_tasks_analyzed": len(task_details),
                 "total_returns": total_returns,
                 "tasks_with_returns": tasks_with_returns,
