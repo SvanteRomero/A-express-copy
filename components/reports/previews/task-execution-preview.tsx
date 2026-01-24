@@ -245,11 +245,7 @@ export const TaskExecutionPreview = ({
                                         </TableCell>
                                         <TableCell>
                                             <div>{task.technicians}</div>
-                                            {task.technician_count > 1 && (
-                                                <Badge variant="outline" className="ml-1 text-xs">
-                                                    {task.technician_count} Techs
-                                                </Badge>
-                                            )}
+
                                         </TableCell>
                                         <TableCell className="font-semibold">
                                             {task.execution_hours} hours
