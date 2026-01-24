@@ -53,19 +53,6 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
     )
   }
 
-  const handleMarkAsPickedUp = () => {
-    if (taskData?.status === 'Terminated') {
-      // For terminated tasks, allow pickup without payment check
-      updateTaskMutation.mutate({ id: taskId, updates: { status: "Picked Up" } })
-      return
-    }
-    if (taskData?.payment_status !== "Fully Paid" && !taskData?.is_debt) {
-      showPaymentRequiredToast()
-      return
-    }
-    updateTaskMutation.mutate({ id: taskId, updates: { status: "Picked Up" } })
-  }
-
   const handleTerminateTask = () => {
     updateTaskMutation.mutate({
       id: taskId,
