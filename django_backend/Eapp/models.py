@@ -55,7 +55,6 @@ class Task(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tasks')
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
-    due_date = models.DateField(null=True, blank=True)
 
     # New fields
     customer = models.ForeignKey('customers.Customer', on_delete=models.CASCADE, related_name='tasks')
@@ -114,6 +113,35 @@ class Task(models.Model):
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='latest_pickup_tasks'
     )
     qc_notes = models.TextField(blank=True, null=True)
+    
+    # Execution Tracking Fields (assignment → completion metrics)
+    first_assigned_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text='Timestamp of first technician assignment'
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text='Timestamp when task was marked as Completed'
+    )
+    return_count = models.IntegerField(
+        default=0,
+        help_text='Number of times task was returned to customer'
+    )
+    return_periods = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='List of {returned_at, reassigned_at} ISO timestamp pairs for net execution calculation'
+    )
+    execution_technicians = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='List of {user_id, name, role, assigned_at} for all technicians involved'
+    )
+    
     # Backward compatibility properties
     @property
     def current_location_name(self):
@@ -133,6 +161,17 @@ class Task(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            # Composite index for execution report queries
+            models.Index(
+                fields=['first_assigned_at', 'completed_at'],
+                name='idx_task_execution'
+            ),
+            models.Index(
+                fields=['completed_at', 'status'],
+                name='idx_task_completed'
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.pk:  # Only for new instances

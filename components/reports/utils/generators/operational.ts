@@ -94,12 +94,11 @@ export const generateTaskExecutionPDF = (
     const taskDetails = data.task_details || [];
 
     const summaryData: [string, string][] = [
-        ["Overall Average", summary.overall_average ? `${summary.overall_average} days` : "N/A"],
+        ["Overall Average", summary.overall_average_hours ? `${summary.overall_average_hours} hours` : "N/A"],
         ["Best Period", summary.best_period || "N/A"],
-        ["Improvement", summary.improvement ? `${summary.improvement}%` : "N/A"],
         ["Tasks Analyzed", summary.total_tasks_analyzed ? `${summary.total_tasks_analyzed} tasks` : "0"],
-        ["Fastest Task", taskDetails.length > 0 ? `${Math.min(...taskDetails.map((t: any) => t.turnaround_days)).toFixed(1)} days` : "N/A"],
-        ["Slowest Task", taskDetails.length > 0 ? `${Math.max(...taskDetails.map((t: any) => t.turnaround_days)).toFixed(1)} days` : "N/A"],
+        ["Fastest Task", taskDetails.length > 0 ? `${Math.min(...taskDetails.map((t: any) => t.execution_hours)).toFixed(1)} hours` : "N/A"],
+        ["Slowest Task", taskDetails.length > 0 ? `${Math.max(...taskDetails.map((t: any) => t.execution_hours)).toFixed(1)} hours` : "N/A"],
     ];
 
     yPosition = addSummaryTable(pdf, summaryData, yPosition, PDF_COLORS.info);
@@ -111,10 +110,10 @@ export const generateTaskExecutionPDF = (
         const taskData = taskDetails.map((task: any) => [
             task.title || "N/A",
             task.customer_name || "N/A",
-            task.intake_date ? `${task.intake_date} ${task.intake_time}` : "N/A",
-            task.pickup_date ? `${task.pickup_date} ${task.pickup_time}` : "N/A",
-            task.assigned_technician || "Unassigned",
-            task.turnaround_days ? `${task.turnaround_days} days` : "N/A",
+            task.execution_start || "N/A",
+            task.execution_end || "N/A",
+            task.technicians || "Unassigned",
+            task.execution_hours ? `${task.execution_hours} hours` : "N/A",
         ]);
 
         autoTable(pdf, {
@@ -144,7 +143,7 @@ export const generateTaskExecutionPDF = (
 
         const turnaroundData = data.periods.map((period: any) => [
             period.period,
-            period.average_turnaround ? `${period.average_turnaround} days` : "N/A",
+            period.average_execution_hours ? `${period.average_execution_hours} hours` : "N/A",
             period.tasks_completed?.toString() || "0",
         ]);
 
@@ -166,14 +165,15 @@ export const generateTaskExecutionPDF = (
         pdf.setTextColor(...PDF_COLORS.success);
         yPosition += 8;
 
-        const turnaroundDays = taskDetails.map((t: any) => t.turnaround_days);
-        const excellent = turnaroundDays.filter((d: number) => d <= 3).length;
-        const good = turnaroundDays.filter((d: number) => d > 3 && d <= 7).length;
-        const average = turnaroundDays.filter((d: number) => d > 7 && d <= 14).length;
-        const needsImprovement = turnaroundDays.filter((d: number) => d > 14).length;
+        const executionHours = taskDetails.map((t: any) => t.execution_hours);
+        // Thresholds in hours: 3 days = 72h, 7 days = 168h, 14 days = 336h
+        const excellent = executionHours.filter((h: number) => h <= 72).length;
+        const good = executionHours.filter((h: number) => h > 72 && h <= 168).length;
+        const average = executionHours.filter((h: number) => h > 168 && h <= 336).length;
+        const needsImprovement = executionHours.filter((h: number) => h > 336).length;
 
         // Efficiency rating
-        const efficiencyScore = ((excellent * 1 + good * 0.8 + average * 0.6 + needsImprovement * 0.3) / turnaroundDays.length) * 100;
+        const efficiencyScore = ((excellent * 1 + good * 0.8 + average * 0.6 + needsImprovement * 0.3) / executionHours.length) * 100;
         pdf.setFontSize(10);
         const efficiencyColor = efficiencyScore >= 80 ? PDF_COLORS.success : efficiencyScore >= 60 ? PDF_COLORS.warning : PDF_COLORS.danger;
         pdf.setTextColor(...efficiencyColor);

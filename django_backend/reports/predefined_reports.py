@@ -436,32 +436,36 @@ class PredefinedReportGenerator:
 
     @staticmethod
     def generate_task_execution_report(period_type="weekly", date_range='last_7_days', start_date=None, end_date=None, page=1, page_size=10):
-        """Generate task execution report with individual task details and date range support."""
+        """Generate task execution report based on assignment to completion time."""
+        from datetime import datetime
+        import pytz
+
+        # Apply date filter based on COMPLETED_AT field
+        date_filter, actual_date_range, duration_days, duration_description, start_date, end_date = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date, field='completed_at')
         
-        # Apply date filter based on activity timestamps (using activities__timestamp for Task filtering)
-        date_filter, actual_date_range, duration_days, duration_description, start_date, end_date = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date, field='activities__timestamp')
-        
-        # Get tasks that were picked up within the date range by filtering through activities
-        
+        # Query tasks with both assignment and completion times
         tasks = (
             Task.objects.filter(
                 date_filter,
-                activities__type="picked_up"
+                first_assigned_at__isnull=False,
+                completed_at__isnull=False,
             )
-            .distinct()
-            .prefetch_related("activities", "customer", "assigned_to")
+            .select_related('customer')
+            # No need to prefetch activities anymore as we have denormalized fields!
+            .order_by('-completed_at')
         )
-
-
+        
         if not tasks.exists():
             return {
                 "periods": [],
                 "task_details": [],
                 "summary": {
-                    "overall_average": 0,
-                    "best_period": "N/A",
-                    "improvement": 0,
+                    "overall_average_hours": 0,
+                    "fastest_task_hours": 0,
+                    "slowest_task_hours": 0,
                     "total_tasks_analyzed": 0,
+                    "total_returns": 0,
+                    "tasks_with_returns": 0,
                 },
                 "date_range": actual_date_range,
                 "duration_info": {
@@ -471,188 +475,109 @@ class PredefinedReportGenerator:
                 "start_date": start_date.isoformat() if start_date else None,
                 "end_date": end_date.isoformat() if end_date else None,
             }
-
+        
         grouped_tasks = {}
         task_details = []
-        tasks_with_issues = 0
-
-        start_datetime = datetime.combine(start_date, time.min)
-        if timezone.is_naive(start_datetime):
-            start_datetime = timezone.make_aware(start_datetime)
-
+        utc_plus_3 = pytz.timezone('Etc/GMT-3')
+        
         for task in tasks:
-            # Get all activities for this task
-            activities = task.activities.all().order_by("timestamp")
-
-            try:
-                # Find ALL picked_up activities within our date range and get the MOST RECENT one
-                pickup_activities_in_range = activities.filter(
-                    type=TaskActivity.ActivityType.PICKED_UP,
-                    timestamp__gte=start_datetime
-                )
-                
-                if end_date:
-                    end_datetime = datetime.combine(end_date, time.max)
-                    if timezone.is_naive(end_datetime):
-                        end_datetime = timezone.make_aware(end_datetime)
-                    pickup_activities_in_range = pickup_activities_in_range.filter(timestamp__lte=end_datetime)
-                
-                pickup_activities_in_range = pickup_activities_in_range.order_by('-timestamp')
-
-                # Get the most recent pickup activity (the first one in the sorted list)
-                most_recent_pickup = pickup_activities_in_range.first()
-
-                if not most_recent_pickup:
-                    tasks_with_issues += 1
-                    continue
-
-                # Find intake activity
-                first_intake = activities.filter(
-                    type=TaskActivity.ActivityType.INTAKE
-                ).first()
-
-                if not first_intake:
-                    tasks_with_issues += 1
-                    continue
-
-                # Calculate gross duration from intake to MOST RECENT pickup
-                gross_duration = most_recent_pickup.timestamp - first_intake.timestamp
-
-                total_away_time = timedelta(0)
-                pickup_events = activities.filter(type=TaskActivity.ActivityType.PICKED_UP)
-                return_events = activities.filter(type=TaskActivity.ActivityType.RETURNED)
-                
-                # Count the number of times the task has been returned
-                return_count = return_events.count()
-
-                # Calculate total time the device was away from workshop (picked up but not returned)
-                for pickup in pickup_events:
-                    next_return = return_events.filter(timestamp__gt=pickup.timestamp).first()
-                    if next_return:
-                        away_time = next_return.timestamp - pickup.timestamp
-                        total_away_time += away_time
-
-                # Calculate net turnaround time (gross minus time away)
-                net_turnaround_duration = gross_duration - total_away_time
-
-                if net_turnaround_duration.total_seconds() < 0:
-                    net_turnaround_duration = timedelta(0)
-
-                # Convert to whole number of days (rounded up to nearest whole day)
-                turnaround_days = net_turnaround_duration.total_seconds() / (24 * 3600)
-                turnaround_days_whole = int(round(turnaround_days))
-
-                # Group by period based on MOST RECENT pickup date
-                end_time = most_recent_pickup.timestamp
-                if period_type == "weekly":
-                    period_key = end_time.strftime("%Y-W%U")
-                elif period_type == "monthly":
-                    period_key = end_time.strftime("%Y-%m")
-                else:
-                    period_key = "overall"
-
-                if period_key not in grouped_tasks:
-                    grouped_tasks[period_key] = []
-                grouped_tasks[period_key].append(turnaround_days_whole)
-
-                # Convert to local timezone for display
-                import pytz
-                utc_plus_3 = pytz.timezone('Etc/GMT-3')  # UTC+3 timezone
-                
-                local_pickup_time = most_recent_pickup.timestamp.astimezone(utc_plus_3)
-                local_intake_time = first_intake.timestamp.astimezone(utc_plus_3)
-
-                # Format times in 12-hour system with local timezone
-                pickup_date_str = local_pickup_time.date().isoformat()
-                pickup_time_str = local_pickup_time.strftime("%I:%M %p")  # 12-hour format
-                intake_date_str = local_intake_time.date().isoformat()
-                intake_time_str = local_intake_time.strftime("%I:%M %p")  # 12-hour format
-
-                # Store individual task details
-                task_detail = {
-                    "title": task.title,
-                    "customer_name": task.customer.name if task.customer else "N/A",
-                    "intake_date": intake_date_str,
-                    "intake_time": intake_time_str,
-                    "pickup_date": pickup_date_str,
-                    "pickup_time": pickup_time_str,
-                    "assigned_technician": (
-                        task.assigned_to.get_full_name()
-                        if task.assigned_to
-                        else "Unassigned"
-                    ),
-                    "turnaround_days": turnaround_days_whole,
-                    "return_count": return_count,
-                    "pickup_count": pickup_activities_in_range.count(),
-                }
-                task_details.append(task_detail)
-
-            except Exception as e:
-                tasks_with_issues += 1
-                continue
-
+            # Calculate execution time in hours (Net Execution Time)
+            gross_duration = task.completed_at - task.first_assigned_at
+            gross_hours = gross_duration.total_seconds() / 3600
+            
+            total_return_hours = 0
+            if task.return_periods:
+                for period in task.return_periods:
+                    if period.get('returned_at'):
+                        returned_at = datetime.fromisoformat(period['returned_at'])
+                        if timezone.is_naive(returned_at):
+                            returned_at = timezone.make_aware(returned_at)
+                            
+                        if period.get('reassigned_at'):
+                            reassigned_at = datetime.fromisoformat(period['reassigned_at'])
+                            if timezone.is_naive(reassigned_at):
+                                reassigned_at = timezone.make_aware(reassigned_at)
+                        else:
+                            # If not reassigned yet but completed (edge case), cap at completion
+                            reassigned_at = task.completed_at
+                            
+                        return_duration = reassigned_at - returned_at
+                        total_return_hours += return_duration.total_seconds() / 3600
+            
+            net_hours = max(0, gross_hours - total_return_hours)
+            
+            # Group by period
+            if period_type == "weekly":
+                period_key = task.completed_at.strftime("%Y-W%U")
+            elif period_type == "monthly":
+                period_key = task.completed_at.strftime("%Y-%m")
+            else:
+                period_key = "overall"
+            
+            if period_key not in grouped_tasks:
+                grouped_tasks[period_key] = []
+            grouped_tasks[period_key].append(net_hours)
+            
+            # Format technicians list
+            technicians_str = "Unassigned"
+            if task.execution_technicians:
+                # Extract names and join
+                tech_names = [t.get('name', 'Unknown') for t in task.execution_technicians]
+                technicians_str = ", ".join(tech_names)
+            
+            # Format display times
+            local_start = task.first_assigned_at.astimezone(utc_plus_3)
+            local_end = task.completed_at.astimezone(utc_plus_3)
+            
+            # Build task detail
+            task_details.append({
+                "title": task.title,
+                "customer_name": task.customer.name if task.customer else "N/A",
+                "execution_start": local_start.strftime("%Y-%m-%d %I:%M %p"),
+                "execution_end": local_end.strftime("%Y-%m-%d %I:%M %p"),
+                "technicians": technicians_str,
+                "technician_count": len(task.execution_technicians),
+                "execution_hours": round(net_hours, 1),
+                "return_count": task.return_count,
+            })
+        
         # Calculate period statistics
         periods_data = []
-        all_turnaround_days = []
-
-        for period, days_list in grouped_tasks.items():
-            avg_turnaround = sum(days_list) / len(days_list) if days_list else 0
-            period_data = {
-                "period": period,
-                "average_turnaround": int(round(avg_turnaround)),
-                "tasks_completed": len(days_list),
-            }
-            periods_data.append(period_data)
-            all_turnaround_days.extend(days_list)
-
-        periods_data.sort(key=lambda x: x["period"])
-
-        # Sort task details by turnaround time (slowest first)
-        task_details.sort(key=lambda x: x["turnaround_days"], reverse=True)
-
-        paginator = Paginator(task_details, page_size)
-        paginated_task_details = paginator.get_page(page)
-
-        overall_average = (
-            sum(all_turnaround_days) / len(all_turnaround_days)
-            if all_turnaround_days
-            else 0
-        )
+        all_execution_hours = []
         
-        best_period_data = (
-            min(periods_data, key=lambda x: x["average_turnaround"])
-            if periods_data
-            else None
-        )
-        best_period = best_period_data["period"] if best_period_data else "N/A"
-
-        improvement = 0
-        if len(periods_data) > 1 and periods_data[-2]["average_turnaround"] > 0:
-            improvement = (
-                (
-                    periods_data[-2]["average_turnaround"]
-                    - periods_data[-1]["average_turnaround"]
-                )
-                / periods_data[-2]["average_turnaround"]
-                * 100
-            )
-
-        # Calculate summary statistics for returns
-        total_returns = sum(task["return_count"] for task in task_details)
-        tasks_with_returns = sum(1 for task in task_details if task["return_count"] > 0)
-        avg_returns_per_task = total_returns / len(task_details) if task_details else 0
-
-        result = {
+        for period, hours_list in grouped_tasks.items():
+            avg_hours = sum(hours_list) / len(hours_list) if hours_list else 0
+            periods_data.append({
+                "period": period,
+                "average_execution_hours": round(avg_hours, 1),
+                "tasks_completed": len(hours_list),
+            })
+            all_execution_hours.extend(hours_list)
+        
+        periods_data.sort(key=lambda x: x["period"])
+        
+        # Sort by execution time (slowest first)
+        task_details.sort(key=lambda x: x["execution_hours"], reverse=True)
+        
+        # Paginate
+        paginator = Paginator(task_details, page_size)
+        paginated_tasks = paginator.get_page(page)
+        
+        # Calculate summary
+        overall_avg = sum(all_execution_hours) / len(all_execution_hours) if all_execution_hours else 0
+        total_returns = sum(t["return_count"] for t in task_details)
+        tasks_with_returns = sum(1 for t in task_details if t["return_count"] > 0)
+        
+        return {
             "periods": periods_data,
-            "task_details": list(paginated_task_details),
+            "task_details": list(paginated_tasks),
             "summary": {
-                "overall_average": int(round(overall_average)),
-                "best_period": best_period,
-                "improvement": int(round(improvement)),
+                "overall_average_hours": round(overall_avg, 1),
+                "fastest_task_hours": round(min(all_execution_hours), 1) if all_execution_hours else 0,
+                "slowest_task_hours": round(max(all_execution_hours), 1) if all_execution_hours else 0,
                 "total_tasks_analyzed": len(task_details),
                 "total_returns": total_returns,
                 "tasks_with_returns": tasks_with_returns,
-                "avg_returns_per_task": round(avg_returns_per_task, 2),
             },
             "date_range": actual_date_range,
             "duration_info": {
@@ -662,16 +587,14 @@ class PredefinedReportGenerator:
             "start_date": start_date.isoformat() if start_date else None,
             "end_date": end_date.isoformat() if end_date else None,
             "pagination": {
-                "current_page": paginated_task_details.number,
+                "current_page": paginated_tasks.number,
                 "page_size": page_size,
                 "total_tasks": paginator.count,
                 "total_pages": paginator.num_pages,
-                "has_next": paginated_task_details.has_next(),
-                "has_previous": paginated_task_details.has_previous(),
+                "has_next": paginated_tasks.has_next(),
+                "has_previous": paginated_tasks.has_previous(),
             }
         }
-        
-        return result
 
     @staticmethod
     def generate_revenue_overview_report():

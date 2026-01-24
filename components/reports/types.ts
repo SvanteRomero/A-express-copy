@@ -35,12 +35,13 @@ export interface TaskDetail {
     estimated_cost: number;
     total_cost?: number;
     paid_amount?: number;
-    // Turnaround specific fields
-    intake_date?: string;
-    intake_time?: string;
-    pickup_date?: string;
-    pickup_time?: string;
-    turnaround_days?: number;
+    // Execution specific fields
+    execution_start?: string;
+    execution_end?: string;
+    execution_hours?: number;
+    technicians?: string;
+    technician_count?: number;
+    return_count?: number;
 }
 
 export interface CompletedTaskDetail {
@@ -169,18 +170,17 @@ export interface TaskStatusReport {
 export interface TaskExecutionReport {
     periods?: {
         period: string;
-        average_turnaround: number;
+        average_execution_hours: number;
         tasks_completed: number;
     }[];
     task_details?: TaskDetail[];
     summary?: {
-        overall_average: number;
-        best_period: string;
-        improvement: number;
+        overall_average_hours: number;
+        fastest_task_hours: number;
+        slowest_task_hours: number;
         total_tasks_analyzed: number;
-        total_returns?: number;
-        tasks_with_returns?: number;
-        avg_returns_per_task?: number;
+        total_returns: number;
+        tasks_with_returns: number;
     };
     date_range?: string;
     duration_info?: {

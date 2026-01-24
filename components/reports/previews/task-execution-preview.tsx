@@ -18,7 +18,7 @@ const ChartTooltipContent = ({ active, payload, label }: any) => {
             {payload.map((p: any, i: number) => (
                 <div key={i} className="flex items-center justify-between">
                     <span className="text-gray-700">{p.name ?? p.dataKey}</span>
-                    <span className="font-medium text-gray-900">{p.value} days</span>
+                    <span className="font-medium text-gray-900">{p.value} hours</span>
                 </div>
             ))}
         </div>
@@ -32,30 +32,29 @@ const ChartTooltip = (props: any) => {
 interface TaskDetail {
     title: string
     customer_name: string
-    intake_date: string
-    intake_time: string
-    pickup_date: string
-    pickup_time: string
-    assigned_technician: string
-    turnaround_days: number
+    execution_start: string
+    execution_end: string
+    technicians: string
+    technician_count: number
+    execution_hours: number
     return_count: number
 }
 
 interface TaskExecutionReport {
     periods: {
         period: string
-        average_turnaround: number
+        average_execution_hours: number
         tasks_completed: number
     }[]
     task_details: TaskDetail[]
     summary: {
-        overall_average: number
+        overall_average_hours: number
+        fastest_task_hours: number
+        slowest_task_hours: number
         best_period: string
-        improvement: number
         total_tasks_analyzed: number
-        total_returns?: number
-        tasks_with_returns?: number
-        avg_returns_per_task?: number
+        total_returns: number
+        tasks_with_returns: number
     }
 }
 
@@ -105,7 +104,7 @@ export const TaskExecutionPreview = ({
                     <CardContent className="p-4">
                         <p className="text-sm text-gray-600">Overall Average</p>
                         <p className="text-2xl font-bold text-blue-600">
-                            {summary.overall_average ? `${summary.overall_average} days` : 'N/A'}
+                            {summary.overall_average_hours ? `${summary.overall_average_hours} hours` : 'N/A'}
                         </p>
                     </CardContent>
                 </Card>
@@ -117,11 +116,22 @@ export const TaskExecutionPreview = ({
                         </p>
                     </CardContent>
                 </Card>
+                {/* 
                 <Card>
                     <CardContent className="p-4">
                         <p className="text-sm text-gray-600">Improvement</p>
                         <p className="text-2xl font-bold text-green-600">
                             {summary.improvement ? `${summary.improvement}%` : 'N/A'}
+                        </p>
+                    </CardContent>
+                </Card> 
+                Improvement metric removed as per new logic simplification for now
+                */}
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-sm text-gray-600">Fastest Task</p>
+                        <p className="text-2xl font-bold text-green-600">
+                            {summary.fastest_task_hours ? `${summary.fastest_task_hours} hrs` : 'N/A'}
                         </p>
                     </CardContent>
                 </Card>
@@ -156,9 +166,9 @@ export const TaskExecutionPreview = ({
                     </Card>
                     <Card>
                         <CardContent className="p-4">
-                            <p className="text-sm text-gray-600">Avg Returns per Task</p>
+                            <p className="text-sm text-gray-600">Slowest Task</p>
                             <p className="text-2xl font-bold text-purple-600">
-                                {summary.avg_returns_per_task ? summary.avg_returns_per_task.toFixed(1) : '0.0'}
+                                {summary.slowest_task_hours ? `${summary.slowest_task_hours} hrs` : 'N/A'}
                             </p>
                         </CardContent>
                     </Card>
@@ -167,20 +177,20 @@ export const TaskExecutionPreview = ({
 
             {periods.length > 0 && (
                 <Card>
-                    <CardHeader><CardTitle>Turnaround Time Trends</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>Execution Time Trends</CardTitle></CardHeader>
                     <CardContent>
                         <ChartContainer className="h-[300px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={periods}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="period" />
-                                    <YAxis label={{ value: 'Days', angle: -90, position: 'insideLeft' }} />
+                                    <YAxis label={{ value: 'Hours', angle: -90, position: 'insideLeft' }} />
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <Bar
-                                        dataKey="average_turnaround"
+                                        dataKey="average_execution_hours"
                                         fill="#3b82f6"
                                         radius={[4, 4, 0, 0]}
-                                        name="Avg Turnaround"
+                                        name="Avg Execution"
                                     />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -192,7 +202,7 @@ export const TaskExecutionPreview = ({
             {/* Individual Task Details Table - ONLY ONE INSTANCE */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Individual Task Turnaround Times</CardTitle>
+                    <CardTitle>Individual Task Execution Times</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -200,10 +210,10 @@ export const TaskExecutionPreview = ({
                             <TableRow>
                                 <TableHead>Task Title</TableHead>
                                 <TableHead>Customer</TableHead>
-                                <TableHead>Intake Date/Time</TableHead>
-                                <TableHead>Pickup Date/Time</TableHead>
-                                <TableHead>Technician</TableHead>
-                                <TableHead>Turnaround</TableHead>
+                                <TableHead>Execution Start</TableHead>
+                                <TableHead>Execution End</TableHead>
+                                <TableHead>Technicians</TableHead>
+                                <TableHead>Execution Time</TableHead>
                                 <TableHead>Times Returned</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -225,19 +235,24 @@ export const TaskExecutionPreview = ({
                                         <TableCell>{task.customer_name}</TableCell>
                                         <TableCell>
                                             <div className="text-sm">
-                                                <div>{task.intake_date}</div>
-                                                <div className="text-gray-500">{task.intake_time}</div>
+                                                <div>{task.execution_start}</div>
                                             </div>
                                         </TableCell>
                                         <TableCell>
                                             <div className="text-sm">
-                                                <div>{task.pickup_date}</div>
-                                                <div className="text-gray-500">{task.pickup_time}</div>
+                                                <div>{task.execution_end}</div>
                                             </div>
                                         </TableCell>
-                                        <TableCell>{task.assigned_technician}</TableCell>
+                                        <TableCell>
+                                            <div>{task.technicians}</div>
+                                            {task.technician_count > 1 && (
+                                                <Badge variant="outline" className="ml-1 text-xs">
+                                                    {task.technician_count} Techs
+                                                </Badge>
+                                            )}
+                                        </TableCell>
                                         <TableCell className="font-semibold">
-                                            {task.turnaround_days} days
+                                            {task.execution_hours} hours
                                         </TableCell>
                                         <TableCell>
                                             <Badge
@@ -304,7 +319,7 @@ export const TaskExecutionPreview = ({
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Period</TableHead>
-                                    <TableHead>Avg Turnaround</TableHead>
+                                    <TableHead>Avg Execution</TableHead>
                                     <TableHead>Tasks Completed</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -313,7 +328,7 @@ export const TaskExecutionPreview = ({
                                     <TableRow key={period.period}>
                                         <TableCell className="font-medium">{period.period}</TableCell>
                                         <TableCell className="font-semibold">
-                                            {period.average_turnaround ? `${period.average_turnaround} days` : 'N/A'}
+                                            {period.average_execution_hours ? `${period.average_execution_hours} hours` : 'N/A'}
                                         </TableCell>
                                         <TableCell>{period.tasks_completed || 0}</TableCell>
                                     </TableRow>
@@ -328,8 +343,8 @@ export const TaskExecutionPreview = ({
                 <Card>
                     <CardContent className="p-6">
                         <div className="text-center text-gray-500">
-                            <p>No turnaround time data available for the selected period.</p>
-                            <p className="text-sm mt-2">Tasks need to be marked as picked up to appear in this report.</p>
+                            <p>No execution data available for the selected period.</p>
+                            <p className="text-sm mt-2">Tasks need to be assigned and completed to appear in this report.</p>
                         </div>
                     </CardContent>
                 </Card>

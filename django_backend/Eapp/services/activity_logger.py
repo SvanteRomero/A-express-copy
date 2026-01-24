@@ -101,16 +101,16 @@ class ActivityLogger:
             return None
         
         activity_type = TaskActivity.ActivityType.STATUS_UPDATE
-        details = None
+        details = {'new_status': new_status}
         
         if new_status == 'Picked Up':
             activity_type = TaskActivity.ActivityType.PICKED_UP
             pickup_time = timezone.now()
-            details = {
+            details.update({
                 'pickup_by_id': user.id,
                 'pickup_by_name': user.get_full_name(),
                 'pickup_at': pickup_time.isoformat()
-            }
+            })
             # Update pickup snapshot fields
             task.latest_pickup_at = pickup_time
             task.latest_pickup_by = user

@@ -1,0 +1,129 @@
+from django.core.management.base import BaseCommand
+from django.db.models import Q
+from Eapp.models import Task, TaskActivity
+from django.db import transaction
+
+class Command(BaseCommand):
+    help = 'Backfill execution metrics for existing tasks'
+
+    def handle(self, *args, **options):
+        # We process all tasks that don't have first_assigned_at set yet
+        # or maybe we should just process all tasks to be safe? 
+        # Safer to process all to ensure consistency.
+        
+        self.stdout.write("Starting backfill of task execution metrics...")
+        
+        tasks_qs = Task.objects.prefetch_related('activities', 'activities__user').all()
+        total_tasks = tasks_qs.count()
+        processed = 0
+        updated_count = 0
+        
+        for task in tasks_qs.iterator(chunk_size=100):
+            processed += 1
+            if processed % 100 == 0:
+                self.stdout.write(f"Processed {processed}/{total_tasks} tasks...")
+            
+            activities = task.activities.all().order_by('timestamp')
+            
+            # 1. First Assignment
+            first_assignment_act = activities.filter(type=TaskActivity.ActivityType.ASSIGNMENT).first()
+            first_assigned_at = first_assignment_act.timestamp if first_assignment_act else None
+            
+            # 2. Completion Time
+            # Find the LAST status update to 'Completed'
+            # Note: A task might be completed multiple times (e.g. reopened then completed). 
+            # Usually we want the *final* completion.
+            completed_act = activities.filter(
+                type=TaskActivity.ActivityType.STATUS_UPDATE
+            ).filter(
+                Q(details__new_status=Task.Status.COMPLETED) | 
+                Q(message="Task marked as Completed.")
+            ).last()
+            completed_at = completed_act.timestamp if completed_act else None
+            
+            # 3. Return Count
+            return_count = activities.filter(type=TaskActivity.ActivityType.RETURNED).count()
+            
+            # 4. Execution Technicians (Unique list)
+            technicians = []
+            seen_tech_ids = set()
+            
+            assignment_acts = activities.filter(
+                type=TaskActivity.ActivityType.ASSIGNMENT,
+                user__isnull=False
+            )
+            
+            for act in assignment_acts:
+                user = act.user
+                if user.role in ['Technician', 'Manager'] and user.id not in seen_tech_ids:
+                    technicians.append({
+                        'user_id': user.id,
+                        'name': user.get_full_name(),
+                        'role': user.role,
+                        'assigned_at': act.timestamp.isoformat()
+                    })
+                    seen_tech_ids.add(user.id)
+            
+            # 5. Return Periods
+            return_periods = []
+            # We need to iterate chronologically to pair returns with reassignments
+            current_return = None
+            
+            for act in activities:
+                if act.type == TaskActivity.ActivityType.RETURNED:
+                    # If we already have an open return, ignore this (duplicate return?) or treat as reset?
+                    # Let's assume simplest case: New return event starts a period.
+                    if current_return:
+                         # Force close previous open return with this timestamp? No, that implies 0 duration?
+                         # Let's keep the *first* return timestamp of a sequence.
+                         pass
+                    else:
+                        current_return = {'returned_at': act.timestamp.isoformat(), 'reassigned_at': None}
+                
+                elif act.type == TaskActivity.ActivityType.ASSIGNMENT:
+                    if current_return:
+                        # This assignment closes the return period
+                        current_return['reassigned_at'] = act.timestamp.isoformat()
+                        return_periods.append(current_return)
+                        current_return = None
+            
+            # If a return is still open at the end
+            if current_return:
+                return_periods.append(current_return)
+
+            # Update fields
+            # Check if any changes needed to avoid unnecessary database writes
+            has_changes = False
+            
+            if task.first_assigned_at != first_assigned_at:
+                task.first_assigned_at = first_assigned_at
+                has_changes = True
+                
+            if task.completed_at != completed_at:
+                task.completed_at = completed_at
+                has_changes = True
+                
+            if task.return_count != return_count:
+                task.return_count = return_count
+                has_changes = True
+                
+            # JSON comparisons might be tricky depending on exact formatting, but simple equality check usually works
+            if len(task.execution_technicians) != len(technicians) or has_changes: # optimize check
+                 task.execution_technicians = technicians
+                 has_changes = True
+                 
+            if len(task.return_periods) != len(return_periods) or has_changes:
+                task.return_periods = return_periods
+                has_changes = True
+            
+            if has_changes:
+                task.save(update_fields=[
+                    'first_assigned_at', 
+                    'completed_at', 
+                    'return_count', 
+                    'return_periods',
+                    'execution_technicians'
+                ])
+                updated_count += 1
+                
+        self.stdout.write(self.style.SUCCESS(f"Backfill complete! Updated {updated_count} tasks."))
