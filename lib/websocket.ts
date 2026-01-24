@@ -88,12 +88,15 @@ export type WebSocketMessage = SchedulerNotificationMessage | ConnectionMessage 
 
 export type MessageHandler = (message: WebSocketMessage) => void;
 export type ConnectionStatusHandler = (isConnected: boolean) => void;
+export type ConnectionQuality = 'connected' | 'degraded' | 'disconnected';
+export type ConnectionQualityHandler = (quality: ConnectionQuality) => void;
 
 export interface WebSocketClientConfig {
     baseUrl?: string;
     reconnectInterval?: number;
     maxReconnectAttempts?: number;
     pingInterval?: number;
+    heartbeatTimeout?: number;
 }
 
 /**
@@ -159,6 +162,7 @@ const DEFAULT_CONFIG: Required<WebSocketClientConfig> = {
     reconnectInterval: 3000,
     maxReconnectAttempts: 10,
     pingInterval: 30000,
+    heartbeatTimeout: 45000, // 1.5x ping interval
 };
 
 /**
@@ -169,11 +173,16 @@ export class NotificationWebSocket {
     private ws: WebSocket | null = null;
     private messageHandlers: Set<MessageHandler> = new Set();
     private statusHandlers: Set<ConnectionStatusHandler> = new Set();
+    private qualityHandlers: Set<ConnectionQualityHandler> = new Set();
     private reconnectAttempts = 0;
     private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+    private reconnectResetTimeout: ReturnType<typeof setTimeout> | null = null;
     private pingInterval: ReturnType<typeof setInterval> | null = null;
+    private heartbeatTimeout: ReturnType<typeof setTimeout> | null = null;
     private config: Required<WebSocketClientConfig>;
     private isIntentionalClose = false;
+    private lastMessageTime: number = Date.now();
+    private connectionQuality: ConnectionQuality = 'disconnected';
 
     constructor(config: WebSocketClientConfig = {}) {
         this.config = { ...DEFAULT_CONFIG, ...config };
@@ -230,10 +239,43 @@ export class NotificationWebSocket {
     }
 
     /**
+     * Add a handler for connection quality changes.
+     */
+    addQualityHandler(handler: ConnectionQualityHandler): void {
+        this.qualityHandlers.add(handler);
+    }
+
+    /**
+     * Remove a quality handler.
+     */
+    removeQualityHandler(handler: ConnectionQualityHandler): void {
+        this.qualityHandlers.delete(handler);
+    }
+
+    /**
      * Check if WebSocket is connected.
      */
     get isConnected(): boolean {
         return this.ws?.readyState === WebSocket.OPEN;
+    }
+
+    /**
+     * Get current connection quality.
+     */
+    get quality(): ConnectionQuality {
+        return this.connectionQuality;
+    }
+
+    /**
+     * Manually force a reconnection.
+     * Resets reconnection attempts and immediately reconnects.
+     */
+    forceReconnect(): void {
+        console.log('Manual reconnection triggered');
+        this.reconnectAttempts = 0;
+        this.updateConnectionQuality('disconnected');
+        this.cleanup();
+        this.connect();
     }
 
     private createConnection(): void {
@@ -254,14 +296,19 @@ export class NotificationWebSocket {
         this.ws.onopen = () => {
             console.debug('WebSocket connected');
             this.reconnectAttempts = 0;
+            this.lastMessageTime = Date.now();
+            this.updateConnectionQuality('connected');
             this.notifyStatusHandlers(true);
             this.startPing();
+            this.startHeartbeatMonitor();
         };
 
         this.ws.onclose = (event) => {
             console.debug(`WebSocket closed: code=${event.code}, reason=${event.reason}`);
+            this.updateConnectionQuality('disconnected');
             this.notifyStatusHandlers(false);
             this.stopPing();
+            this.stopHeartbeatMonitor();
 
             if (!this.isIntentionalClose) {
                 this.scheduleReconnect();
@@ -277,6 +324,13 @@ export class NotificationWebSocket {
         this.ws.onmessage = (event) => {
             try {
                 const message = JSON.parse(event.data) as WebSocketMessage;
+                this.lastMessageTime = Date.now();
+
+                // If we were degraded, restore to connected
+                if (this.connectionQuality === 'degraded') {
+                    this.updateConnectionQuality('connected');
+                }
+
                 this.notifyMessageHandlers(message);
             } catch (error) {
                 console.error('Failed to parse WebSocket message:', error);
@@ -304,9 +358,36 @@ export class NotificationWebSocket {
         });
     }
 
+    private notifyQualityHandlers(quality: ConnectionQuality): void {
+        this.qualityHandlers.forEach((handler) => {
+            try {
+                handler(quality);
+            } catch (error) {
+                console.error('Quality handler error:', error);
+            }
+        });
+    }
+
+    private updateConnectionQuality(quality: ConnectionQuality): void {
+        if (this.connectionQuality !== quality) {
+            console.debug(`Connection quality changed: ${this.connectionQuality} -> ${quality}`);
+            this.connectionQuality = quality;
+            this.notifyQualityHandlers(quality);
+        }
+    }
+
     private scheduleReconnect(): void {
         if (this.reconnectAttempts >= this.config.maxReconnectAttempts) {
-            console.error('Max reconnect attempts reached');
+            console.warn('Max reconnect attempts reached. Will reset and retry in 2 minutes...');
+            this.updateConnectionQuality('disconnected');
+
+            // Schedule a reset of reconnection attempts after 2 minutes
+            // This allows recovery from temporary network outages
+            this.reconnectResetTimeout = setTimeout(() => {
+                console.log('Resetting reconnection attempts, trying again...');
+                this.reconnectAttempts = 0;
+                this.scheduleReconnect();
+            }, 120000); // 2 minutes
             return;
         }
 
@@ -332,6 +413,36 @@ export class NotificationWebSocket {
         if (this.pingInterval) {
             clearInterval(this.pingInterval);
             this.pingInterval = null;
+        }
+    }
+
+    private startHeartbeatMonitor(): void {
+        // Check heartbeat every 15 seconds
+        this.heartbeatTimeout = setInterval(() => {
+            const timeSinceLastMessage = Date.now() - this.lastMessageTime;
+
+            // If no message received within timeout period, connection may be stale
+            if (timeSinceLastMessage > this.config.heartbeatTimeout) {
+                console.warn(`No messages received for ${timeSinceLastMessage}ms. Connection may be stale.`);
+
+                // Mark as degraded first
+                if (this.connectionQuality === 'connected') {
+                    this.updateConnectionQuality('degraded');
+                }
+
+                // If WebSocket still appears open but is stale, force reconnection
+                if (this.ws?.readyState === WebSocket.OPEN) {
+                    console.log('Forcing reconnection due to stale connection');
+                    this.ws.close();
+                }
+            }
+        }, 15000); // Check every 15 seconds
+    }
+
+    private stopHeartbeatMonitor(): void {
+        if (this.heartbeatTimeout) {
+            clearInterval(this.heartbeatTimeout);
+            this.heartbeatTimeout = null;
         }
     }
 

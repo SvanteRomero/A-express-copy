@@ -19,6 +19,7 @@ import {
     TransactionRequestMessage,
     DebtRequestMessage,
     DebtRequestResolvedMessage,
+    ConnectionQuality,
 } from '@/lib/websocket';
 import { showSchedulerNotificationToast } from '@/components/notifications/toast';
 import { dispatchWebSocketToast } from '@/components/notifications/toast/websocket-toasts';
@@ -27,7 +28,9 @@ import { showDebtRequestToast, dismissDebtRequestToast } from '@/components/noti
 
 interface WebSocketContextType {
     isConnected: boolean;
+    connectionQuality: ConnectionQuality;
     lastMessage: WebSocketMessage | null;
+    forceReconnect: () => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
@@ -36,6 +39,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     const { user, isAuthenticated } = useAuth();
     const queryClient = useQueryClient();
     const [isConnected, setIsConnected] = useState(false);
+    const [connectionQuality, setConnectionQuality] = useState<ConnectionQuality>('disconnected');
     const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
     const wsClient = useRef<NotificationWebSocket | null>(null);
     const isConnecting = useRef(false);
@@ -177,6 +181,18 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         setIsConnected(connected);
     }, []);
 
+    // Handle connection quality changes
+    const handleQualityChange = useCallback((quality: ConnectionQuality) => {
+        setConnectionQuality(quality);
+    }, []);
+
+    // Manually trigger reconnection
+    const forceReconnect = useCallback(() => {
+        if (wsClient.current) {
+            wsClient.current.forceReconnect();
+        }
+    }, []);
+
     // Connect to WebSocket (uses cookie-based auth, same as HTTP)
     const connectWebSocket = useCallback(() => {
         if (isConnecting.current || wsClient.current?.isConnected) return;
@@ -186,13 +202,14 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             wsClient.current = getWebSocketClient();
             wsClient.current.addMessageHandler(handleMessage);
             wsClient.current.addStatusHandler(handleStatusChange);
+            wsClient.current.addQualityHandler(handleQualityChange);
             wsClient.current.connect();
         } catch (error) {
             console.debug('Failed to connect WebSocket:', error);
         } finally {
             isConnecting.current = false;
         }
-    }, [handleMessage, handleStatusChange]);
+    }, [handleMessage, handleStatusChange, handleQualityChange]);
 
     // Connect/disconnect based on auth state
     useEffect(() => {
@@ -206,6 +223,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
                 if (wsClient.current) {
                     wsClient.current.removeMessageHandler(handleMessage);
                     wsClient.current.removeStatusHandler(handleStatusChange);
+                    wsClient.current.removeQualityHandler(handleQualityChange);
                     wsClient.current.disconnect();
                     wsClient.current = null;
                 }
@@ -217,10 +235,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
                 wsClient.current = null;
             }
         }
-    }, [user, isAuthenticated, connectWebSocket]);
+    }, [user, isAuthenticated, connectWebSocket, handleMessage, handleStatusChange, handleQualityChange]);
 
     return (
-        <WebSocketContext.Provider value={{ isConnected, lastMessage }}>
+        <WebSocketContext.Provider value={{ isConnected, connectionQuality, lastMessage, forceReconnect }}>
             {children}
         </WebSocketContext.Provider>
     );
