@@ -84,11 +84,13 @@ class UserSerializer(serializers.ModelSerializer):
     profile_picture_url = serializers.SerializerMethodField()
     full_name = serializers.CharField(source='get_full_name', read_only=True)
 
+    active_task_count = serializers.IntegerField(required=False, read_only=True)
+
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'first_name', 'last_name', 'full_name',
-                    'phone', 'role', 'is_workshop', 'profile_picture', 'profile_picture_url', 'is_active', 'created_at', 'last_login') 
-        read_only_fields = ('id', 'created_at', 'last_login', 'full_name') 
+                    'phone', 'role', 'is_workshop', 'profile_picture', 'profile_picture_url', 'is_active', 'created_at', 'last_login', 'active_task_count') 
+        read_only_fields = ('id', 'created_at', 'last_login', 'full_name', 'active_task_count') 
         
     def get_profile_picture_url(self, obj):
         """Return absolute URL for profile picture that works in all environments."""

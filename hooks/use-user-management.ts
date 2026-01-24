@@ -28,6 +28,7 @@ export interface User {
   is_workshop: boolean
   created_at: string
   last_login: string
+  active_task_count?: number
 }
 
 export function useUserManagement() {

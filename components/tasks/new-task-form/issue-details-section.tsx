@@ -174,7 +174,27 @@ export function IssueDetailsSection({ form }: IssueDetailsSectionProps) {
                                 return !t.is_workshop
                             }).map((technician) => (
                                 <SelectItem key={technician.id} value={technician.id.toString()}>
-                                    {technician.first_name} {technician.last_name}{technician.role === 'Manager' ? ' (Manager)' : ''}
+                                    <div className="flex items-center justify-between w-full min-w-[200px] gap-2">
+                                        <span>
+                                            {technician.first_name} {technician.last_name}{technician.role === 'Manager' ? ' (Manager)' : ''}
+                                        </span>
+                                        {typeof technician.active_task_count === 'number' && (
+                                            <span className={`
+                                                inline-flex items-center justify-center
+                                                px-2 py-0.5 
+                                                text-xs font-medium 
+                                                rounded-full
+                                                ${technician.active_task_count <= 2
+                                                    ? 'bg-green-100 text-green-700'
+                                                    : technician.active_task_count <= 5
+                                                        ? 'bg-yellow-100 text-yellow-700'
+                                                        : 'bg-red-100 text-red-700'
+                                                }
+                                            `}>
+                                                {technician.active_task_count} tasks
+                                            </span>
+                                        )}
+                                    </div>
                                 </SelectItem>
                             ))}
                         </SelectContent>

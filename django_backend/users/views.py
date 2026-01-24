@@ -21,6 +21,7 @@ from .authentication import set_jwt_cookies, clear_jwt_cookies
 from Eapp.models import TaskActivity
 from .permissions import IsAdminOrManager
 from django.conf import settings
+from django.db.models import Count, Q
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -464,6 +465,11 @@ class UserListViewSet(viewsets.ViewSet):
         users = User.objects.filter(
             role__in=['Technician', 'Manager'], 
             is_active=True
+        ).annotate(
+            active_task_count=Count(
+                'tasks', 
+                filter=Q(tasks__status__in=['Pending', 'In Progress', 'Awaiting Parts'])
+            )
         )
         serializer = UserSerializer(users, many=True, context={'request': request})
         return Response(serializer.data)
