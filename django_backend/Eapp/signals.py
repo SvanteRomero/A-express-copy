@@ -91,22 +91,44 @@ def update_task_execution_metrics(sender, instance, created, **kwargs):
                     last_period['returned_at'] = instance.timestamp.isoformat()
                     task.workshop_periods[-1] = last_period
     
-    # Handle COMPLETION
-    elif instance.type == TaskActivity.ActivityType.STATUS_UPDATE:
-        details = instance.details or {}
-        # Check for status change to Completed
-        # We check details first (new way), then message (legacy way)
-        if details.get('new_status') == Task.Status.COMPLETED or instance.message == "Task marked as Completed.":
-            # If it wasn't already completed (or we are re-completing, update timestamp to latest)
-            task.completed_at = instance.timestamp
+    # Handle COMPLETION, READY FOR PICKUP, or ASSIGNMENT (Implicit Return from Workshop)
+    elif instance.type in [TaskActivity.ActivityType.STATUS_UPDATE, TaskActivity.ActivityType.READY, TaskActivity.ActivityType.ASSIGNMENT]:
+        
+        should_close_workshop = False
+        is_completed = False
+        
+        if instance.type == TaskActivity.ActivityType.ASSIGNMENT:
+            # Assignment always implies explicitly back in local hands
+            should_close_workshop = True
+        else:
+            details = instance.details or {}
+            new_status = details.get('new_status')
+            message = instance.message or ""
             
-            # Edge case: If task was returned and then completed without an explicit assignment in between (unlikely but possible)
-            # We should close the open return period
-            if task.return_periods:
-                last_period = task.return_periods[-1]
-                if last_period.get('reassigned_at') is None:
-                    last_period['reassigned_at'] = instance.timestamp.isoformat()
-                    task.return_periods[-1] = last_period
+            # Check for status change to Completed or Ready for Pickup
+            is_completed = new_status == Task.Status.COMPLETED or message == "Task marked as Completed."
+            is_ready = new_status == 'Ready for Pickup' or instance.type == TaskActivity.ActivityType.READY
+            should_close_workshop = is_completed or is_ready
+        
+        if should_close_workshop:
+            # Close open workshop period
+            if task.workshop_periods:
+                last_period = task.workshop_periods[-1]
+                if last_period.get('returned_at') is None:
+                    last_period['returned_at'] = instance.timestamp.isoformat()
+                    task.workshop_periods[-1] = last_period
+
+            # If Completed, update completed_at
+            if is_completed:
+                # If it wasn't already completed (or we are re-completing, update timestamp to latest)
+                task.completed_at = instance.timestamp
+                
+                # Edge case: If task was returned and then completed without an explicit assignment in between
+                if task.return_periods:
+                    last_period = task.return_periods[-1]
+                    if last_period.get('reassigned_at') is None:
+                        last_period['reassigned_at'] = instance.timestamp.isoformat()
+                        task.return_periods[-1] = last_period
 
     # Save task with updated metrics
     task.save(update_fields=[

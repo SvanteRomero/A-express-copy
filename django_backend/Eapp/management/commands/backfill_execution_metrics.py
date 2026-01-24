@@ -115,36 +115,46 @@ class Command(BaseCommand):
             if current_return:
                 return_periods.append(current_return)
 
-            # 6. Workshop Periods
+
+            
+            # REFACTOR: Iterate all activities chronologically to handle interleaving
             workshop_periods = []
             current_workshop = None
             
-            workshop_acts = activities.filter(type=TaskActivity.ActivityType.WORKSHOP).order_by('timestamp')
-            for act in workshop_acts:
+            # Re-fetch all activities sorted
+            all_activities = task.activities.all().order_by('timestamp')
+            
+            for act in all_activities:
                 details = act.details or {}
                 message = act.message or ""
                 
-                # Start: Sending (has location OR message indicates send)
-                if details.get('workshop_location_id') or "Task sent to workshop" in message:
-                    if current_workshop:
-                         # Ensure we capture the earliest start, or maybe extend?
-                         # If we send again, we are still at workshop. Ignore.
-                         pass 
-                    else:
-                        current_workshop = {'sent_at': act.timestamp.isoformat(), 'returned_at': None}
+                # Start Workshop
+                if act.type == TaskActivity.ActivityType.WORKSHOP and (details.get('workshop_location_id') or "Task sent to workshop" in message):
+                     if not current_workshop:
+                         current_workshop = {'sent_at': act.timestamp.isoformat(), 'returned_at': None}
                 
-                # End: Returning (has status OR message indicates return)
-                elif details.get('workshop_status') or "Task returned from workshop" in message:
+                # End Workshop (Explicit)
+                elif act.type == TaskActivity.ActivityType.WORKSHOP and (details.get('workshop_status') or "Task returned from workshop" in message):
                     if current_workshop:
                         current_workshop['returned_at'] = act.timestamp.isoformat()
                         workshop_periods.append(current_workshop)
                         current_workshop = None
-                    else:
-                        # Robustness: Found a return without a start?
-                        # Could infer start time? No, unreliable. Ignore.
-                        pass
-            
+                
+                # End Workshop (Implicit - Ready, Completed, or Assigned)
+                elif (act.type == TaskActivity.ActivityType.READY) or \
+                     (act.type == TaskActivity.ActivityType.ASSIGNMENT) or \
+                     (act.type == TaskActivity.ActivityType.STATUS_UPDATE and \
+                      (details.get('new_status') == Task.Status.COMPLETED or \
+                       details.get('new_status') == 'Ready for Pickup' or \
+                       "Task marked as Completed" in message)):
+                       
+                     if current_workshop:
+                        current_workshop['returned_at'] = act.timestamp.isoformat()
+                        workshop_periods.append(current_workshop)
+                        current_workshop = None
+
             if current_workshop:
+                # If still open, append as is (report will handle it using completed_at or 'now')
                 workshop_periods.append(current_workshop)
 
             # Update fields

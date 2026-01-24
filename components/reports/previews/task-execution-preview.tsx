@@ -3,8 +3,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table"
 import { Badge } from "@/components/ui/core/badge"
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts"
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 import { Button } from "@/components/ui/core/button"
+import { TaskExecutionReport, TaskDetail } from "../types"
 
 const ChartContainer = ({ children, className }: any) => {
     return <div className={className}>{children}</div>
@@ -29,34 +30,7 @@ const ChartTooltip = (props: any) => {
     return <Tooltip {...props} />
 }
 
-interface TaskDetail {
-    title: string
-    customer_name: string
-    execution_start: string
-    execution_end: string
-    technicians: string
-    technician_count: number
-    execution_hours: number
-    return_count: number
-}
 
-interface TaskExecutionReport {
-    periods: {
-        period: string
-        average_execution_hours: number
-        tasks_completed: number
-    }[]
-    task_details: TaskDetail[]
-    summary: {
-        overall_average_hours: number
-        fastest_task_hours: number
-        slowest_task_hours: number
-        best_period: string
-        total_tasks_analyzed: number
-        total_returns: number
-        tasks_with_returns: number
-    }
-}
 
 export const TaskExecutionPreview = ({
     report,
@@ -79,7 +53,7 @@ export const TaskExecutionPreview = ({
     isLoading?: boolean
 }) => {
     // Add safety checks for the report data
-    const summary = report.summary || {}
+    const summary: any = report.summary || {}
     const periods = report.periods || []
     const taskDetails = report.task_details || []
     const pagination = report.pagination
@@ -102,31 +76,23 @@ export const TaskExecutionPreview = ({
             <div className="grid gap-4 md:grid-cols-4">
                 <Card>
                     <CardContent className="p-4">
-                        <p className="text-sm text-gray-600">Overall Average</p>
+                        <p className="text-sm text-gray-600">Avg Execution Time</p>
                         <p className="text-2xl font-bold text-blue-600">
-                            {summary.overall_average_hours ? `${summary.overall_average_hours} hours` : 'N/A'}
+                            {summary.overall_average_hours} hours
                         </p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardContent className="p-4">
-                        <p className="text-sm text-gray-600">Best Period</p>
-                        <p className="text-xl font-bold text-green-600">
-                            {summary.best_period || 'N/A'}
+                        <p className="text-sm text-gray-600">Avg Workshop Time</p>
+                        <p className="text-2xl font-bold text-orange-500">
+                            {summary.overall_average_workshop_hours} hours
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            {summary.total_tasks_workshop} sent to workshop
                         </p>
                     </CardContent>
                 </Card>
-                {/* 
-                <Card>
-                    <CardContent className="p-4">
-                        <p className="text-sm text-gray-600">Improvement</p>
-                        <p className="text-2xl font-bold text-green-600">
-                            {summary.improvement ? `${summary.improvement}%` : 'N/A'}
-                        </p>
-                    </CardContent>
-                </Card> 
-                Improvement metric removed as per new logic simplification for now
-                */}
                 <Card>
                     <CardContent className="p-4">
                         <p className="text-sm text-gray-600">Fastest Task</p>
@@ -186,11 +152,18 @@ export const TaskExecutionPreview = ({
                                     <XAxis dataKey="period" />
                                     <YAxis label={{ value: 'Hours', angle: -90, position: 'insideLeft' }} />
                                     <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Legend />
                                     <Bar
                                         dataKey="average_execution_hours"
                                         fill="#3b82f6"
                                         radius={[4, 4, 0, 0]}
                                         name="Avg Execution"
+                                    />
+                                    <Bar
+                                        dataKey="average_workshop_hours"
+                                        fill="#f59e0b"
+                                        radius={[4, 4, 0, 0]}
+                                        name="Avg Workshop"
                                     />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -231,7 +204,7 @@ export const TaskExecutionPreview = ({
                             ) : taskDetails.length > 0 ? (
                                 taskDetails.map((task, index) => (
                                     <TableRow key={index}>
-                                        <TableCell className="font-medium">{task.title}</TableCell>
+                                        <TableCell className="font-medium">{task.task_title}</TableCell>
                                         <TableCell>{task.customer_name}</TableCell>
                                         <TableCell>
                                             <div className="text-sm">
@@ -248,7 +221,14 @@ export const TaskExecutionPreview = ({
 
                                         </TableCell>
                                         <TableCell className="font-semibold">
-                                            {task.execution_hours} hours
+                                            <div className="flex flex-col">
+                                                <span>{task.execution_hours} h</span>
+                                                {(task.workshop_hours || 0) > 0 && (
+                                                    <span className="text-xs text-muted-foreground">
+                                                        Workshop: {task.workshop_hours} h
+                                                    </span>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell>
                                             <Badge

@@ -39,6 +39,7 @@ export interface TaskDetail {
     execution_start?: string;
     execution_end?: string;
     execution_hours?: number;
+    workshop_hours?: number; // NEW
     technicians?: string;
     technician_count?: number;
     return_count?: number;
@@ -171,14 +172,18 @@ export interface TaskExecutionReport {
     periods?: {
         period: string;
         average_execution_hours: number;
+        average_workshop_hours: number; // NEW
+        workshop_count: number;         // NEW
         tasks_completed: number;
     }[];
     task_details?: TaskDetail[];
     summary?: {
         overall_average_hours: number;
+        overall_average_workshop_hours: number; // NEW
         fastest_task_hours: number;
         slowest_task_hours: number;
         total_tasks_analyzed: number;
+        total_tasks_workshop: number; // NEW
         total_returns: number;
         tasks_with_returns: number;
     };
