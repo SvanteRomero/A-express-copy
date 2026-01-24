@@ -155,7 +155,7 @@ export function ManagerTasksPage() {
   };
 
   const handleReject = (taskTitle: string, notes: string) => {
-    updateTaskMutation.mutate({ id: taskTitle, updates: { status: "In Progress", qc_notes: notes } });
+    updateTaskMutation.mutate({ id: taskTitle, updates: { status: "In Progress", note: notes } });
   };
 
   const handleTerminateTask = (taskTitle: string) => {

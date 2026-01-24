@@ -112,7 +112,6 @@ class Task(models.Model):
     latest_pickup_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='latest_pickup_tasks'
     )
-    qc_notes = models.TextField(blank=True, null=True)
     
     # Execution Tracking Fields (assignment → completion metrics)
     first_assigned_at = models.DateTimeField(

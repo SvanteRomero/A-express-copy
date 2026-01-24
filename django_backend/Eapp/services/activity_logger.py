@@ -179,16 +179,16 @@ class ActivityLogger:
         )
     
     @staticmethod
-    def log_rejection(task, user, qc_notes):
+    def log_rejection(task, user, reason):
         """
         Log task rejection activity.
         
         Args:
             task: Task instance
             user: User who performed the action
-            qc_notes: Quality control notes explaining rejection
+            reason: Reason/notes explaining rejection
         """
-        message = f"Task rejected by {user.get_full_name()} with notes: {qc_notes}"
+        message = f"Task rejected by {user.get_full_name()} with notes: {reason}"
         
         return TaskActivity.objects.create(
             task=task,

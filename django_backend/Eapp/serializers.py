@@ -110,7 +110,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             'workshop_location_details', 'original_technician_snapshot_details', 'approved_by_details',
             'latest_pickup_at', 'latest_pickup_by', 'latest_pickup_by_details',
             'sent_out_by', 'sent_out_by_details',
-            'qc_notes', 'qc_rejected_at', 'qc_rejected_by',
+            'qc_rejected_at', 'qc_rejected_by',
             'cost_breakdowns'
         )
         read_only_fields = ('created_at', 'updated_at', 'assigned_to_details', 'created_by_details', 'activities', 'payments',

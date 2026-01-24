@@ -112,7 +112,7 @@ export function FrontDeskTasksPage() {
   }, [user, completedTasksData, approvingTaskId, updateTaskMutation]);
 
   const handleReject = useCallback(async (taskTitle: string, notes: string) => {
-    updateTaskMutation.mutate({ id: taskTitle, updates: { status: "In Progress", qc_notes: notes, workshop_status: null } });
+    updateTaskMutation.mutate({ id: taskTitle, updates: { status: "In Progress", note: notes, workshop_status: null } });
   }, [updateTaskMutation]);
 
   const [pickingUpTaskId, setPickingUpTaskId] = useState<string | null>(null);

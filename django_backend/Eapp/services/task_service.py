@@ -284,8 +284,8 @@ class TaskUpdateService:
             )
         
         # Handle rejection (special case - don't log normal status change)
-        if new_status == 'In Progress' and 'qc_notes' in data and data['qc_notes']:
-            ActivityLogger.log_rejection(task, user, data['qc_notes'])
+        if new_status == 'In Progress' and 'note' in data and data['note']:
+            ActivityLogger.log_rejection(task, user, data['note'])
             
             # Handle returned task assignment
             if user.role == 'Front Desk' and data.get('assigned_to'):
