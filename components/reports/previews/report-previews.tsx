@@ -5,7 +5,7 @@ import { TechnicianPerformancePreview } from "./technician-performance-preview"
 import { TaskStatusPreview } from "./task-status-preview"
 import { TechnicianWorkloadPreview } from "./technician-workload-preview"
 import { PaymentMethodsPreview } from "./payment-methods-preview"
-import { TurnaroundTimePreview } from "./turnaround-time-preview"
+import { TaskExecutionPreview } from "./task-execution-preview"
 import { GenericReportPreview } from "./generic-report-preview"
 import { FrontDeskPerformancePreview } from "./front-desk-performance-preview"
 import type {
@@ -44,9 +44,9 @@ export const ReportPreview = ({
                     isLoading={isLoading}
                 />
             )
-        case "turnaround_time":
+        case "task_execution":
             return (
-                <TurnaroundTimePreview
+                <TaskExecutionPreview
                     report={data}
                     searchTerm={searchTerm}
                     onPageChange={onPageChange || (() => { })}

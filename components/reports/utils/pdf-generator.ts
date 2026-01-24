@@ -6,7 +6,7 @@ import {
     generateOutstandingPaymentsPDF,
     generatePaymentMethodsPDF,
     generateTaskStatusPDF,
-    generateTurnaroundTimePDF,
+    generateTaskExecutionPDF,
     generateInventoryLocationPDF,
     generateTechnicianPerformancePDF,
     generateTechnicianWorkloadPDF,
@@ -19,7 +19,7 @@ const API_ENDPOINTS: Record<string, string> = {
     "outstanding-payments": "/reports/outstanding-payments/",
     "payment-methods": "/reports/payment-methods/",
     "task-status": "/reports/task-status/",
-    "turnaround-time": "/reports/turnaround-time/",
+    "task-execution": "/reports/task-execution/",
     "workload": "/reports/technician-workload/",
     "performance": "/reports/technician-performance/",
     "inventory-location": "/reports/laptops-in-shop/",
@@ -96,8 +96,8 @@ const generateReportContent = (
         case "outstanding_payments":
             generateOutstandingPaymentsPDF(pdf, reportData, yPosition);
             break;
-        case "turnaround_time":
-            generateTurnaroundTimePDF(pdf, reportData, yPosition);
+        case "task_execution":
+            generateTaskExecutionPDF(pdf, reportData, yPosition);
             break;
         case "inventory_location":
             generateInventoryLocationPDF(pdf, reportData, yPosition);

@@ -14,7 +14,7 @@ export interface PaginationInfo {
     total_pages: number;
     has_next: boolean;
     has_previous: boolean;
-    
+
 }
 
 // ==========================================
@@ -166,7 +166,7 @@ export interface TaskStatusReport {
     top_models?: { laptop_model: string; count: number }[];
 }
 
-export interface TurnaroundTimeReport {
+export interface TaskExecutionReport {
     periods?: {
         period: string;
         average_turnaround: number;

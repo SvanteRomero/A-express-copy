@@ -41,7 +41,7 @@ interface TaskDetail {
     return_count: number
 }
 
-interface TurnaroundTimeReport {
+interface TaskExecutionReport {
     periods: {
         period: string
         average_turnaround: number
@@ -59,13 +59,13 @@ interface TurnaroundTimeReport {
     }
 }
 
-export const TurnaroundTimePreview = ({
+export const TaskExecutionPreview = ({
     report,
     searchTerm,
     onPageChange,
     isLoading = false
 }: {
-    report: TurnaroundTimeReport & {
+    report: TaskExecutionReport & {
         pagination?: {
             current_page: number
             page_size: number
@@ -176,9 +176,9 @@ export const TurnaroundTimePreview = ({
                                     <XAxis dataKey="period" />
                                     <YAxis label={{ value: 'Days', angle: -90, position: 'insideLeft' }} />
                                     <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Bar 
-                                        dataKey="average_turnaround" 
-                                        fill="#3b82f6" 
+                                    <Bar
+                                        dataKey="average_turnaround"
+                                        fill="#3b82f6"
                                         radius={[4, 4, 0, 0]}
                                         name="Avg Turnaround"
                                     />

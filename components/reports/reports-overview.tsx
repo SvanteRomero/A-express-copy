@@ -38,7 +38,7 @@ export function ReportsOverview() {
         'outstanding-payments': '/reports/outstanding-payments/',
         'payment-methods': '/reports/payment-methods/',
         'task-status': '/reports/task-status/',
-        'turnaround-time': '/reports/turnaround-time/',
+        'task-execution': '/reports/task-execution/',
         'workload': '/reports/technician-workload/',
         'performance': '/reports/technician-performance/',
         'inventory-location': '/reports/laptops-in-shop/',
@@ -63,15 +63,15 @@ export function ReportsOverview() {
       }
 
       // Add pagination parameters
-      const paginatedReports = ['outstanding-payments', 'turnaround-time']
+      const paginatedReports = ['outstanding-payments', 'task-execution']
       if (paginatedReports.includes(reportId)) {
         params.page = page.toString()
         params.page_size = pageSize.toString()
         console.log('📄 DEBUG - Added pagination params:', { page, pageSize })
       }
 
-      // Add period type for turnaround time
-      if (reportId === 'turnaround-time') {
+      // Add period type for task execution
+      if (reportId === 'task-execution') {
         params.period_type = 'weekly'
         console.log('📊 DEBUG - Added period_type param')
       }

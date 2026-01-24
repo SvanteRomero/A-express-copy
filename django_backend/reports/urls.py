@@ -24,7 +24,7 @@ urlpatterns = [
         views.get_technician_performance,
         name="technician_performance",
     ),
-    path("reports/turnaround-time/", views.get_turnaround_time, name="turnaround_time"),
+    path("reports/task-execution/", views.get_task_execution, name="task_execution"),
     path(
         "reports/technician-workload/",
         views.get_technician_workload,

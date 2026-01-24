@@ -80,14 +80,14 @@ export const generateTaskStatusPDF = (
 };
 
 /**
- * Generate Turnaround Time PDF content
+ * Generate Task Execution PDF content
  */
-export const generateTurnaroundTimePDF = (
+export const generateTaskExecutionPDF = (
     pdf: jsPDF,
     data: any,
     startY: number
 ): void => {
-    let yPosition = addReportTitle(pdf, "Turnaround Time Report", startY);
+    let yPosition = addReportTitle(pdf, "Task Execution Report", startY);
 
     // Summary
     const summary = data.summary || {};
@@ -106,7 +106,7 @@ export const generateTurnaroundTimePDF = (
 
     // Individual Task Details
     if (taskDetails.length > 0) {
-        yPosition = addSectionHeader(pdf, "Individual Task Turnaround Times", yPosition);
+        yPosition = addSectionHeader(pdf, "Individual Task Execution Times", yPosition);
 
         const taskData = taskDetails.map((task: any) => [
             task.title || "N/A",
@@ -118,7 +118,7 @@ export const generateTurnaroundTimePDF = (
         ]);
 
         autoTable(pdf, {
-            head: [["Task", "Customer", "Intake", "Pickup", "Technician", "Turnaround"]],
+            head: [["Task", "Customer", "Intake", "Pickup", "Technician", "Execution"]],
             body: taskData,
             startY: yPosition,
             theme: "grid",
@@ -140,7 +140,7 @@ export const generateTurnaroundTimePDF = (
 
     // Turnaround Time by Period
     if (data.periods?.length > 0) {
-        yPosition = addSectionHeader(pdf, "Turnaround Time by Period", yPosition);
+        yPosition = addSectionHeader(pdf, "Task Execution by Period", yPosition);
 
         const turnaroundData = data.periods.map((period: any) => [
             period.period,
@@ -149,7 +149,7 @@ export const generateTurnaroundTimePDF = (
         ]);
 
         autoTable(pdf, {
-            head: [["Period", "Avg Turnaround", "Tasks Completed"]],
+            head: [["Period", "Avg Execution", "Tasks Completed"]],
             body: turnaroundData,
             startY: yPosition,
             theme: "grid",

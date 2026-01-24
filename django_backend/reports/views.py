@@ -75,7 +75,7 @@ def get_report_field_options(request):
             {
                 "id": "operational",
                 "label": "Operational Metrics",
-                "description": "Task status, turnaround times, efficiency",
+                "description": "Task status, execution times, efficiency",
             },
             {
                 "id": "performance",
@@ -97,8 +97,8 @@ def get_report_field_options(request):
             {"id": "date_in", "label": "Date In", "category": "dates"},
             {"id": "date_completed", "label": "Date Completed", "category": "dates"},
             {
-                "id": "turnaround_time",
-                "label": "Turnaround Time",
+                "id": "task_execution",
+                "label": "Task Execution",
                 "category": "performance",
             },
             {"id": "total_cost", "label": "Total Cost", "category": "financial"},
@@ -165,8 +165,8 @@ def get_technician_performance(request):
     [permissions.IsAuthenticated, IsAdminOrManagerOrFrontDeskOrAccountant]
 )
 @api_view_try_except
-def get_turnaround_time(request):
-    """Get turnaround time report with date range and pagination support"""
+def get_task_execution(request):
+    """Get task execution report with date range and pagination support"""
     date_range = request.GET.get("date_range", "last_30_days")
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
@@ -174,12 +174,12 @@ def get_turnaround_time(request):
     page = int(request.GET.get("page", 1))
     page_size = int(request.GET.get("page_size", 10))
 
-    report_data = PredefinedReportGenerator.generate_turnaround_time_report(
+    report_data = PredefinedReportGenerator.generate_task_execution_report(
         period_type, date_range, start_date, end_date, page, page_size
     )
     
     return Response(
-        {"success": True, "report": report_data, "type": "turnaround_time"}
+        {"success": True, "report": report_data, "type": "task_execution"}
     )
 
 
