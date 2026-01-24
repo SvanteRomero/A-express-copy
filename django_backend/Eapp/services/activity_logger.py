@@ -60,7 +60,12 @@ class ActivityLogger:
             old_technician: Previous technician (None if initial assignment)
             new_technician: New technician (None if unassignment)
         """
+        details = {}
         if new_technician:
+            details.update({
+                'new_technician_id': new_technician.id,
+                'new_technician_name': new_technician.get_full_name()
+            })
             if old_technician and old_technician != new_technician:
                 message = (
                     f"Task reassigned from {old_technician.get_full_name()} "
@@ -78,7 +83,8 @@ class ActivityLogger:
             task=task,
             user=user,
             type=TaskActivity.ActivityType.ASSIGNMENT,
-            message=message
+            message=message,
+            details=details
         )
     
     @staticmethod

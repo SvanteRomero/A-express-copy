@@ -34,7 +34,7 @@ export interface Task {
     created_by_details: UserResponse;
     created_at: string;
     updated_at: string;
-    due_date: string;
+
     customer_name: string;
     customer_phone_numbers: PhoneNumber[];
     customer_details: Customer;

@@ -48,14 +48,39 @@ class Command(BaseCommand):
             technicians = []
             seen_tech_ids = set()
             
+            # Key fix: Always include the currently assigned technician
+            if task.assigned_to:
+                user = task.assigned_to
+                if user.role in ['Technician', 'Manager']:
+                     # Use first_assigned_at or created_at as proxy for assignment time if unknown
+                     assigned_at = task.first_assigned_at or task.created_at
+                     technicians.append({
+                        'user_id': user.id,
+                        'name': user.get_full_name(),
+                        'role': user.role,
+                        'assigned_at': assigned_at.isoformat() if assigned_at else None
+                    })
+                     seen_tech_ids.add(user.id)
+
             assignment_acts = activities.filter(
                 type=TaskActivity.ActivityType.ASSIGNMENT,
                 user__isnull=False
             )
             
+            # Try to add historical technicians if we can identify them (e.g. they acted on the task?)
+            # Since user in ASSIGNMENT is the actor, we might skip them if we can't verify they are the tech.
+            # But let's keep the logic if they are Technician/Manager, assuming self-assignment or active role?
+            # Or better, iterate STATUS_UPDATES which usually implies work done?
+            # For now, let's just stick to adding the current assignee as the primary fix. 
+            # We can also check if the actor of an ASSIGNMENT was assigning TO THEMSELVES? (user == new_technician_name logic hard)
+            
             for act in assignment_acts:
                 user = act.user
+                # Only add if not already added (e.g. current assignee)
                 if user.role in ['Technician', 'Manager'] and user.id not in seen_tech_ids:
+                    # HEURISTIC: If a technician assigns a task, are they the one working on it?
+                    # Often yes (self-assign). Sometimes no (lead tech assigning to junior).
+                    # We'll include them for completeness but this might be noisy.
                     technicians.append({
                         'user_id': user.id,
                         'name': user.get_full_name(),

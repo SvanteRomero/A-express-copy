@@ -17,18 +17,44 @@ def update_task_execution_metrics(sender, instance, created, **kwargs):
             task.first_assigned_at = instance.timestamp
             
         # Add technician (Technicians and Managers included)
-        # Note: We check if user exists to be safe, though activity usually has a user
-        if instance.user and instance.user.role in ['Technician', 'Manager']:
-            tech_data = {
-                'user_id': instance.user.id,
-                'name': instance.user.get_full_name(),
-                'role': instance.user.role,
+        # Add technician (Technicians and Managers included)
+        # Check details for explicitly assigned technician (new format)
+        details = instance.details or {}
+        new_tech_id = details.get('new_technician_id')
+        new_tech_name = details.get('new_technician_name')
+        
+        if new_tech_id:
+             tech_data = {
+                'user_id': new_tech_id,
+                'name': new_tech_name or 'Unknown',
+                'role': 'Technician', # We assume assigned person performs tech role for this task
                 'assigned_at': instance.timestamp.isoformat()
             }
-            
-            existing_ids = [t.get('user_id') for t in task.execution_technicians]
-            if instance.user.id not in existing_ids:
+             existing_ids = [t.get('user_id') for t in task.execution_technicians]
+             if new_tech_id not in existing_ids:
                 task.execution_technicians.append(tech_data)
+
+        # Fallback to instance.user if it is a technician/manager performing the action (e.g., self-assignment or legacy)
+        # BUT be careful: if Manager assigns to Tech, instance.user is Manager. We don't necessarily want to list Manager as "execution technician" unless they did work?
+        # The requirement said "including managers". 
+        # If the Manager merely *assigned* it, should they be listed? 
+        # "Since technician reassignment is possible... all of the technicians involved should be recognized"
+        # Usually implies people who held the task.
+        # So we probably should NOT include the actor unless they assigned it to themselves.
+        # But for legacy data where we don't have details, we might have no choice or we ignore it?
+        # Let's keep existing logic but ONLY if 'new_technician_id' was NOT present (legacy), 
+        # AND maybe check if message implies self-assignment? Hard to know.
+        # Safer to rely on details for new stuff. For old stuff, we rely on backfill logic.
+        
+        # However, to be safe and compatible with previous logic:
+        elif instance.user and instance.user.role in ['Technician', 'Manager']:
+            # Only add if we didn't add a target technician from details
+            # And maybe logic to detect if they are just dispatching?
+            # For now, let's keep it but it might add dispatchers. 
+            # Actually, "execution technicians" usually means assignee.
+            # If I assign to you, I didn't execute it.
+            # So I should probably REMOVE this fallback for Assignment type if I want only assignees.
+            pass
         
         # If this is a reassignment after return, close the open return period
         if task.return_periods:

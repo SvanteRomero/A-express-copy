@@ -96,7 +96,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'title', 'description', 'status', 'urgency',
             'assigned_to', 'assigned_to_details', 'created_by_details',
-            'created_at', 'updated_at', 'due_date',
+            'created_at', 'updated_at',
             'customer', 'customer_details',
             'brand', 'brand_details', 'laptop_model', 'laptop_model_details',
             'device_type', 'device_notes',
