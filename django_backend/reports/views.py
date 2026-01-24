@@ -170,7 +170,7 @@ def get_task_execution(request):
     date_range = request.GET.get("date_range", "last_30_days")
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
-    period_type = request.GET.get("period_type", "weekly")
+    period_type = request.GET.get("period_type")
     page = int(request.GET.get("page", 1))
     page_size = int(request.GET.get("page_size", 10))
 

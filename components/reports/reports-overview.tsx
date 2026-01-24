@@ -70,11 +70,7 @@ export function ReportsOverview() {
         console.log('📄 DEBUG - Added pagination params:', { page, pageSize })
       }
 
-      // Add period type for task execution
-      if (reportId === 'task-execution') {
-        params.period_type = 'weekly'
-        console.log('📊 DEBUG - Added period_type param')
-      }
+
 
       console.log('🌐 DEBUG - Making request to:', endpoint, 'with params:', params)
 

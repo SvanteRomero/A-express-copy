@@ -435,7 +435,7 @@ class PredefinedReportGenerator:
         }
 
     @staticmethod
-    def generate_task_execution_report(period_type="weekly", date_range='last_7_days', start_date=None, end_date=None, page=1, page_size=10):
+    def generate_task_execution_report(period_type=None, date_range='last_7_days', start_date=None, end_date=None, page=1, page_size=10):
         """Generate task execution report based on assignment to completion time."""
         from datetime import datetime
         import pytz
@@ -476,6 +476,17 @@ class PredefinedReportGenerator:
                 "end_date": end_date.isoformat() if end_date else None,
             }
         
+        # Determine period type automatically if not specified
+        if not period_type or period_type == 'auto':
+            if duration_days <= 7:
+                period_type = 'daily'
+            elif duration_days <= 30:
+                period_type = 'weekly'
+            elif duration_days <= 90:
+                period_type = 'monthly'
+            else:
+                period_type = 'quarterly'
+
         grouped_tasks = {}
         task_details = []
         utc_plus_3 = pytz.timezone('Etc/GMT-3')
@@ -507,10 +518,17 @@ class PredefinedReportGenerator:
             net_hours = max(0, gross_hours - total_return_hours)
             
             # Group by period
-            if period_type == "weekly":
-                period_key = task.completed_at.strftime("%Y-W%U")
+            local_completion = task.completed_at.astimezone(utc_plus_3)
+            
+            if period_type == "daily":
+                period_key = local_completion.strftime("%Y-%m-%d")
+            elif period_type == "weekly":
+                period_key = local_completion.strftime("%Y-W%U")
             elif period_type == "monthly":
-                period_key = task.completed_at.strftime("%Y-%m")
+                period_key = local_completion.strftime("%Y-%m")
+            elif period_type == "quarterly":
+                quarter = (local_completion.month - 1) // 3 + 1
+                period_key = f"{local_completion.year}-Q{quarter}"
             else:
                 period_key = "overall"
             
