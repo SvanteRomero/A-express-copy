@@ -94,12 +94,12 @@ export const generateTaskExecutionPDF = (
     const taskDetails = data.task_details || [];
 
     const summaryData: [string, string][] = [
-        ["Overall Avg Exec", summary.overall_average_hours ? `${summary.overall_average_hours} hours` : "N/A"],
-        ["Overall Avg Workshop", summary.overall_average_workshop_hours ? `${summary.overall_average_workshop_hours} hours` : "N/A"],
+        ["Overall Avg Exec", summary.overall_average_hours !== undefined ? `${summary.overall_average_hours} hours` : "N/A"],
+        ["Overall Avg Workshop", summary.overall_average_workshop_hours !== undefined ? `${summary.overall_average_workshop_hours} hours` : "N/A"],
         ["Tasks Analyzed", summary.total_tasks_analyzed ? `${summary.total_tasks_analyzed} tasks` : "0"],
-        ["Workshop Tasks", summary.total_tasks_workshop ? `${summary.total_tasks_workshop} tasks` : "0"],
+        ["Tasks sent to Workshop", summary.total_tasks_workshop ? `${summary.total_tasks_workshop} tasks` : "0"],
         ["Best Period", summary.best_period || "N/A"],
-        ["Fastest Task", taskDetails.length > 0 ? `${Math.min(...taskDetails.map((t: any) => t.execution_hours)).toFixed(1)} hours` : "N/A"],
+        ["Fastest Task", summary.fastest_task_hours !== undefined ? `${summary.fastest_task_hours} hours` : "N/A"],
     ];
 
     yPosition = addSummaryTable(pdf, summaryData, yPosition, PDF_COLORS.info);
@@ -137,8 +137,8 @@ export const generateTaskExecutionPDF = (
 
         const turnaroundData = data.periods.map((period: any) => [
             period.period,
-            period.average_execution_hours ? `${period.average_execution_hours}h` : "N/A",
-            period.average_workshop_hours ? `${period.average_workshop_hours}h` : "0h",
+            period.average_execution_hours !== undefined ? `${period.average_execution_hours}h` : "N/A",
+            period.average_workshop_hours !== undefined ? `${period.average_workshop_hours}h` : "0h",
             period.workshop_count?.toString() || "0",
             period.tasks_completed?.toString() || "0",
         ]);
