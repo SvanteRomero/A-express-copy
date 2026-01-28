@@ -109,5 +109,5 @@ class Command(BaseCommand):
                 else:
                     self.stdout.write(self.style.WARNING(f"     [DRY RUN] Would move tasks and delete source."))
         
-        return duplicates
+        return duplicates_found
 
