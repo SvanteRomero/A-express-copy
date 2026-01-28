@@ -297,7 +297,7 @@ export const TaskExecutionPreview = ({
                                     <TableHead>Period</TableHead>
                                     <TableHead>Avg Execution</TableHead>
                                     <TableHead>Avg Workshop</TableHead>
-                                    <TableHead>Workshop Tasks</TableHead>
+                                    <TableHead>Sent to Workshop</TableHead>
                                     <TableHead>Tasks Completed</TableHead>
                                 </TableRow>
                             </TableHeader>

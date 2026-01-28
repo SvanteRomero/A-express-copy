@@ -103,10 +103,12 @@ export const generateTaskExecutionPDF = (
     ];
 
     yPosition = addSummaryTable(pdf, summaryData, yPosition, PDF_COLORS.info);
+    yPosition += 5; // Extra spacing after summary
 
     // Top 5 Fastest Tasks
     const top5Fastest = summary.top_5_fastest || [];
     if (top5Fastest.length > 0) {
+        yPosition = checkPageBreak(pdf, yPosition, 250);
         yPosition = addSectionHeader(pdf, "Top 5 Fastest Tasks", yPosition);
 
         const fastData = top5Fastest.map((task: any) => [
@@ -124,15 +126,16 @@ export const generateTaskExecutionPDF = (
             theme: "grid",
             headStyles: { fillColor: PDF_COLORS.success },
             margin: { left: 20, right: 20 },
-            styles: { fontSize: 8, cellPadding: 2 },
+            styles: { fontSize: 8, cellPadding: 3 },
         });
 
-        yPosition = getLastTableY(pdf);
+        yPosition = getLastTableY(pdf, 20); // Increased spacing
     }
 
     // Top 5 Slowest Tasks
     const top5Slowest = summary.top_5_slowest || [];
     if (top5Slowest.length > 0) {
+        yPosition = checkPageBreak(pdf, yPosition, 250);
         yPosition = addSectionHeader(pdf, "Top 5 Slowest Tasks", yPosition);
 
         const slowData = top5Slowest.map((task: any) => [
@@ -150,14 +153,15 @@ export const generateTaskExecutionPDF = (
             theme: "grid",
             headStyles: { fillColor: PDF_COLORS.danger },
             margin: { left: 20, right: 20 },
-            styles: { fontSize: 8, cellPadding: 2 },
+            styles: { fontSize: 8, cellPadding: 3 },
         });
 
-        yPosition = getLastTableY(pdf);
+        yPosition = getLastTableY(pdf, 20); // Increased spacing
     }
 
     // Turnaround Time by Period
     if (data.periods?.length > 0) {
+        yPosition = checkPageBreak(pdf, yPosition, 250);
         yPosition = addSectionHeader(pdf, "Task Execution by Period", yPosition);
 
         const turnaroundData = data.periods.map((period: any) => [
@@ -175,9 +179,10 @@ export const generateTaskExecutionPDF = (
             theme: "grid",
             headStyles: { fillColor: PDF_COLORS.success },
             margin: { left: 20, right: 20 },
+            styles: { fontSize: 8, cellPadding: 3 },
         });
 
-        yPosition = getLastTableY(pdf);
+        yPosition = getLastTableY(pdf, 20);
     }
 
     // Performance Analysis
