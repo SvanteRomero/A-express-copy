@@ -642,6 +642,8 @@ class PredefinedReportGenerator:
                 "total_tasks_workshop": total_tasks_workshop,
                 "fastest_task_hours": round(min(all_execution_hours), 1) if all_execution_hours else 0,
                 "slowest_task_hours": round(max(all_execution_hours), 1) if all_execution_hours else 0,
+                "top_5_fastest": task_details[-5:][::-1] if len(task_details) > 0 else [], # task_details is sorted desc by execution_hours, so last 5 are fastest
+                "top_5_slowest": task_details[:5] if len(task_details) > 0 else [],     # first 5 are slowest
                 "best_period": best_period,
                 "total_tasks_analyzed": len(task_details),
                 "total_returns": total_returns,

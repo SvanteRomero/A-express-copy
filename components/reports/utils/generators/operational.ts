@@ -104,28 +104,53 @@ export const generateTaskExecutionPDF = (
 
     yPosition = addSummaryTable(pdf, summaryData, yPosition, PDF_COLORS.info);
 
-    // Individual Task Details
-    if (taskDetails.length > 0) {
-        yPosition = addSectionHeader(pdf, "Individual Task Execution Times", yPosition);
+    // Top 5 Fastest Tasks
+    const top5Fastest = summary.top_5_fastest || [];
+    if (top5Fastest.length > 0) {
+        yPosition = addSectionHeader(pdf, "Top 5 Fastest Tasks", yPosition);
 
-        const taskData = taskDetails.map((task: any) => [
+        const fastData = top5Fastest.map((task: any) => [
             task.task_title || task.title || "N/A",
             task.customer_name || "N/A",
-            task.execution_start || "N/A",
-            task.execution_end || "N/A",
             task.technicians || "Unassigned",
             task.execution_hours ? `${task.execution_hours}` : "0",
             task.workshop_hours ? `${task.workshop_hours}` : "0",
         ]);
 
         autoTable(pdf, {
-            head: [["Task", "Customer", "Start", "End", "Techs", "Exec(h)", "Work(h)"]],
-            body: taskData,
+            head: [["Task", "Customer", "Techs", "Exec(h)", "Work(h)"]],
+            body: fastData,
             startY: yPosition,
             theme: "grid",
-            headStyles: { fillColor: PDF_COLORS.technician.secondary },
+            headStyles: { fillColor: PDF_COLORS.success },
             margin: { left: 20, right: 20 },
-            styles: { fontSize: 7, cellPadding: 2 },
+            styles: { fontSize: 8, cellPadding: 2 },
+        });
+
+        yPosition = getLastTableY(pdf);
+    }
+
+    // Top 5 Slowest Tasks
+    const top5Slowest = summary.top_5_slowest || [];
+    if (top5Slowest.length > 0) {
+        yPosition = addSectionHeader(pdf, "Top 5 Slowest Tasks", yPosition);
+
+        const slowData = top5Slowest.map((task: any) => [
+            task.task_title || task.title || "N/A",
+            task.customer_name || "N/A",
+            task.technicians || "Unassigned",
+            task.execution_hours ? `${task.execution_hours}` : "0",
+            task.workshop_hours ? `${task.workshop_hours}` : "0",
+        ]);
+
+        autoTable(pdf, {
+            head: [["Task", "Customer", "Techs", "Exec(h)", "Work(h)"]],
+            body: slowData,
+            startY: yPosition,
+            theme: "grid",
+            headStyles: { fillColor: PDF_COLORS.danger },
+            margin: { left: 20, right: 20 },
+            styles: { fontSize: 8, cellPadding: 2 },
         });
 
         yPosition = getLastTableY(pdf);

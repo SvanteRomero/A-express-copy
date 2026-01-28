@@ -182,6 +182,8 @@ export interface TaskExecutionReport {
         overall_average_workshop_hours: number; // NEW
         fastest_task_hours: number;
         slowest_task_hours: number;
+        top_5_fastest?: TaskDetail[]; // NEW
+        top_5_slowest?: TaskDetail[]; // NEW
         total_tasks_analyzed: number;
         total_tasks_workshop: number; // NEW
         total_returns: number;

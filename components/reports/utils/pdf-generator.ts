@@ -32,7 +32,7 @@ const DATE_RANGE_REPORTS = ["technician-performance", "payment-methods"];
 /**
  * Add standard header to PDF
  */
-const addHeader = (pdf: jsPDF, reportTitle: string, category: string): number => {
+const addHeader = (pdf: jsPDF, reportTitle: string, category: string, dateRange: string): number => {
     // Brand
     pdf.setFontSize(20);
     pdf.setTextColor(...PDF_COLORS.primary);
@@ -48,7 +48,9 @@ const addHeader = (pdf: jsPDF, reportTitle: string, category: string): number =>
     pdf.setTextColor(...PDF_COLORS.neutral);
     pdf.text(`Generated on: ${new Date().toLocaleString()}`, 20, 45);
     pdf.text(`Report Category: ${category}`, 20, 52);
-    pdf.text(`Date Range: Last 30 Days`, 20, 59);
+    // Use proper capitalization for date range
+    const formattedDateRange = dateRange.charAt(0).toUpperCase() + dateRange.slice(1);
+    pdf.text(`Date Range: ${formattedDateRange}`, 20, 59);
 
     return 75; // Starting Y position for content
 };
@@ -161,11 +163,15 @@ export const generatePDF = async (
         const allReports = [...financialReports, ...operationalReports, ...technicianReports];
         const report = allReports.find((r) => r.id === reportId);
 
+        // Extract date range description
+        const dateRangeDescription = reportData.duration_info?.description || "Custom Range";
+
         // Add header
         const yPosition = addHeader(
             pdf,
             report?.title || reportId.replace(/-/g, " "),
-            report?.category || "General"
+            report?.category || "General",
+            dateRangeDescription
         );
 
         // Generate report content
