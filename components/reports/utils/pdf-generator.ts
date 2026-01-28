@@ -164,7 +164,18 @@ export const generatePDF = async (
         const report = allReports.find((r) => r.id === reportId);
 
         // Extract date range description
-        const dateRangeDescription = reportData.duration_info?.description || "Custom Range";
+        let dateRangeDescription = reportData.duration_info?.description || "Custom Range";
+
+        if (reportData.start_date && reportData.end_date) {
+            const formatDate = (isoString: string) => {
+                return new Date(isoString).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            };
+            dateRangeDescription = `${formatDate(reportData.start_date)} - ${formatDate(reportData.end_date)}`;
+        }
 
         // Add header
         const yPosition = addHeader(

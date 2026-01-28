@@ -576,8 +576,8 @@ class PredefinedReportGenerator:
             task_details.append({
                 "task_title": task.title,
                 "customer_name": task.customer.name if task.customer else "N/A",
-                "execution_start": local_start.strftime("%Y-%m-%d %I:%M %p"),
-                "execution_end": local_end.strftime("%Y-%m-%d %I:%M %p"),
+                "execution_start": local_start.strftime("%b %d, %Y %I:%M %p"),
+                "execution_end": local_end.strftime("%b %d, %Y %I:%M %p"),
                 "technicians": technicians_str,
                 "technician_count": len(task.execution_technicians),
                 "execution_hours": round(net_hours, 1),
@@ -607,6 +607,25 @@ class PredefinedReportGenerator:
             })
         
         periods_data.sort(key=lambda x: x["period"])
+
+        # Reformat periods for display (Human Readable)
+        if period_type == 'daily':
+            for p in periods_data:
+                try:
+                    p['period'] = datetime.strptime(p['period'], "%Y-%m-%d").strftime("%b %d, %Y")
+                except: pass
+        elif period_type == 'monthly':
+            for p in periods_data:
+                try:
+                    p['period'] = datetime.strptime(p['period'], "%Y-%m").strftime("%b %Y")
+                except: pass
+        elif period_type == 'weekly':
+             for p in periods_data:
+                try:
+                     # Attempt to make weekly readable, e.g. "2026-W04" -> "Week 04, 2026"
+                     year, week = p['period'].split('-W')
+                     p['period'] = f"Week {week}, {year}"
+                except: pass
         
         # Sort by execution time (slowest first)
         task_details.sort(key=lambda x: x["execution_hours"], reverse=True)
