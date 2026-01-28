@@ -11,8 +11,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--brand',
             type=str,
-            required=True,
-            help='Name of the brand to deduplicate',
+            nargs='?',
+            help='Name of the brand to deduplicate (optional, defaults to all brands)',
         )
         parser.add_argument(
             '--dry-run',
@@ -24,14 +24,29 @@ class Command(BaseCommand):
         brand_name = options['brand']
         dry_run = options['dry_run']
         
-        self.stdout.write(f"Starting auto-deduplication for Brand: '{brand_name}' (Dry run: {dry_run})")
-        
-        try:
-            brand = Brand.objects.get(name__iexact=brand_name)
-        except Brand.DoesNotExist:
-            self.stdout.write(self.style.ERROR(f"Brand '{brand_name}' not found."))
-            return
+        if brand_name:
+            try:
+                brands = [Brand.objects.get(name__iexact=brand_name)]
+            except Brand.DoesNotExist:
+                self.stdout.write(self.style.ERROR(f"Brand '{brand_name}' not found."))
+                return
+        else:
+            brands = Brand.objects.all()
+            self.stdout.write(f"Running auto-deduplication for ALL {len(brands)} brands (Dry run: {dry_run})")
 
+        total_duplicates = 0
+        
+        for brand in brands:
+            self.stdout.write(f"\n--- Processing Brand: {brand.name} ---")
+            duplicates = self.process_brand(brand, dry_run)
+            total_duplicates += duplicates
+
+        if total_duplicates == 0:
+            self.stdout.write(self.style.SUCCESS("\nNo duplicates found in any processed brands."))
+        else:
+            self.stdout.write(self.style.SUCCESS(f"\nCompleted. Processed {total_duplicates} groups of duplicates across all brands."))
+
+    def process_brand(self, brand, dry_run):
         # 1. Fetch all models for this brand
         all_models = list(Model.objects.filter(brand=brand))
         
@@ -51,7 +66,7 @@ class Command(BaseCommand):
                 continue
                 
             duplicates_found += 1
-            self.stdout.write(f"\nFound duplicate group for '{norm_name}': {[m.name for m in models_in_group]}")
+            self.stdout.write(f"Found duplicate group for '{norm_name}': {[m.name for m in models_in_group]}")
             
             # 4. Determine Target (Best Model)
             # Priority: 
@@ -93,8 +108,6 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.SUCCESS(f"     [OK] Moved {updated_count} tasks and deleted source."))
                 else:
                     self.stdout.write(self.style.WARNING(f"     [DRY RUN] Would move tasks and delete source."))
+        
+        return duplicates
 
-        if duplicates_found == 0:
-            self.stdout.write(self.style.SUCCESS(f"No duplicates found for brand '{brand_name}'."))
-        else:
-            self.stdout.write(self.style.SUCCESS(f"\nProcessed {duplicates_found} groups of duplicates."))
