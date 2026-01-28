@@ -94,11 +94,12 @@ export const generateTaskExecutionPDF = (
     const taskDetails = data.task_details || [];
 
     const summaryData: [string, string][] = [
-        ["Overall Average", summary.overall_average_hours ? `${summary.overall_average_hours} hours` : "N/A"],
-        ["Best Period", summary.best_period || "N/A"],
+        ["Overall Avg Exec", summary.overall_average_hours ? `${summary.overall_average_hours} hours` : "N/A"],
+        ["Overall Avg Workshop", summary.overall_average_workshop_hours ? `${summary.overall_average_workshop_hours} hours` : "N/A"],
         ["Tasks Analyzed", summary.total_tasks_analyzed ? `${summary.total_tasks_analyzed} tasks` : "0"],
+        ["Workshop Tasks", summary.total_tasks_workshop ? `${summary.total_tasks_workshop} tasks` : "0"],
+        ["Best Period", summary.best_period || "N/A"],
         ["Fastest Task", taskDetails.length > 0 ? `${Math.min(...taskDetails.map((t: any) => t.execution_hours)).toFixed(1)} hours` : "N/A"],
-        ["Slowest Task", taskDetails.length > 0 ? `${Math.max(...taskDetails.map((t: any) => t.execution_hours)).toFixed(1)} hours` : "N/A"],
     ];
 
     yPosition = addSummaryTable(pdf, summaryData, yPosition, PDF_COLORS.info);
@@ -108,30 +109,23 @@ export const generateTaskExecutionPDF = (
         yPosition = addSectionHeader(pdf, "Individual Task Execution Times", yPosition);
 
         const taskData = taskDetails.map((task: any) => [
-            task.title || "N/A",
+            task.task_title || task.title || "N/A",
             task.customer_name || "N/A",
             task.execution_start || "N/A",
             task.execution_end || "N/A",
             task.technicians || "Unassigned",
-            task.execution_hours ? `${task.execution_hours} hours` : "N/A",
+            task.execution_hours ? `${task.execution_hours}` : "0",
+            task.workshop_hours ? `${task.workshop_hours}` : "0",
         ]);
 
         autoTable(pdf, {
-            head: [["Task", "Customer", "Intake", "Pickup", "Technician", "Execution"]],
+            head: [["Task", "Customer", "Start", "End", "Techs", "Exec(h)", "Work(h)"]],
             body: taskData,
             startY: yPosition,
             theme: "grid",
             headStyles: { fillColor: PDF_COLORS.technician.secondary },
             margin: { left: 20, right: 20 },
             styles: { fontSize: 7, cellPadding: 2 },
-            columnStyles: {
-                0: { cellWidth: "auto" },
-                1: { cellWidth: "auto" },
-                2: { cellWidth: "auto" },
-                3: { cellWidth: "auto" },
-                4: { cellWidth: "auto" },
-                5: { cellWidth: "auto" },
-            },
         });
 
         yPosition = getLastTableY(pdf);
@@ -143,12 +137,14 @@ export const generateTaskExecutionPDF = (
 
         const turnaroundData = data.periods.map((period: any) => [
             period.period,
-            period.average_execution_hours ? `${period.average_execution_hours} hours` : "N/A",
+            period.average_execution_hours ? `${period.average_execution_hours}h` : "N/A",
+            period.average_workshop_hours ? `${period.average_workshop_hours}h` : "0h",
+            period.workshop_count?.toString() || "0",
             period.tasks_completed?.toString() || "0",
         ]);
 
         autoTable(pdf, {
-            head: [["Period", "Avg Execution", "Tasks Completed"]],
+            head: [["Period", "Avg Exec", "Avg Wrkshp", "Wrkshp Count", "Completed"]],
             body: turnaroundData,
             startY: yPosition,
             theme: "grid",

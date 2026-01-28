@@ -97,7 +97,7 @@ export const TaskExecutionPreview = ({
                     <CardContent className="p-4">
                         <p className="text-sm text-gray-600">Fastest Task</p>
                         <p className="text-2xl font-bold text-green-600">
-                            {summary.fastest_task_hours ? `${summary.fastest_task_hours} hrs` : 'N/A'}
+                            {summary.fastest_task_hours !== undefined ? `${summary.fastest_task_hours} hrs` : 'N/A'}
                         </p>
                     </CardContent>
                 </Card>
@@ -296,6 +296,8 @@ export const TaskExecutionPreview = ({
                                 <TableRow>
                                     <TableHead>Period</TableHead>
                                     <TableHead>Avg Execution</TableHead>
+                                    <TableHead>Avg Workshop</TableHead>
+                                    <TableHead>Workshop Tasks</TableHead>
                                     <TableHead>Tasks Completed</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -305,6 +307,12 @@ export const TaskExecutionPreview = ({
                                         <TableCell className="font-medium">{period.period}</TableCell>
                                         <TableCell className="font-semibold">
                                             {period.average_execution_hours ? `${period.average_execution_hours} hours` : 'N/A'}
+                                        </TableCell>
+                                        <TableCell>
+                                            {period.average_workshop_hours ? `${period.average_workshop_hours} hours` : '0 hours'}
+                                        </TableCell>
+                                        <TableCell>
+                                            {period.workshop_count || 0}
                                         </TableCell>
                                         <TableCell>{period.tasks_completed || 0}</TableCell>
                                     </TableRow>
