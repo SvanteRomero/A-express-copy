@@ -51,7 +51,7 @@ export const generateOutstandingPaymentsPDF = (
         ]);
 
         autoTable(pdf, {
-            head: [["Task ID", "Customer", "Phone", "Total Cost", "Paid Amount", "Outstanding", "Status", "Device Status"]],
+            head: [["Task ID", "Customer", "Phone", "Total Cost", "Paid Amount", "Outstanding", "Status"]],
             body: top20Data,
             startY: yPosition,
             theme: "grid",
@@ -77,7 +77,7 @@ export const generateOutstandingPaymentsPDF = (
         ]);
 
         autoTable(pdf, {
-            head: [["Task ID", "Customer", "Phone", "Total Cost", "Paid Amount", "Outstanding", "Status", "Device Status"]],
+            head: [["Task ID", "Customer", "Phone", "Total Cost", "Paid Amount", "Outstanding", "Status"]],
             body: bottom20Data,
             startY: yPosition,
             theme: "grid",
@@ -104,7 +104,7 @@ export const generateOutstandingPaymentsPDF = (
         ]);
 
         autoTable(pdf, {
-            head: [["Task ID", "Customer", "Phone", "Outstanding", "Status", "Device Status"]],
+            head: [["Task ID", "Customer", "Phone", "Outstanding", "Status"]],
             body: tasksData,
             startY: yPosition,
             theme: "grid",
