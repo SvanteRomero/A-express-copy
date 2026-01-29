@@ -29,7 +29,6 @@ export const generateOutstandingPaymentsPDF = (
             ["Total Outstanding", formatCurrency(data.summary.total_outstanding)],
             ["Total Tasks", data.summary.task_count?.toString() || "0"],
             ["Average Balance", formatCurrency(data.summary.average_balance)],
-            ["Overdue Tasks", overdueCount.toString()],
         ];
 
         yPosition = addSummaryTable(pdf, summaryData, yPosition, PDF_COLORS.financial.primary);
