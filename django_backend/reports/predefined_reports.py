@@ -504,7 +504,8 @@ class PredefinedReportGenerator:
 
         overdue_tasks_list = []
         for t in overdue_tasks_query:
-            days_overdue = (timezone.now() - t.ready_for_pickup_at).days if t.ready_for_pickup_at else 0
+            total_days_ready = (timezone.now() - t.ready_for_pickup_at).days if t.ready_for_pickup_at else 0
+            days_overdue = max(0, total_days_ready - 7)
             
             # Decrypt phone if needed (reusing logic or basic access)
             customer_phone = "N/A"
