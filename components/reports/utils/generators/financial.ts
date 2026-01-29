@@ -35,11 +35,12 @@ export const generateOutstandingPaymentsPDF = (
         yPosition = addSummaryTable(pdf, summaryData, yPosition, PDF_COLORS.financial.primary);
     }
 
-    // Outstanding Tasks Table
-    if (data.outstanding_tasks?.length > 0) {
-        yPosition = addSectionHeader(pdf, "Outstanding Payments Details", yPosition);
+    // PDF specific export with Top/Bottom 20
+    if (data.pdf_data) {
+        // Table 1: Highest Outstanding Balances
+        yPosition = addSectionHeader(pdf, "Highest Outstanding Balances (Top 20)", yPosition);
 
-        const tasksData = data.outstanding_tasks.map((task: any) => [
+        const top20Data = data.pdf_data.top_20.map((task: any) => [
             task.task_id,
             task.customer_name,
             task.customer_phone,
@@ -48,9 +49,62 @@ export const generateOutstandingPaymentsPDF = (
             formatCurrency(task.outstanding_balance),
             task.workshop_status || '-',
         ]);
-        
+
         autoTable(pdf, {
-            head: [["Task ID", "Customer", "Phone", "Total Cost", "Paid Amount", "Outstanding Balance", "Device Status"]],
+            head: [["Task ID", "Customer", "Phone", "Total Cost", "Paid Amount", "Outstanding", "Status", "Device Status"]],
+            body: top20Data,
+            startY: yPosition,
+            theme: "grid",
+            headStyles: { fillColor: PDF_COLORS.danger },
+            margin: { left: 20, right: 20 },
+            styles: { fontSize: 7 },
+            pageBreak: "auto",
+        });
+
+        yPosition = getLastTableY(pdf, 15);
+
+        // Table 2: Lowest Outstanding Balances
+        yPosition = addSectionHeader(pdf, "Lowest Outstanding Balances (Last 20)", yPosition);
+
+        const bottom20Data = data.pdf_data.bottom_20.map((task: any) => [
+            task.task_id,
+            task.customer_name,
+            task.customer_phone,
+            formatCurrency(task.total_cost),
+            formatCurrency(task.paid_amount),
+            formatCurrency(task.outstanding_balance),
+            task.workshop_status || '-',
+        ]);
+
+        autoTable(pdf, {
+            head: [["Task ID", "Customer", "Phone", "Total Cost", "Paid Amount", "Outstanding", "Status", "Device Status"]],
+            body: bottom20Data,
+            startY: yPosition,
+            theme: "grid",
+            headStyles: { fillColor: PDF_COLORS.operational.primary }, // Use distinct color for contrast
+            margin: { left: 20, right: 20 },
+            styles: { fontSize: 7 },
+            pageBreak: "auto",
+        });
+
+        return;
+    }
+
+    // Fallback / Standard Outstanding Tasks Table (e.g. if paginated view is passed directly)
+    if (data.outstanding_tasks?.length > 0) {
+        yPosition = addSectionHeader(pdf, "Outstanding Payments Details", yPosition);
+
+        const tasksData = data.outstanding_tasks.map((task: any) => [
+            task.task_id,
+            task.customer_name,
+            task.customer_phone,
+            formatCurrency(task.outstanding_balance),
+            task.status,
+            task.workshop_status || '-',
+        ]);
+
+        autoTable(pdf, {
+            head: [["Task ID", "Customer", "Phone", "Outstanding", "Status", "Device Status"]],
             body: tasksData,
             startY: yPosition,
             theme: "grid",

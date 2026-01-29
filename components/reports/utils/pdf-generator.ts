@@ -127,7 +127,8 @@ export const generatePDF = async (
         let reportType = "";
 
         // If we have the report data already from viewing, use it
-        if (selectedReport && selectedReport.id === reportId) {
+        // UNLESS it's outstanding-payments, which needs a special PDF export fetch
+        if (selectedReport && selectedReport.id === reportId && reportId !== 'outstanding-payments') {
             reportData = selectedReport.data.report;
             reportType = selectedReport.data.type;
         } else {
@@ -141,6 +142,10 @@ export const generatePDF = async (
             const params: Record<string, string> = {};
             if (DATE_RANGE_REPORTS.includes(reportId)) {
                 params.date_range = "last_30_days";
+            }
+
+            if (reportId === 'outstanding-payments') {
+                params.pdf_export = "true";
             }
 
             // Use apiClient with cookie auth

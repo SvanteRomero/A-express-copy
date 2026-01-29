@@ -113,7 +113,7 @@ class PredefinedReportGenerator:
         return Q(**filter_kwargs), actual_range, duration_days, duration_description, start_date, end_date
     
     @staticmethod
-    def generate_outstanding_payments_report(date_range='last_7_days', start_date=None, end_date=None, page=1, page_size=10, search_query=None):
+    def generate_outstanding_payments_report(date_range='last_7_days', start_date=None, end_date=None, page=1, page_size=10, search_query=None, pdf_export=False):
         """Generate outstanding payments report with date range, pagination, and search support"""
         from django.core.paginator import Paginator
         # Apply date filter to tasks based on date_in field
@@ -149,6 +149,62 @@ class PredefinedReportGenerator:
                 outstanding_balance_calculated=F('total_cost') - F('paid_amount')
             ).filter(outstanding_balance_calculated__gt=0).order_by('-outstanding_balance_calculated')
         )
+
+        if pdf_export:
+            # For PDF, we want Top 20 (Highest Balance) and "Last 20" (Lowest Balance)
+            # qs is already ordered by -outstanding_balance_calculated (Highest first)
+            
+            top_20_qs = outstanding_tasks_qs[:20]
+            
+            # For "Last 20", we want the ones with the lowest balance.
+            # We can reverse the ordering to get lowest first, then take 20.
+            bottom_20_qs = outstanding_tasks_qs.reverse()[:20]
+            
+            def serialize_task(t):
+                days_overdue = ((timezone.now().date() - t.date_in).days if t.date_in else 0)
+                customer_phone = "Not provided"
+                if hasattr(t.customer, "phone_numbers") and t.customer.phone_numbers.exists():
+                     encrypted_phone = t.customer.phone_numbers.first().phone_number
+                     customer_phone = decrypt_value(encrypted_phone) or encrypted_phone
+                
+                return {
+                    "task_id": t.title,
+                    "customer_name": t.customer.name,
+                    "customer_phone": customer_phone,
+                    "total_cost": float(t.total_cost or 0),
+                    "paid_amount": float(t.paid_amount or 0),
+                    "outstanding_balance": float(t.outstanding_balance_calculated),
+                    "days_overdue": days_overdue,
+                    "status": t.status,
+                    "workshop_status": t.workshop_status,
+                    "date_in": t.date_in.isoformat() if t.date_in else None,
+                }
+
+            pdf_data = {
+                "top_20": [serialize_task(t) for t in top_20_qs],
+                "bottom_20": [serialize_task(t) for t in bottom_20_qs]
+            }
+            
+            # For PDF export, we return the special data structure
+            # We also return the summary stats based on the FULL qs
+            total_outstanding = outstanding_tasks_qs.aggregate(total=Sum('outstanding_balance_calculated'))['total'] or 0
+            count = outstanding_tasks_qs.count()
+            
+            return {
+                "pdf_data": pdf_data,
+                "summary": {
+                    "total_outstanding": float(total_outstanding),
+                    "task_count": count,
+                    "average_balance": float(total_outstanding) / count if count > 0 else 0,
+                },
+                "date_range": actual_date_range,
+                 "duration_info": {
+                    "days": duration_days,
+                    "description": duration_description
+                },
+                "start_date": start_date.isoformat() if start_date else None,
+                "end_date": end_date.isoformat() if end_date else None,
+            }
 
         paginator = Paginator(outstanding_tasks_qs, page_size)
         paginated_tasks = paginator.get_page(page)
