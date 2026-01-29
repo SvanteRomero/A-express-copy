@@ -144,8 +144,6 @@ export const OutstandingPaymentsPreview = ({
                                             <TableCell className="font-medium">{task.task_id}</TableCell>
                                             <TableCell>{task.customer_name}</TableCell>
                                             <TableCell>{task.customer_phone}</TableCell>
-                                            <TableCell>TSh {task.total_cost.toLocaleString()}</TableCell>
-                                            <TableCell>TSh {task.paid_amount.toLocaleString()}</TableCell>
                                             <TableCell className="font-semibold text-red-600">
                                                 TSh {task.outstanding_balance.toLocaleString()}
                                             </TableCell>
