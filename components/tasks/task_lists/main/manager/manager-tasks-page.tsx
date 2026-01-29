@@ -29,11 +29,22 @@ export function ManagerTasksPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('pending');
+  const [searchQuery, setSearchQuery] = useState("");
   const [pages, setPages] = useState({
     pending: 1,
     completed: 1,
     myTasks: 1,
   });
+
+  const handleSearchChange = React.useCallback((query: string) => {
+    setSearchQuery(query);
+    // Reset all pages to 1 when search changes
+    setPages({
+      pending: 1,
+      completed: 1,
+      myTasks: 1,
+    });
+  }, []);
 
   // Swipe handling
   const touchStartX = useRef<number>(0);
@@ -66,12 +77,14 @@ export function ManagerTasksPage() {
   const { data: pendingTasksData, isLoading: isLoadingPending } = useTasks({
     page: pages.pending,
     status: "Pending,In Progress,Awaiting Parts,Assigned - Not Accepted,Diagnostic",
+    search: searchQuery,
   });
 
 
   const { data: completedTasksData, isLoading: isLoadingCompleted } = useTasks({
     page: pages.completed,
     status: "Completed,Ready for Pickup",
+    search: searchQuery,
   });
 
   // My Tasks - tasks assigned to this manager
@@ -82,6 +95,7 @@ export function ManagerTasksPage() {
     page: pages.myTasks,
     assigned_to: user?.id,
     status: "In Progress,Pending,Awaiting Parts,Assigned - Not Accepted,Diagnostic",
+    search: searchQuery,
   });
 
   // Workshop queue tasks (only for workshop managers)
@@ -91,6 +105,7 @@ export function ManagerTasksPage() {
       page: pages.myTasks,
       workshop_status: 'In Workshop',
       status: "In Progress,Pending,Awaiting Parts,Assigned - Not Accepted,Diagnostic",
+      search: searchQuery,
     } : { page: 1 }  // Dummy query when not needed
   );
 
@@ -231,6 +246,8 @@ export function ManagerTasksPage() {
               onProcessPickup={handleProcessPickup}
               onTerminateTask={handleTerminateTask}
               isManagerView={true}
+              searchQuery={searchQuery}
+              onSearchQueryChange={handleSearchChange}
             />
             <div className="flex justify-end space-x-2 mt-4">
               <Button onClick={() => handlePageChange('pending', 'previous')} disabled={!pendingTasksData?.previous}>Previous</Button>
@@ -245,6 +262,8 @@ export function ManagerTasksPage() {
               showActions={false}
               isManagerView={false}
               isMyTasksTab={true}
+              searchQuery={searchQuery}
+              onSearchQueryChange={handleSearchChange}
             />
             <div className="flex justify-end space-x-2 mt-4">
               <Button onClick={() => handlePageChange('myTasks', 'previous')} disabled={!myTasksData?.previous}>Previous</Button>
@@ -261,6 +280,8 @@ export function ManagerTasksPage() {
               onProcessPickup={handleProcessPickup}
               isCompletedTab={true}
               isManagerView={true}
+              searchQuery={searchQuery}
+              onSearchQueryChange={handleSearchChange}
             />
             <div className="flex justify-end space-x-2 mt-4">
               <Button onClick={() => handlePageChange('completed', 'previous')} disabled={!completedTasksData?.previous}>Previous</Button>

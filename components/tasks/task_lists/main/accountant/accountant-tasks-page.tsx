@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { deleteTask, addTaskPayment } from "@/lib/api-client";
@@ -17,11 +17,18 @@ export default function AccountantTasksPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+  }, []);
 
   const { data: tasksData, isLoading, isError, error } = useTasks({
     unpaid_tasks: true,
     page,
     page_size: 15,
+    search: searchQuery,
   });
   const { data: technicians } = useTechnicians();
 
@@ -90,6 +97,8 @@ export default function AccountantTasksPage() {
         showActions={true}
         onAddPayment={handleAddPayment}
         isAccountantView={true}
+        searchQuery={searchQuery}
+        onSearchQueryChange={handleSearchChange}
       />
 
       {/* Pagination Controls */}

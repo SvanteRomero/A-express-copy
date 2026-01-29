@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useTasks } from "@/hooks/use-tasks";
 import { TasksDisplay } from "../../../task_utils/tasks-display";
 import { useRouter } from "next/navigation";
@@ -25,7 +25,16 @@ import { Loader2 } from "lucide-react";
 import { PageSkeleton, TableSkeleton } from "@/components/ui/core/loaders";
 
 const DebtsPage = () => {
-  const { data: tasksData, isLoading, error } = useTasks({ debts: true });
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
+
+  const { data: tasksData, isLoading, error } = useTasks({
+    debts: true,
+    search: searchQuery
+  });
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -160,6 +169,8 @@ const DebtsPage = () => {
         onAddPayment={handleAddPayment}
         onRemindDebt={handleRemindDebt}
         isAccountantView={true}
+        searchQuery={searchQuery}
+        onSearchQueryChange={handleSearchChange}
       />
 
       {/* Debt Reminder Confirmation Dialog */}

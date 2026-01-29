@@ -36,6 +36,8 @@ interface TasksDisplayProps {
   approvingTaskId?: string | null
   pickingUpTaskId?: string | null
   isMyTasksTab?: boolean
+  searchQuery?: string
+  onSearchQueryChange?: (query: string) => void
 }
 
 export function TasksDisplay({
@@ -61,7 +63,9 @@ export function TasksDisplay({
   onRemindDebt,
   approvingTaskId,
   pickingUpTaskId,
-  isMyTasksTab
+  isMyTasksTab,
+  searchQuery: externalSearchQuery,
+  onSearchQueryChange: onExternalSearchQueryChange
 }: TasksDisplayProps) {
   const isMobile = useIsMobile()
   const [statusOptions, setStatusOptions] = useState<string[]>([])
@@ -89,7 +93,10 @@ export function TasksDisplay({
     uniqueUrgencies,
     uniqueDeviceStatuses,
     uniqueLocations
-  } = useTaskFiltering(tasks, technicians)
+  } = useTaskFiltering(tasks, technicians, {
+    externalSearchQuery,
+    onSearchChange: onExternalSearchQueryChange
+  })
 
   useEffect(() => {
     const fetchStatusOptions = async () => {

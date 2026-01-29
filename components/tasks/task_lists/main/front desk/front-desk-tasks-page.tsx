@@ -32,25 +32,39 @@ type PageState = {
 export function FrontDeskTasksPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
   const [pages, setPages] = useState<PageState>({
     "not-completed": 1,
     completed: 1,
     pickup: 1,
   });
 
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+    // Reset all pages to 1 when search changes
+    setPages({
+      "not-completed": 1,
+      completed: 1,
+      pickup: 1,
+    });
+  }, []);
+
   const { data: notCompletedTasksData, isLoading: isLoadingNotCompleted } = useTasks({
     page: pages["not-completed"],
     status: "Pending,In Progress",
+    search: searchQuery,
   });
 
   const { data: completedTasksData, isLoading: isLoadingCompleted } = useTasks({
     page: pages.completed,
     status: "Completed",
+    search: searchQuery,
   });
 
   const { data: pickupTasksData, isLoading: isLoadingPickup } = useTasks({
     page: pages.pickup,
     status: "Ready for Pickup",
+    search: searchQuery,
   });
 
   const { data: technicians } = useTechnicians();
@@ -231,6 +245,8 @@ export function FrontDeskTasksPage() {
             onRowClick={handleRowClick}
             showActions={false}
             isManagerView={true}
+            searchQuery={searchQuery}
+            onSearchQueryChange={handleSearchChange}
           />
           <div className="flex justify-end space-x-2 mt-4">
             <Button onClick={() => handlePageChange('not-completed', 'previous')} disabled={!notCompletedTasksData?.previous}>Previous</Button>
@@ -247,6 +263,8 @@ export function FrontDeskTasksPage() {
             onReject={handleReject}
             isFrontDeskCompletedView={true}
             approvingTaskId={approvingTaskId}
+            searchQuery={searchQuery}
+            onSearchQueryChange={handleSearchChange}
           />
           <div className="flex justify-end space-x-2 mt-4">
             <Button onClick={() => handlePageChange('completed', 'previous')} disabled={!completedTasksData?.previous}>Previous</Button>
@@ -263,6 +281,8 @@ export function FrontDeskTasksPage() {
             onPickedUp={handlePickedUp}
             onNotifyCustomer={handleNotifyCustomer}
             pickingUpTaskId={pickingUpTaskId}
+            searchQuery={searchQuery}
+            onSearchQueryChange={handleSearchChange}
           />
           <div className="flex justify-end space-x-2 mt-4">
             <Button onClick={() => handlePageChange('pickup', 'previous')} disabled={!pickupTasksData?.previous}>Previous</Button>

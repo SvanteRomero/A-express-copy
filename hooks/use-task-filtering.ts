@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 
 export interface TaskSorting {
     sortField: string | null
@@ -15,8 +15,18 @@ export interface TaskFiltersState {
     locationFilter: string
 }
 
-export function useTaskFiltering(tasks: any[], technicians: any[]) {
-    const [searchQuery, setSearchQuery] = useState("")
+interface UseTaskFilteringProps {
+    externalSearchQuery?: string;
+    onSearchChange?: (query: string) => void;
+}
+
+export function useTaskFiltering(tasks: any[], technicians: any[], props?: UseTaskFilteringProps) {
+    const [internalSearchQuery, setInternalSearchQuery] = useState("")
+    
+    // key determination logic: use external if provided, otherwise internal
+    const isServerSideSearch = props?.externalSearchQuery !== undefined;
+    const searchQuery = isServerSideSearch ? props!.externalSearchQuery! : internalSearchQuery;
+
     const [taskStatusFilter, setTaskStatusFilter] = useState<string>("all")
     const [technicianFilter, setTechnicianFilter] = useState<string>("all")
     const [urgencyFilter, setUrgencyFilter] = useState<string>("all")
@@ -24,6 +34,14 @@ export function useTaskFiltering(tasks: any[], technicians: any[]) {
     const [locationFilter, setLocationFilter] = useState<string>("all")
     const [sortField, setSortField] = useState<string | null>(null)
     const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(null)
+
+    const setSearchQuery = (query: string) => {
+        if (isServerSideSearch && props?.onSearchChange) {
+            props.onSearchChange(query);
+        } else {
+            setInternalSearchQuery(query);
+        }
+    };
 
     const uniqueTechnicians = useMemo(() => {
         return technicians.map((tech) => ({ id: tech.id, full_name: `${tech.first_name} ${tech.last_name}`.trim() }))
@@ -35,13 +53,17 @@ export function useTaskFiltering(tasks: any[], technicians: any[]) {
 
     const filteredAndSortedTasks = useMemo(() => {
         const filtered = tasks.filter((task) => {
-            const matchesSearch =
-                searchQuery === "" ||
-                task.title.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (task.customer_details?.name && task.customer_details.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                (task.customer_details?.phone_numbers && task.customer_details.phone_numbers.some((p: any) => p.phone_number.toLowerCase().includes(searchQuery.toLowerCase()))) ||
-                (task.laptop_model_details?.name && task.laptop_model_details.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                task.description.toLowerCase().includes(searchQuery.toLowerCase())
+            // Client-side search only applies if NOT using server-side search
+            let matchesSearch = true;
+            if (!isServerSideSearch) {
+                matchesSearch =
+                    searchQuery === "" ||
+                    task.title.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    (task.customer_details?.name && task.customer_details.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                    (task.customer_details?.phone_numbers && task.customer_details.phone_numbers.some((p: any) => p.phone_number.toLowerCase().includes(searchQuery.toLowerCase()))) ||
+                    (task.laptop_model_details?.name && task.laptop_model_details.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                    task.description.toLowerCase().includes(searchQuery.toLowerCase());
+            }
 
             const matchesTaskStatus = taskStatusFilter === "all" || task.status === taskStatusFilter
             const matchesTechnician = technicianFilter === "all" || task.assigned_to_details?.full_name === technicianFilter
@@ -54,12 +76,6 @@ export function useTaskFiltering(tasks: any[], technicians: any[]) {
 
         if (sortField && sortDirection) {
             filtered.sort((a, b) => {
-                // Handle nested properties if necessary, though current usage suggests flat field access or pre-processed data might be needed.
-                // The original code used direct access: aValue = a[sortField]
-                // This assumes sortField corresponds to a key in the task object.
-                // For 'customer_details.name', standard bracket access wouldn't work without splitting.
-                // Let's implement safe getter.
-
                 const getField = (obj: any, path: string) => {
                     return path.split('.').reduce((acc, part) => acc && acc[part], obj);
                 }
@@ -74,7 +90,7 @@ export function useTaskFiltering(tasks: any[], technicians: any[]) {
         }
 
         return filtered
-    }, [searchQuery, taskStatusFilter, technicianFilter, urgencyFilter, deviceStatusFilter, locationFilter, sortField, sortDirection, tasks])
+    }, [searchQuery, isServerSideSearch, taskStatusFilter, technicianFilter, urgencyFilter, deviceStatusFilter, locationFilter, sortField, sortDirection, tasks])
 
     const handleSort = (field: string) => {
         if (sortField === field) {
