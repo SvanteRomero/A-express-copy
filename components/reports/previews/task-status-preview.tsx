@@ -43,9 +43,11 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
     const completedTasks = statusDistribution.find((s: any) => s.status === 'Completed')?.count || 0
     const inProgressTasks = statusDistribution.find((s: any) => s.status === 'In Progress')?.count || 0
 
+    const overduePickupCount = report.overdue_pickup_count || 0
+
     return (
         <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-4">
                 <Card>
                     <CardContent className="p-4">
                         <p className="text-sm text-gray-600">Total Tasks</p>
@@ -62,6 +64,12 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
                     <CardContent className="p-4">
                         <p className="text-sm text-gray-600">In Progress</p>
                         <p className="text-2xl font-bold text-orange-600">{inProgressTasks}</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-sm text-gray-600">Overdue Pickup (&gt;7 Days)</p>
+                        <p className="text-2xl font-bold text-red-600">{overduePickupCount}</p>
                     </CardContent>
                 </Card>
             </div>

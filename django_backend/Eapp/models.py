@@ -113,6 +113,14 @@ class Task(models.Model):
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='latest_pickup_tasks'
     )
     
+    # Status Timestamps
+    ready_for_pickup_at = models.DateTimeField(
+        null=True, 
+        blank=True, 
+        db_index=True,
+        help_text='Timestamp when task was marked as Ready for Pickup'
+    )
+    
     # Execution Tracking Fields (assignment → completion metrics)
     first_assigned_at = models.DateTimeField(
         null=True,

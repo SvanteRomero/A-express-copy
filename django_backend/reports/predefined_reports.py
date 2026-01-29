@@ -490,10 +490,18 @@ class PredefinedReportGenerator:
         top_models_query = list(filtered_tasks.values('laptop_model__name').annotate(count=Count('laptop_model')).order_by('-count').filter(laptop_model__name__isnull=False)[:5])
         top_models = [{'laptop_model': item['laptop_model__name'], 'count': item['count']} for item in top_models_query]
 
+        # Calculate overdue pickup count
+        overdue_threshold = timezone.now() - timedelta(days=7)
+        overdue_pickup_count = Task.objects.filter(
+            status='Ready for Pickup',
+            ready_for_pickup_at__lte=overdue_threshold
+        ).count()
+
         return {
             "status_distribution": status_data,
             "urgency_distribution": list(urgency_counts),
             "total_tasks": total_tasks,
+            "overdue_pickup_count": overdue_pickup_count,
             "popular_brand": popular_brand['brand__name'] if popular_brand and popular_brand['brand__name'] else "N/A",
             "popular_model": popular_model['laptop_model__name'] if popular_model and popular_model['laptop_model__name'] else "N/A",
             "top_brands": top_brands,

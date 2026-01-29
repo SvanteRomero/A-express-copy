@@ -103,7 +103,7 @@ export const generateOutstandingPaymentsPDF = (
         ]);
 
         autoTable(pdf, {
-            head: [["Task ID", "Customer", "Phone", "Outstanding", "Status"]],
+            head: [["Task ID", "Customer", "Phone", "Outstanding", "Status", "Device Status"]],
             body: tasksData,
             startY: yPosition,
             theme: "grid",

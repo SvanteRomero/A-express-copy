@@ -18,6 +18,7 @@ from Eapp.utils import TaskIDGenerator
 from .activity_logger import ActivityLogger
 from customers.services import CustomerHandler
 from .workshop_handler import WorkshopHandler
+from django.utils import timezone
 
 
 class TaskCreationService:
@@ -297,6 +298,11 @@ class TaskUpdateService:
         
         # Log standard status changes
         ActivityLogger.log_status_change(task, user, new_status)
+        
+        # Update ready_for_pickup_at timestamp
+        if new_status == 'Ready for Pickup':
+            task.ready_for_pickup_at = timezone.now()
+            task.save(update_fields=['ready_for_pickup_at'])
         
         # Handle returned task assignment (when not a rejection)
         if new_status == 'In Progress' and user.role == 'Front Desk':
