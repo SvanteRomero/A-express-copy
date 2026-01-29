@@ -1,6 +1,6 @@
 "use client"
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { getTasks, getTask, createTask, updateTask as apiUpdateTask, createCostBreakdown, getDebts, apiClient } from '@/lib/api-client'
 import { Task, PaginatedTasks } from '@/components/tasks/types'
 
@@ -42,6 +42,7 @@ export function useTasks(filters?: {
   return useQuery<PaginatedTasks>({
     queryKey: ['tasks', filters],
     queryFn: () => (filters?.debts ? getDebts(filters) : getTasks(filters)).then(res => res.data),
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -21,11 +21,36 @@ interface UseTaskFilteringProps {
 }
 
 export function useTaskFiltering(tasks: any[], technicians: any[], props?: UseTaskFilteringProps) {
-    const [internalSearchQuery, setInternalSearchQuery] = useState("")
-    
-    // key determination logic: use external if provided, otherwise internal
-    const isServerSideSearch = props?.externalSearchQuery !== undefined;
-    const searchQuery = isServerSideSearch ? props!.externalSearchQuery! : internalSearchQuery;
+    const isServerSideSearch = props?.onSearchChange !== undefined;
+
+    // Always maintain internal state for instant UI feedback
+    const [internalSearchQuery, setInternalSearchQuery] = useState(props?.externalSearchQuery || "")
+
+    // Sync external -> internal (e.g. clear filters from parent, or initial load)
+    useEffect(() => {
+        if (props?.externalSearchQuery !== undefined && props.externalSearchQuery !== internalSearchQuery) {
+            setInternalSearchQuery(props.externalSearchQuery)
+        }
+    }, [props?.externalSearchQuery])
+
+    // Sync internal -> external (Debounced)
+    useEffect(() => {
+        if (isServerSideSearch && props?.onSearchChange) {
+            const handler = props.onSearchChange;
+            const timer = setTimeout(() => {
+                // Avoid calling if the value hasn't effectively changed from what server likely has 
+                // (though handling that check is complex without refs, simple debounce is usually sufficient)
+                if (props.externalSearchQuery !== internalSearchQuery) {
+                    handler(internalSearchQuery)
+                }
+            }, 300)
+            return () => clearTimeout(timer)
+        }
+    }, [internalSearchQuery, isServerSideSearch, props?.onSearchChange, props?.externalSearchQuery])
+
+    const setSearchQuery = (query: string) => {
+        setInternalSearchQuery(query)
+    }
 
     const [taskStatusFilter, setTaskStatusFilter] = useState<string>("all")
     const [technicianFilter, setTechnicianFilter] = useState<string>("all")
@@ -34,14 +59,6 @@ export function useTaskFiltering(tasks: any[], technicians: any[], props?: UseTa
     const [locationFilter, setLocationFilter] = useState<string>("all")
     const [sortField, setSortField] = useState<string | null>(null)
     const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(null)
-
-    const setSearchQuery = (query: string) => {
-        if (isServerSideSearch && props?.onSearchChange) {
-            props.onSearchChange(query);
-        } else {
-            setInternalSearchQuery(query);
-        }
-    };
 
     const uniqueTechnicians = useMemo(() => {
         return technicians.map((tech) => ({ id: tech.id, full_name: `${tech.first_name} ${tech.last_name}`.trim() }))
@@ -57,12 +74,12 @@ export function useTaskFiltering(tasks: any[], technicians: any[], props?: UseTa
             let matchesSearch = true;
             if (!isServerSideSearch) {
                 matchesSearch =
-                    searchQuery === "" ||
-                    task.title.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    (task.customer_details?.name && task.customer_details.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                    (task.customer_details?.phone_numbers && task.customer_details.phone_numbers.some((p: any) => p.phone_number.toLowerCase().includes(searchQuery.toLowerCase()))) ||
-                    (task.laptop_model_details?.name && task.laptop_model_details.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                    task.description.toLowerCase().includes(searchQuery.toLowerCase());
+                    internalSearchQuery === "" ||
+                    task.title.toString().toLowerCase().includes(internalSearchQuery.toLowerCase()) ||
+                    (task.customer_details?.name && task.customer_details.name.toLowerCase().includes(internalSearchQuery.toLowerCase())) ||
+                    (task.customer_details?.phone_numbers && task.customer_details.phone_numbers.some((p: any) => p.phone_number.toLowerCase().includes(internalSearchQuery.toLowerCase()))) ||
+                    (task.laptop_model_details?.name && task.laptop_model_details.name.toLowerCase().includes(internalSearchQuery.toLowerCase())) ||
+                    task.description.toLowerCase().includes(internalSearchQuery.toLowerCase());
             }
 
             const matchesTaskStatus = taskStatusFilter === "all" || task.status === taskStatusFilter
@@ -90,7 +107,7 @@ export function useTaskFiltering(tasks: any[], technicians: any[], props?: UseTa
         }
 
         return filtered
-    }, [searchQuery, isServerSideSearch, taskStatusFilter, technicianFilter, urgencyFilter, deviceStatusFilter, locationFilter, sortField, sortDirection, tasks])
+    }, [internalSearchQuery, isServerSideSearch, taskStatusFilter, technicianFilter, urgencyFilter, deviceStatusFilter, locationFilter, sortField, sortDirection, tasks])
 
     const handleSort = (field: string) => {
         if (sortField === field) {
@@ -109,7 +126,7 @@ export function useTaskFiltering(tasks: any[], technicians: any[], props?: UseTa
     }
 
     const clearAllFilters = () => {
-        setSearchQuery("")
+        setInternalSearchQuery("") // This triggers the debounced update to parent
         setTaskStatusFilter("all")
         setTechnicianFilter("all")
         setUrgencyFilter("all")
@@ -119,7 +136,8 @@ export function useTaskFiltering(tasks: any[], technicians: any[], props?: UseTa
     }
 
     return {
-        searchQuery, setSearchQuery,
+        searchQuery: internalSearchQuery, // Return internal state for UI
+        setSearchQuery,
         taskStatusFilter, setTaskStatusFilter,
         technicianFilter, setTechnicianFilter,
         urgencyFilter, setUrgencyFilter,
