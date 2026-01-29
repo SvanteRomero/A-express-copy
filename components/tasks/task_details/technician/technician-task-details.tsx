@@ -255,7 +255,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                     Mark as Complete
                   </Button>
                 )}
-                {task.status === 'In Progress' && !user?.is_workshop && user?.id === task.assigned_to && (
+                {task.status === 'In Progress' && task.workshop_status !== 'In Workshop' && !user?.is_workshop && user?.id === task.assigned_to && (
                   <Dialog open={isSendToWorkshopDialogOpen} onOpenChange={setIsSendToWorkshopDialogOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50 bg-transparent w-full sm:w-auto">
