@@ -10,8 +10,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--brand',
             type=str,
-            default='HP',
-            help='Name of the brand to reconcile',
+            default=None,
+            help='Name of the brand to reconcile (optional, defaults to all brands)',
         )
         parser.add_argument(
             '--dry-run',
@@ -20,16 +20,31 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        brand_name = options['brand']
+        brand_name_arg = options['brand']
         dry_run = options['dry_run']
         
-        self.stdout.write(f"Starting reconciliation for Brand: '{brand_name}' (Dry run: {dry_run})")
-        
-        try:
-            brand = Brand.objects.get(name__iexact=brand_name)
-        except Brand.DoesNotExist:
-            self.stdout.write(self.style.ERROR(f"Brand '{brand_name}' not found."))
-            return
+        target_brands = []
+
+        if brand_name_arg:
+            try:
+                brand = Brand.objects.get(name__iexact=brand_name_arg)
+                target_brands.append(brand)
+            except Brand.DoesNotExist:
+                self.stdout.write(self.style.ERROR(f"Brand '{brand_name_arg}' not found."))
+                return
+        else:
+            target_brands = Brand.objects.all()
+
+        self.stdout.write(f"Starting reconciliation for {len(target_brands)} brands (Dry run: {dry_run})")
+
+        for brand in target_brands:
+            self.reconcile_brand(brand, dry_run)
+            
+        self.stdout.write(self.style.SUCCESS("\nReconciliation process finished."))
+
+    def reconcile_brand(self, brand, dry_run):
+        brand_name = brand.name
+        self.stdout.write(f"\n--- Checking Brand: {brand_name} ---")
 
         # Find models for this brand that start with the brand name (case insensitive)
         # e.g. for brand "HP", find models like "HP Elitebook" or "hp Pavilion"
@@ -39,7 +54,7 @@ class Command(BaseCommand):
         )
         
         if not bad_models.exists():
-            self.stdout.write(self.style.SUCCESS(f"No models found starting with '{brand_name}' for brand '{brand_name}'."))
+            self.stdout.write(f"No models found starting with '{brand_name}' for brand '{brand_name}'.")
             return
 
         for bad_model in bad_models:
@@ -57,7 +72,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(f"Skipping model '{original_name}' as stripping brand leaves empty string."))
                 continue
 
-            self.stdout.write(f"\nProcessing '{original_name}' -> Target: '{clean_name}'")
+            self.stdout.write(f"Processing '{original_name}' -> Target: '{clean_name}'")
 
             # Check if the clean model already exists for this brand
             try:
@@ -87,5 +102,3 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.SUCCESS("  - Rename complete."))
                 else:
                     self.stdout.write(self.style.WARNING("  - [DRY RUN] Would rename model."))
-
-        self.stdout.write(self.style.SUCCESS("\nReconciliation process finished."))
