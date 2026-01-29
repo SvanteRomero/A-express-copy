@@ -17,6 +17,7 @@ export const FrontDeskPerformancePreview: React.FC<FrontDeskPerformancePreviewPr
     name: p.user_name,
     '% Tasks Approved': p.approved_percentage,
     '% Tasks Sent Out': p.sent_out_percentage,
+    '% Tasks Created': p.created_percentage,
   }));
 
   return (
@@ -26,7 +27,8 @@ export const FrontDeskPerformancePreview: React.FC<FrontDeskPerformancePreviewPr
           <CardTitle>Front Desk Performance Summary</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div>Total Tasks Created: {summary.total_created}</div>
             <div>Total Tasks Approved: {summary.total_approved}</div>
             <div>Total Tasks Sent Out: {summary.total_sent_out}</div>
             <div>Start Date: {summary.start_date}</div>
@@ -48,8 +50,9 @@ export const FrontDeskPerformancePreview: React.FC<FrontDeskPerformancePreviewPr
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="% Tasks Approved" fill="#8884d8" />
-                <Bar dataKey="% Tasks Sent Out" fill="#82ca9d" />
+                <Bar dataKey="% Tasks Created" fill="#8884d8" />
+                <Bar dataKey="% Tasks Approved" fill="#82ca9d" />
+                <Bar dataKey="% Tasks Sent Out" fill="#ffc658" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -65,16 +68,20 @@ export const FrontDeskPerformancePreview: React.FC<FrontDeskPerformancePreviewPr
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
+                <TableHead>Tasks Created</TableHead>
+                <TableHead>% Created</TableHead>
                 <TableHead>Tasks Approved</TableHead>
-                <TableHead>% of Total Approved</TableHead>
+                <TableHead>% Approved</TableHead>
                 <TableHead>Tasks Sent Out</TableHead>
-                <TableHead>% of Total Sent Out</TableHead>
+                <TableHead>% Sent Out</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {performance.map((user) => (
                 <TableRow key={user.user_name}>
                   <TableCell>{user.user_name}</TableCell>
+                  <TableCell>{user.created_count}</TableCell>
+                  <TableCell>{user.created_percentage.toFixed(2)}%</TableCell>
                   <TableCell>{user.approved_count}</TableCell>
                   <TableCell>{user.approved_percentage.toFixed(2)}%</TableCell>
                   <TableCell>{user.sent_out_count}</TableCell>

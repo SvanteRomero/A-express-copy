@@ -312,8 +312,10 @@ export interface FrontDeskPerformanceData {
     user_name: string;
     approved_count: number;
     sent_out_count: number;
+    created_count: number;
     approved_percentage: number;
     sent_out_percentage: number;
+    created_percentage: number;
 }
 
 export interface FrontDeskPerformanceReport {
@@ -321,6 +323,7 @@ export interface FrontDeskPerformanceReport {
     summary: {
         total_approved: number;
         total_sent_out: number;
+        total_created: number;
         start_date: string;
         end_date: string;
     };
