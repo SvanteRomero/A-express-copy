@@ -246,6 +246,37 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
                 </CardContent>
             </Card>
 
+            {/* Overdue Tasks Section */}
+            {report.overdue_tasks && report.overdue_tasks.length > 0 && (
+                <Card className="border-red-200">
+                    <CardHeader className="bg-red-50">
+                        <CardTitle className="text-red-700">Top 10 Overdue for Pickup</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Task Title</TableHead>
+                                    <TableHead>Customer</TableHead>
+                                    <TableHead>Phone</TableHead>
+                                    <TableHead>Days Overdue</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {report.overdue_tasks.map((task: any) => (
+                                    <TableRow key={task.id}>
+                                        <TableCell className="font-medium">{task.title}</TableCell>
+                                        <TableCell>{task.customer_name}</TableCell>
+                                        <TableCell>{task.customer_phone}</TableCell>
+                                        <TableCell className="font-bold text-red-600">{task.days_overdue} days</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            )}
+
             {/* Generated At Info */}
             <Card className="border-gray-200 bg-gray-50">
                 <CardContent className="p-4">

@@ -31,6 +31,7 @@ export const generateTaskStatusPDF = (
         ["Total Tasks", totalTasks.toString()],
         ["Completed Tasks", completedTasks.toString()],
         ["In Progress Tasks", inProgressTasks.toString()],
+        ["Overdue Pickup (>7 Days)", (data.overdue_pickup_count || 0).toString()],
         ["Completion Rate", totalTasks > 0 ? `${((completedTasks / totalTasks) * 100).toFixed(1)}%` : "0%"],
     ];
 
@@ -74,6 +75,31 @@ export const generateTaskStatusPDF = (
             startY: yPosition,
             theme: "grid",
             headStyles: { fillColor: PDF_COLORS.warning },
+            margin: { left: 20, right: 20 },
+        });
+
+        yPosition = getLastTableY(pdf);
+    }
+
+    // Overdue Tasks Section
+    const overdueTasks = data.overdue_tasks || [];
+    if (overdueTasks.length > 0) {
+        yPosition = checkPageBreak(pdf, yPosition, 250);
+        yPosition = addSectionHeader(pdf, "Top 10 Overdue for Pickup", yPosition);
+
+        const overdueData = overdueTasks.map((task: any) => [
+            task.title || "N/A",
+            task.customer_name || "N/A",
+            task.customer_phone || "N/A",
+            `${task.days_overdue} days`,
+        ]);
+
+        autoTable(pdf, {
+            head: [["Task Title", "Customer", "Phone", "Days Overdue"]],
+            body: overdueData,
+            startY: yPosition,
+            theme: "grid",
+            headStyles: { fillColor: PDF_COLORS.danger },
             margin: { left: 20, right: 20 },
         });
     }

@@ -492,16 +492,41 @@ class PredefinedReportGenerator:
 
         # Calculate overdue pickup count
         overdue_threshold = timezone.now() - timedelta(days=7)
+        overdue_tasks_query = Task.objects.filter(
+            status='Ready for Pickup',
+            ready_for_pickup_at__lte=overdue_threshold
+        ).select_related('customer').order_by('ready_for_pickup_at')[:10]
+        
         overdue_pickup_count = Task.objects.filter(
             status='Ready for Pickup',
             ready_for_pickup_at__lte=overdue_threshold
         ).count()
+
+        overdue_tasks_list = []
+        for t in overdue_tasks_query:
+            days_overdue = (timezone.now() - t.ready_for_pickup_at).days if t.ready_for_pickup_at else 0
+            
+            # Decrypt phone if needed (reusing logic or basic access)
+            customer_phone = "N/A"
+            if t.customer and hasattr(t.customer, "phone_numbers") and t.customer.phone_numbers.exists():
+                 encrypted_phone = t.customer.phone_numbers.first().phone_number
+                 customer_phone = decrypt_value(encrypted_phone) or encrypted_phone
+
+            overdue_tasks_list.append({
+                "id": t.id,
+                "title": t.title,
+                "customer_name": t.customer.name if t.customer else "N/A",
+                "customer_phone": customer_phone,
+                "ready_since": t.ready_for_pickup_at.isoformat() if t.ready_for_pickup_at else None,
+                "days_overdue": days_overdue
+            })
 
         return {
             "status_distribution": status_data,
             "urgency_distribution": list(urgency_counts),
             "total_tasks": total_tasks,
             "overdue_pickup_count": overdue_pickup_count,
+            "overdue_tasks": overdue_tasks_list,
             "popular_brand": popular_brand['brand__name'] if popular_brand and popular_brand['brand__name'] else "N/A",
             "popular_model": popular_model['laptop_model__name'] if popular_model and popular_model['laptop_model__name'] else "N/A",
             "top_brands": top_brands,
