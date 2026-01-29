@@ -132,11 +132,9 @@ export const OutstandingPaymentsPreview = ({
                                     <TableHead>Task ID</TableHead>
                                     <TableHead>Customer</TableHead>
                                     <TableHead>Phone</TableHead>
-                                    <TableHead>Total Cost</TableHead>
-                                    <TableHead>Paid</TableHead>
                                     <TableHead>Outstanding</TableHead>
-                                    <TableHead>Days Overdue</TableHead>
                                     <TableHead>Status</TableHead>
+                                    <TableHead>Device Status</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -152,14 +150,16 @@ export const OutstandingPaymentsPreview = ({
                                                 TSh {task.outstanding_balance.toLocaleString()}
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant={task.days_overdue > 7 ? "destructive" : "secondary"}>
-                                                    {task.days_overdue} days
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
                                                 <Badge variant={task.status === "Completed" ? "default" : "secondary"}>
                                                     {task.status}
                                                 </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                {task.workshop_status && (
+                                                    <Badge variant="outline">
+                                                        {task.workshop_status}
+                                                    </Badge>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))

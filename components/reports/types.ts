@@ -61,6 +61,7 @@ export interface OutstandingTask {
     outstanding_balance: number;
     days_overdue: number;
     status: string;
+    workshop_status?: string;
     date_in: string;
 }
 

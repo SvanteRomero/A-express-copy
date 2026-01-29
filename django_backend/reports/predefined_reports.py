@@ -178,6 +178,7 @@ class PredefinedReportGenerator:
                     "outstanding_balance": float(task.outstanding_balance_calculated),
                     "days_overdue": days_overdue,
                     "status": task.status,
+                    "workshop_status": task.workshop_status,
                     "date_in": task.date_in.isoformat() if task.date_in else None,
                 }
             )
