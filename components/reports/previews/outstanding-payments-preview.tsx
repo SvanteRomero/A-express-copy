@@ -47,11 +47,8 @@ export const OutstandingPaymentsPreview = ({
         onPageChange(newPage, newSize)
     }
 
-    const filteredTasks = report.outstanding_tasks.filter(task =>
-        task.task_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.customer_phone.includes(searchTerm)
-    )
+    // No client-side filtering - data comes filtered from server
+    const filteredTasks = report.outstanding_tasks
 
     const pagination = report.pagination
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { ReportSection } from "./report-section"
 import { financialReports, operationalReports, technicianReports, SelectedReport } from "./report-data"
 import { generatePDF } from "./utils/pdf-generator"
@@ -25,13 +25,14 @@ export function ReportsOverview() {
   }
 
   // Handle view report
-  const handleViewReport = async (
+  const handleViewReport = useCallback(async (
     reportId: string,
     dateRange?: { start: Date; end: Date },
     page: number = 1,
-    pageSize: number = 10
+    pageSize: number = 10,
+    searchTerm?: string
   ) => {
-    console.log('🔄 DEBUG - handleViewReport called:', { reportId, dateRange, page, pageSize })
+    console.log('🔄 DEBUG - handleViewReport called:', { reportId, dateRange, page, pageSize, searchTerm })
 
     try {
       const apiEndpoints: { [key: string]: string } = {
@@ -70,7 +71,11 @@ export function ReportsOverview() {
         console.log('📄 DEBUG - Added pagination params:', { page, pageSize })
       }
 
-
+      // Add search parameter
+      if (searchTerm) {
+        params.search = searchTerm
+        console.log('🔍 DEBUG - Added search param:', searchTerm)
+      }
 
       console.log('🌐 DEBUG - Making request to:', endpoint, 'with params:', params)
 
@@ -102,10 +107,10 @@ export function ReportsOverview() {
       console.error('❌ DEBUG - Error fetching report:', error)
       alert(`Failed to load report data: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
-  }
+  }, []) // Empty dependency array as it doesn't depend on props/state
 
   // Handle page changes
-  const handlePageChange = async (page: number, pageSize: number) => {
+  const handlePageChange = useCallback(async (page: number, pageSize: number) => {
     console.log('🔄🔄🔄 DEBUG - handlePageChange CALLED in reports-overview:')
     console.log('  page:', page)
     console.log('  pageSize:', pageSize)
@@ -134,13 +139,32 @@ export function ReportsOverview() {
     } else {
       console.error('❌❌❌ DEBUG - No selectedReport found when handlePageChange was called!')
     }
-  }
+  }, [selectedReport, handleViewReport])
+
+  // Handle search
+  const handleSearch = useCallback(async (searchTerm: string) => {
+    if (selectedReport) {
+      // Get the current date range from the selected report data
+      const reportData = selectedReport.data.report
+      let currentDateRange = undefined
+
+      if (reportData?.start_date && reportData?.end_date) {
+        currentDateRange = {
+          start: new Date(reportData.start_date),
+          end: new Date(reportData.end_date)
+        }
+      }
+
+      // Reset to page 1 for new search
+      await handleViewReport(selectedReport.id, currentDateRange, 1, 10, searchTerm)
+    }
+  }, [selectedReport, handleViewReport])
 
   // Handle closing viewer
-  const handleCloseViewer = () => {
+  const handleCloseViewer = useCallback(() => {
     setIsViewerOpen(false)
     setTimeout(() => setSelectedReport(null), 300)
-  }
+  }, [])
 
   // Escape key and backdrop click handling
   useEffect(() => {
@@ -159,7 +183,7 @@ export function ReportsOverview() {
       document.removeEventListener('keydown', handleEscapeKey)
       document.body.style.overflow = 'unset'
     }
-  }, [isViewerOpen])
+  }, [isViewerOpen, handleCloseViewer])
 
   return (
     <div className="flex-1 space-y-8 p-6">
@@ -198,6 +222,7 @@ export function ReportsOverview() {
           onGeneratePDF={handleGeneratePDF}
           onClose={handleCloseViewer}
           onPageChange={handlePageChange}
+          onSearch={handleSearch}
           reports={[...financialReports, ...operationalReports, ...technicianReports]}
         />
       )}

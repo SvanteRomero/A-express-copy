@@ -9,6 +9,7 @@ interface ReportViewerModalProps {
     onGeneratePDF: (reportId: string) => void
     onClose: () => void
     onPageChange?: (page: number, pageSize: number) => void
+    onSearch?: (term: string) => void
     reports: ReportCard[]
 }
 
@@ -18,6 +19,7 @@ export function ReportViewerModal({
     onGeneratePDF,
     onClose,
     onPageChange,
+    onSearch,
     reports
 }: ReportViewerModalProps) {
     const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -88,6 +90,7 @@ export function ReportViewerModal({
                         onGeneratePDF={() => onGeneratePDF(selectedReport.id)}
                         isGeneratingPDF={isGeneratingPDF === selectedReport.id}
                         onPageChange={onPageChange}
+                        onSearch={onSearch} // Pass onSearch
                         currentPage={selectedReport.currentPage || 1}
                         pageSize={selectedReport.pageSize || 10}
                     />
@@ -97,7 +100,7 @@ export function ReportViewerModal({
                 <div className="border-t border-gray-200 p-4 bg-gray-50 sticky bottom-0">
                     <div className="flex items-center justify-between">
                         <p className="text-sm text-gray-500">
-                           A+ Express 2025
+                            A+ Express 2025
                         </p>
                         <div className="flex items-center gap-3">
                             <Button

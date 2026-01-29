@@ -113,19 +113,36 @@ class PredefinedReportGenerator:
         return Q(**filter_kwargs), actual_range, duration_days, duration_description, start_date, end_date
     
     @staticmethod
-    def generate_outstanding_payments_report(date_range='last_7_days', start_date=None, end_date=None, page=1, page_size=10):
-        """Generate outstanding payments report with date range and pagination support"""
+    def generate_outstanding_payments_report(date_range='last_7_days', start_date=None, end_date=None, page=1, page_size=10, search_query=None):
+        """Generate outstanding payments report with date range, pagination, and search support"""
         from django.core.paginator import Paginator
         # Apply date filter to tasks based on date_in field
         date_filter, actual_date_range, duration_days, duration_description, start_date, end_date = PredefinedReportGenerator._get_date_filter(date_range, start_date, end_date, field='date_in')
         
+        # Base query: Unpaid/Partially Paid AND Solved status AND Date Range
+        base_query = (Q(payment_status="Unpaid") | Q(payment_status="Partially Paid")) & \
+                     Q(workshop_status="Solved") & \
+                     date_filter
+
+        # Apply search filter if provided
+        if search_query:
+             from common.encryption import encrypt_value
+             
+             # For phone search, we might need to encrypt the search term if it looks like a phone number
+             # However, partial match on encrypted data is tricky. 
+             # For now, we'll search by title and customer name primarily.
+             # If strict phone search is needed, we'd need exact match on encrypted value or decrypting DB side (slow).
+             # Let's try simple text fields first.
+             
+             search_filter = Q(title__icontains=search_query) | \
+                             Q(customer__name__icontains=search_query)
+             
+             base_query &= search_filter
+
         # Get tasks with unpaid or partially paid status within date range
         # Use existing total_cost and paid_amount fields from the model
         outstanding_tasks_qs = (
-            Task.objects.filter(
-                (Q(payment_status="Unpaid") | Q(payment_status="Partially Paid")) &
-                date_filter
-            )
+            Task.objects.filter(base_query)
             .select_related("customer")
             .prefetch_related("payments", "customer__phone_numbers", "cost_breakdowns")
             .annotate(

@@ -294,8 +294,10 @@ def get_outstanding_payments(request):
     page = int(request.GET.get("page", 1))
     page_size = int(request.GET.get("page_size", 10))
 
+    search_query = request.GET.get("search")
+
     report_data = PredefinedReportGenerator.generate_outstanding_payments_report(
-        date_range, start_date, end_date, page, page_size
+        date_range, start_date, end_date, page, page_size, search_query
     )
     
     return Response({
