@@ -25,11 +25,12 @@ export const generateTaskStatusPDF = (
     const totalTasks = data.total_tasks || 0;
 
     const completedTasks = statusDistribution.find((s: any) => s.status === "Completed")?.count || 0;
+    const readyForPickupTasks = statusDistribution.find((s: any) => s.status === "Ready for Pickup")?.count || 0;
     const inProgressTasks = statusDistribution.find((s: any) => s.status === "In Progress")?.count || 0;
 
     const summaryData: [string, string][] = [
         ["Total Tasks", totalTasks.toString()],
-        ["Completed Tasks", completedTasks.toString()],
+        ["Ready for Pickup", readyForPickupTasks.toString()],
         ["In Progress Tasks", inProgressTasks.toString()],
         ["Overdue Pickup (>7 Days)", (data.overdue_pickup_count || 0).toString()],
         ["Completion Rate", totalTasks > 0 ? `${((completedTasks / totalTasks) * 100).toFixed(1)}%` : "0%"],

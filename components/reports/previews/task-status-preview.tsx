@@ -40,7 +40,7 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
     const topModels = report.top_models || []
 
     // Calculate summary from the actual data
-    const completedTasks = statusDistribution.find((s: any) => s.status === 'Completed')?.count || 0
+    const readyForPickupTasks = statusDistribution.find((s: any) => s.status === 'Ready for Pickup')?.count || 0
     const inProgressTasks = statusDistribution.find((s: any) => s.status === 'In Progress')?.count || 0
 
     const overduePickupCount = report.overdue_pickup_count || 0
@@ -56,8 +56,8 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
                 </Card>
                 <Card>
                     <CardContent className="p-4">
-                        <p className="text-sm text-gray-600">Completed</p>
-                        <p className="text-2xl font-bold text-green-600">{completedTasks}</p>
+                        <p className="text-sm text-gray-600">Ready for Pickup</p>
+                        <p className="text-2xl font-bold text-green-600">{readyForPickupTasks}</p>
                     </CardContent>
                 </Card>
                 <Card>
