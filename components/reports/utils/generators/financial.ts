@@ -46,12 +46,11 @@ export const generateOutstandingPaymentsPDF = (
             formatCurrency(task.total_cost),
             formatCurrency(task.paid_amount),
             formatCurrency(task.outstanding_balance),
-            `${task.days_overdue} days`,
-            task.status,
+            task.workshop_status || '-',
         ]);
-
+        
         autoTable(pdf, {
-            head: [["Task ID", "Customer", "Phone", "Total Cost", "Paid", "Outstanding", "Days Overdue", "Status"]],
+            head: [["Task ID", "Customer", "Phone", "Total Cost", "Paid Amount", "Outstanding Balance", "Device Status"]],
             body: tasksData,
             startY: yPosition,
             theme: "grid",
