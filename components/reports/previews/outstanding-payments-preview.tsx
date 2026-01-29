@@ -2,10 +2,10 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table"
-import { Badge } from "@/components/ui/core/badge"
 import { useState, useEffect } from "react"
 import type { OutstandingPaymentsReport } from "../types"
 import { Spinner } from "@/components/ui/core/loaders"
+import { StatusBadge } from "@/components/tasks/task_utils/task-badges"
 
 interface OutstandingPaymentsPreviewProps {
     report: OutstandingPaymentsReport
@@ -148,15 +148,11 @@ export const OutstandingPaymentsPreview = ({
                                                 TSh {task.outstanding_balance.toLocaleString()}
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant={task.status === "Completed" ? "default" : "secondary"}>
-                                                    {task.status}
-                                                </Badge>
+                                                <StatusBadge status={task.status} />
                                             </TableCell>
                                             <TableCell>
                                                 {task.workshop_status && (
-                                                    <Badge variant="outline">
-                                                        {task.workshop_status}
-                                                    </Badge>
+                                                    <StatusBadge status={task.workshop_status} />
                                                 )}
                                             </TableCell>
                                         </TableRow>
