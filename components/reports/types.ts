@@ -243,9 +243,13 @@ export interface TechnicianPerformance {
     technician_name: string;
     technician_email: string;
     completed_tasks_count: number;
+    solved_count?: number;
+    not_solved_count?: number;
     total_revenue_generated?: number;
     avg_completion_hours: number;
     current_in_progress_tasks?: number;
+    in_progress_count?: number;
+    in_workshop_count?: number;
     current_assigned_tasks: number;
     tasks_sent_to_workshop?: number;
     workshop_rate?: number;

@@ -104,20 +104,37 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                     <div className="text-xs text-gray-500">{tech.technician_email}</div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="font-semibold">{tech.completed_tasks_count}</TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="font-medium">{tech.completed_tasks_count}</span>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {(tech.solved_count ?? 0) > 0 && (
+                                                            <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                                                                Solved: {tech.solved_count}
+                                                            </Badge>
+                                                        )}
+                                                        {(tech.not_solved_count ?? 0) > 0 && (
+                                                            <Badge variant="secondary" className="text-xs bg-red-100 text-red-800">
+                                                                Not Solved: {tech.not_solved_count}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col gap-1">
                                                     <span className="font-medium">{tech.current_assigned_tasks}</span>
                                                     <div className="flex flex-wrap gap-1">
-                                                        {Object.entries(tech.status_counts).slice(0, 3).map(([status, count]) => (
-                                                            <Badge
-                                                                key={`${tech.technician_id}-${status}`}
-                                                                variant="secondary"
-                                                                className={`text-xs ${getStatusColor(status)}`}
-                                                            >
-                                                                {status}: {count}
+                                                        {(tech.in_progress_count ?? 0) > 0 && (
+                                                            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                                                                In Progress: {tech.in_progress_count}
                                                             </Badge>
-                                                        ))}
+                                                        )}
+                                                        {(tech.in_workshop_count ?? 0) > 0 && (
+                                                            <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800">
+                                                                In Workshop: {tech.in_workshop_count}
+                                                            </Badge>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </TableCell>
@@ -150,7 +167,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                                 ))}
 
                                                                 <div className="text-center p-2 bg-white rounded border">
-                                                                    <div className="font-semibold">{tech.workshop_rate.toFixed(1)}%</div>
+                                                                    <div className="font-semibold">{(tech.workshop_rate ?? 0).toFixed(1)}%</div>
                                                                     <div className="text-sm text-gray-600">Workshop Rate</div>
                                                                 </div>
                                                             </div>

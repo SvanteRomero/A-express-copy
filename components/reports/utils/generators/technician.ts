@@ -44,6 +44,8 @@ export const generateTechnicianPerformancePDF = (
         const performanceTableData = technicianData.map((tech: any) => [
             tech.technician_name,
             tech.completed_tasks_count?.toString() || "0",
+            `${tech.solved_count || 0} / ${tech.not_solved_count || 0}`,  // Solved / Not Solved
+            tech.in_progress_count?.toString() || "0",
             tech.current_assigned_tasks?.toString() || "0",
             formatCurrency(tech.total_revenue_generated),
             tech.avg_completion_hours > 0 ? `${tech.avg_completion_hours.toFixed(1)}h` : "N/A",
@@ -52,7 +54,7 @@ export const generateTechnicianPerformancePDF = (
         ]);
 
         autoTable(pdf, {
-            head: [["Technician", "Completed", "Current", "Revenue", "Avg Time", "Completion Rate", "Workload"]],
+            head: [["Technician", "Completed", "Solved/Not", "In Progress", "Current", "Revenue", "Avg Time", "Completion Rate", "Workload"]],
             body: performanceTableData,
             startY: yPosition,
             theme: "grid",
@@ -67,6 +69,8 @@ export const generateTechnicianPerformancePDF = (
                 4: { cellWidth: "auto" },
                 5: { cellWidth: "auto" },
                 6: { cellWidth: "auto" },
+                7: { cellWidth: "auto" },
+                8: { cellWidth: "auto" },
             },
         });
 
