@@ -110,7 +110,7 @@ class TechnicianReportGenerator(ReportGeneratorBase):
                     for tech_data in t.execution_technicians
                 )
             )
-            percentage_of_tasks_involved = (tasks_involved_count / total_tasks_in_period * 100) if total_tasks_in_period > 0 else 0
+            percentage_of_tasks_involved = (tasks_involved_count / total_tasks * 100) if total_tasks > 0 else 0
             
             # FULL ATTRIBUTION: Calculate average completion hours for tasks this technician was involved in
             # Each technician gets credit for the full net execution time of tasks they worked on
