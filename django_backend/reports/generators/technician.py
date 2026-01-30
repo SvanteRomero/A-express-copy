@@ -44,10 +44,6 @@ class TechnicianReportGenerator(ReportGeneratorBase):
         for activity in activities:
             activities_by_tech[activity.user_id].append(activity)
 
-        total_tasks_in_period = TaskActivity.objects.filter(
-            date_filter_q, 
-            user__role="Technician"
-        ).values('task').distinct().count()
 
         final_report = []
         for tech in technicians:
@@ -184,7 +180,7 @@ class TechnicianReportGenerator(ReportGeneratorBase):
             "summary": {
                 "total_completed_tasks": len(unique_completed_task_ids),
                 "total_current_tasks": len(unique_current_task_ids),
-                "total_tasks_in_period": total_tasks_in_period,
+                "total_tasks_in_period": len(unique_completed_task_ids) + len(unique_current_task_ids),
             },
         }
     
