@@ -87,6 +87,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                     <TableHead>Technician</TableHead>
                                     <TableHead>Completed Tasks</TableHead>
                                     <TableHead>Current Tasks</TableHead>
+                                    <TableHead>Avg Time</TableHead>
                                     <TableHead>% of Tasks Involved</TableHead>
                                     <TableHead>Workshop Rate</TableHead>
                                 </TableRow>
@@ -137,6 +138,13 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                         )}
                                                     </div>
                                                 </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                {(tech.avg_completion_hours ?? 0) > 0 ? (
+                                                    <span className="font-medium">{tech.avg_completion_hours?.toFixed(1)}h</span>
+                                                ) : (
+                                                    <span className="text-gray-400">N/A</span>
+                                                )}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant="secondary">
