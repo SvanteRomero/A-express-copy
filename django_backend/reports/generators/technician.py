@@ -52,22 +52,6 @@ class TechnicianReportGenerator(ReportGeneratorBase):
         final_report = []
         for tech in technicians:
             tech_tasks = tasks_by_tech[tech.id]
-
-            tasks_by_status = {}
-            for task in tech_tasks:
-                status = task.status
-                if status not in tasks_by_status:
-                    tasks_by_status[status] = []
-                tasks_by_status[status].append({
-                    "task_id": task.id,
-                    "task_title": task.title,
-                    "customer_name": task.customer.name if task.customer else "N/A",
-                    "laptop_model": task.laptop_model.name if task.laptop_model else "N/A",
-                    "date_in": task.date_in.isoformat() if task.date_in else "N/A",
-                    "estimated_cost": float(task.estimated_cost) if task.estimated_cost else 0,
-                    "total_cost": float(task.total_cost) if task.total_cost else 0,
-                    "paid_amount": float(task.paid_amount) if task.paid_amount else 0,
-                })
             
             # Completed tasks breakdown (includes Completed, Ready for Pickup, and Picked Up)
             completion_statuses = ["Completed", "Ready for Pickup", "Picked Up"]
@@ -148,6 +132,12 @@ class TechnicianReportGenerator(ReportGeneratorBase):
                 total_hours += net_hours
             
             avg_completion_hours = (total_hours / len(completed_tasks_with_times)) if completed_tasks_with_times else 0
+            
+            # Calculate status counts (lightweight - just counts, not full task objects)
+            status_counts = {}
+            for task in tech_tasks:
+                status = task.status
+                status_counts[status] = status_counts.get(status, 0) + 1
 
             final_report.append({
                 "technician_id": tech.id,
@@ -158,18 +148,31 @@ class TechnicianReportGenerator(ReportGeneratorBase):
                 "not_solved_count": not_solved_count,
                 "in_progress_count": in_progress_count,
                 "in_workshop_count": in_workshop_count,
-                "current_in_progress_tasks": in_progress_count,
                 "current_assigned_tasks": current_task_count,
-                "tasks_sent_to_workshop": tasks_sent_to_workshop,
                 "workshop_rate": round(workshop_rate, 2),
                 "percentage_of_tasks_involved": round(percentage_of_tasks_involved, 2),
                 "avg_completion_hours": round(avg_completion_hours, 1),
-                "tasks_by_status": tasks_by_status,
-                "status_counts": {status: len(task_list) for status, task_list in tasks_by_status.items()},
-                "total_tasks_handled": total_tasks,
+                "status_counts": status_counts,
             })
 
         final_report.sort(key=lambda x: x["completed_tasks_count"], reverse=True)
+        
+        # Calculate unique counts for summary (avoid double-counting when tasks are reassigned/collaborated)
+        unique_completed_task_ids = set()
+        unique_current_task_ids = set()
+        completion_statuses = ["Completed", "Ready for Pickup", "Picked Up"]
+        
+        # Iterate through all tasks directly
+        for task in tasks:
+            # Check if task was completed in date range
+            if task.status in completion_statuses and task.completed_at:
+                task_date = task.completed_at.date() if hasattr(task.completed_at, 'date') else task.completed_at
+                s_date = start_date.date() if hasattr(start_date, 'date') else start_date
+                e_date = end_date.date() if hasattr(end_date, 'date') else end_date
+                if s_date <= task_date <= e_date:
+                    unique_completed_task_ids.add(task.id)
+            elif task.status == "In Progress":
+                unique_current_task_ids.add(task.id)
 
         return {
             "technician_performance": final_report,
@@ -179,8 +182,8 @@ class TechnicianReportGenerator(ReportGeneratorBase):
             'end_date': end_date.isoformat() if end_date else None,
             "total_technicians": len(final_report),
             "summary": {
-                "total_completed_tasks": sum(tech["completed_tasks_count"] for tech in final_report),
-                "total_current_tasks": sum(tech["current_assigned_tasks"] for tech in final_report),
+                "total_completed_tasks": len(unique_completed_task_ids),
+                "total_current_tasks": len(unique_current_task_ids),
                 "total_tasks_in_period": total_tasks_in_period,
             },
         }
