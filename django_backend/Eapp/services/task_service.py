@@ -255,13 +255,29 @@ class TaskUpdateService:
                 user
             )
         
-        # Handle workshop return
+        # Handle workshop return OR task completion with outcome
         if data.get('workshop_status') in ['Solved', 'Not Solved']:
-            WorkshopHandler.return_from_workshop(
-                task,
-                data['workshop_status'],
-                user
-            )
+            # Check if this is a regular task completion (not from workshop)
+            # Regular completion: task was never in workshop (workshop_status was None)
+            # Workshop return: task was in workshop (workshop_status == 'In Workshop')
+            
+            if task.workshop_status == 'In Workshop':
+                # This is an actual workshop return
+                WorkshopHandler.return_from_workshop(
+                    task,
+                    data['workshop_status'],
+                    user
+                )
+            else:
+                # This is a regular task completion with outcome
+                # Log the completion outcome instead of workshop return
+                outcome = data.get('workshop_status')
+                ActivityLogger.log_completion_outcome(task, user, outcome)
+                # Keep workshop_status in data so it gets saved to the task model
+                
+                # Mark that we've logged this completion to prevent duplicate logging
+                data['_completion_outcome_logged'] = True
+        
         
         return None
     
@@ -296,8 +312,14 @@ class TaskUpdateService:
             
             return None  # Prevent other status update logs
         
-        # Log standard status changes
-        ActivityLogger.log_status_change(task, user, new_status)
+        # Skip standard status logging if completion outcome was already logged
+        if not data.get('_completion_outcome_logged'):
+            # Log standard status changes
+            ActivityLogger.log_status_change(task, user, new_status)
+        else:
+            # Clean up the internal flag
+            data.pop('_completion_outcome_logged', None)
+        
         
         # Update ready_for_pickup_at timestamp
         if new_status == 'Ready for Pickup':

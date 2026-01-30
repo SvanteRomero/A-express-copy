@@ -232,12 +232,17 @@ class TaskViewSet(viewsets.ModelViewSet):
             )
 
         # Notify original technician when workshop marks task as Solved/Not Solved
+        # Only notify if this was an actual workshop return (not a regular completion)
         if data.get('workshop_status') in ['Solved', 'Not Solved']:
-            TaskNotificationHandler.notify_workshop_status_changed(
-                updated_task,
-                data.get('workshop_status'),
-                request.user
-            )
+            # Check if task was in workshop before this update
+            # If it wasn't, this is a regular completion with outcome, not a workshop return
+            if task.workshop_status == 'In Workshop':
+                TaskNotificationHandler.notify_workshop_status_changed(
+                    updated_task,
+                    data.get('workshop_status'),
+                    request.user
+                )
+
 
         # Broadcast task update for live cross-user cache invalidation
         TaskNotificationHandler.broadcast_task_update(updated_task, list(data.keys()))

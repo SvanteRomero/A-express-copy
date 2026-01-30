@@ -71,31 +71,22 @@ export function FrontDeskTasksPage() {
   const updateTaskMutation = useUpdateTask();
   const [approvingTaskId, setApprovingTaskId] = useState<string | null>(null);
   const [isBrandModalOpen, setIsBrandModalOpen] = useState(false);
-  const [statusDialogTask, setStatusDialogTask] = useState<any>(null);
 
   const handleRowClick = useCallback((task: any) => {
     router.push(`/dashboard/tasks/${task.title}`);
   }, [router]);
 
-  const confirmApproval = async (task: any, statusOverride?: string) => {
+  const confirmApproval = async (task: any) => {
     if (!user) return;
     if (approvingTaskId) return;
 
     setApprovingTaskId(task.title);
-    setStatusDialogTask(null); // Close dialog if open
 
     const updates: any = {
       status: "Ready for Pickup",
       approved_by: user.id,
       approved_at: new Date().toISOString(),
     };
-
-    if (statusOverride) {
-      updates.workshop_status = statusOverride;
-    } else if (!task.workshop_status) {
-      // Fallback if somehow called without status and task has none (shouldn't happen with new flow)
-      updates.workshop_status = 'Solved';
-    }
 
     try {
       await updateTaskMutation.mutateAsync({
@@ -117,11 +108,7 @@ export function FrontDeskTasksPage() {
 
       if (!task) return;
 
-      if (!task.workshop_status) {
-        setStatusDialogTask(task);
-      } else {
-        confirmApproval(task);
-      }
+      confirmApproval(task);
     }
   }, [user, completedTasksData, approvingTaskId, updateTaskMutation]);
 
@@ -203,34 +190,6 @@ export function FrontDeskTasksPage() {
           </Button>
         </div>
       </div>
-
-      <Dialog open={!!statusDialogTask} onOpenChange={(open) => !open && setStatusDialogTask(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Specify Final Task Status</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-gray-500 mb-4">
-              Is this task solved or not solved? Please specify the outcome of the repair.
-            </p>
-            <div className="flex gap-4 justify-center">
-              <Button
-                variant="outline"
-                className="w-full border-red-200 hover:bg-red-50 text-red-700"
-                onClick={() => confirmApproval(statusDialogTask, 'Not Solved')}
-              >
-                Not Solved
-              </Button>
-              <Button
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-                onClick={() => confirmApproval(statusDialogTask, 'Solved')}
-              >
-                Solved
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Tabs defaultValue="not-completed">
         <TabsList className="grid w-full grid-cols-3 bg-gray-100">

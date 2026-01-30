@@ -133,6 +133,36 @@ class ActivityLogger:
         )
     
     @staticmethod
+    def log_completion_outcome(task, user, outcome):
+        """
+        Log task completion with outcome (Solved/Not Solved).
+        
+        This is used when a technician marks a task as completed and specifies
+        whether it was solved or not. This is distinct from workshop returns.
+        
+        Args:
+            task: Task instance
+            user: User who performed the action
+            outcome: Outcome value ('Solved' or 'Not Solved')
+        """
+        message = f"Task marked as Completed with outcome: {outcome}."
+        details = {
+            'new_status': 'Completed',
+            'completion_outcome': outcome,
+            'outcome_by_id': user.id,
+            'outcome_by_name': user.get_full_name()
+        }
+        
+        return TaskActivity.objects.create(
+            task=task,
+            user=user,
+            type=TaskActivity.ActivityType.STATUS_UPDATE,
+            message=message,
+            details=details
+        )
+    
+    
+    @staticmethod
     def log_workshop_send(task, user, location):
         """
         Log workshop send activity.

@@ -29,12 +29,7 @@ import {
 } from "@/components/ui/feedback/alert-dialog"
 import {
   ArrowLeft,
-  AlertTriangle,
   Clock,
-  Phone,
-  Mail,
-  Printer,
-  Calendar,
   Wrench,
   MessageSquare,
   CheckCircle,
@@ -72,6 +67,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   const [noteType, setNoteType] = useState("note")
   const [isSendToWorkshopDialogOpen, setIsSendToWorkshopDialogOpen] = useState(false)
   const [selectedWorkshopLocation, setSelectedWorkshopLocation] = useState<string | undefined>(undefined)
+  const [isCompletionOutcomeDialogOpen, setIsCompletionOutcomeDialogOpen] = useState(false)
 
   const updateTaskMutation = useUpdateTask();
 
@@ -93,8 +89,28 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   }
 
   const handleMarkComplete = async () => {
-    await handleStatusChange("Completed")
+    if (!task) return;
+
+    // Check if task has no workshop_status - if so, show outcome dialog
+    if (!task.workshop_status) {
+      setIsCompletionOutcomeDialogOpen(true)
+    } else {
+      // Task already has outcome from workshop, just mark as completed
+      await handleStatusChange("Completed")
+    }
   }
+
+  const confirmCompletion = async (outcome: string) => {
+    setIsCompletionOutcomeDialogOpen(false)
+    updateTaskMutation.mutate({
+      id: taskId,
+      updates: {
+        status: "Completed",
+        workshop_status: outcome
+      }
+    });
+  }
+
 
   const handleSendToWorkshop = async () => {
     if (!selectedWorkshopLocation) {
@@ -177,9 +193,9 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+      <div className="space-y-4 sm:space-y-6">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Task Overview */}
           <Card className="border-gray-200">
             <CardHeader>
@@ -210,7 +226,11 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                   <label className="text-xs sm:text-sm font-medium text-gray-700">Date In</label>
                   <p className="text-base sm:text-lg font-semibold text-gray-900">{task.date_in}</p>
                 </div>
-                <div className="sm:col-span-2">
+                <div>
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">Priority</label>
+                  <div className="mt-1"><UrgencyBadge urgency={task.urgency} /></div>
+                </div>
+                <div>
                   <label className="text-xs sm:text-sm font-medium text-gray-700">Assigned Technician</label>
                   <p className="text-base sm:text-lg font-semibold text-gray-900">{task.assigned_to_details?.full_name}</p>
                 </div>
@@ -302,6 +322,35 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
             </CardContent>
           </Card>
 
+          {/* Completion Outcome Dialog */}
+          <Dialog open={isCompletionOutcomeDialogOpen} onOpenChange={(open) => !open && setIsCompletionOutcomeDialogOpen(false)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Specify Task Outcome</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                <p className="text-sm text-gray-500 mb-4">
+                  Was this task resolved successfully? Please specify the outcome of the repair.
+                </p>
+                <div className="flex gap-4 justify-center">
+                  <Button
+                    variant="outline"
+                    className="w-full border-red-200 hover:bg-red-50 text-red-700"
+                    onClick={() => confirmCompletion('Not Solved')}
+                  >
+                    Not Solved
+                  </Button>
+                  <Button
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => confirmCompletion('Solved')}
+                  >
+                    Solved
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           {/* Repair Notes & Activity Log */}
           <Card className="border-gray-200">
             <CardHeader className="p-4 sm:p-6">
@@ -365,32 +414,6 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                   <Plus className="h-4 w-4 mr-2" />
                   Add Note
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-4 sm:space-y-6">
-          {/* Timeline */}
-          <Card className="border-gray-200">
-            <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="text-base sm:text-lg font-semibold text-gray-900">Timeline</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0 space-y-3">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-gray-500 shrink-0" />
-                <div>
-                  <p className="text-xs sm:text-sm font-medium">Date In</p>
-                  <p className="text-xs sm:text-sm text-gray-600">{task.date_in}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-gray-500 shrink-0" />
-                <div>
-                  <p className="text-xs sm:text-sm font-medium">Priority</p>
-                  <div className="mt-1"><UrgencyBadge urgency={task.urgency} /></div>
-                </div>
               </div>
             </CardContent>
           </Card>
