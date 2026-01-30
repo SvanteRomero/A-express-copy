@@ -62,6 +62,8 @@ export function WorkshopStatusBadge({ status }: { status: string }) {
             return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{status}</Badge>
         case "Not Solved":
             return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">{status}</Badge>
+        case "To Be Checked":
+            return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100 border border-orange-300">⏳ {status}</Badge>
         default:
             return <Badge variant="secondary">{status}</Badge>
     }

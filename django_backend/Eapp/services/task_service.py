@@ -243,10 +243,12 @@ class TaskUpdateService:
     @staticmethod
     def _handle_workshop_operations(task, data, user):
         """
-        Handle workshop send/return operations.
+        Handle workshop send/return operations and verification.
         
         Returns Response object if there's an error, None otherwise.
         """
+        from .notification_handler import TaskNotificationHandler
+        
         # Handle workshop send
         if 'workshop_location' in data:
             WorkshopHandler.send_to_workshop(
@@ -255,8 +257,25 @@ class TaskUpdateService:
                 user
             )
         
+        # Handle verification action from original technician
+        if 'verification_action' in data:
+            action = data.get('verification_action')  # 'agree' or 'disagree'
+            agrees = action == 'agree'
+            _, previous_status = WorkshopHandler.verify_workshop_outcome(task, agrees, user)
+            
+            if agrees:
+                TaskNotificationHandler.notify_verification_confirmed(task, user, previous_status)
+            else:
+                TaskNotificationHandler.notify_verification_disputed(task, user, previous_status)
+            
+            # Remove from data so it doesn't try to save as a field
+            data.pop('verification_action')
+            return None
+        
         # Handle workshop return OR task completion with outcome
         if data.get('workshop_status') in ['Solved', 'Not Solved']:
+            to_be_checked = data.pop('to_be_checked', False)
+            
             # Check if this is a regular task completion (not from workshop)
             # Regular completion: task was never in workshop (workshop_status was None)
             # Workshop return: task was in workshop (workshop_status == 'In Workshop')
@@ -266,8 +285,19 @@ class TaskUpdateService:
                 WorkshopHandler.return_from_workshop(
                     task,
                     data['workshop_status'],
-                    user
+                    user,
+                    to_be_checked=to_be_checked
                 )
+                
+                # Different notification based on to_be_checked flag
+                if to_be_checked:
+                    TaskNotificationHandler.notify_workshop_outcome_to_verify(
+                        task, data['workshop_status'], user
+                    )
+                else:
+                    TaskNotificationHandler.notify_workshop_status_changed(
+                        task, data['workshop_status'], user
+                    )
             else:
                 # This is a regular task completion with outcome
                 # Log the completion outcome instead of workshop return

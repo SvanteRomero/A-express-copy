@@ -44,6 +44,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             'total_cost',
             'is_debt',
             'is_terminated',
+            'to_be_checked',
         )
 
 class TaskDetailSerializer(serializers.ModelSerializer):
@@ -105,7 +106,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             'date_in', 'approved_at', 'approved_by',
             'date_out', 'negotiated_by', 'negotiated_by_details',
             'activities', 'payments', 'outstanding_balance', 'is_referred', 'is_debt', 'is_terminated', 'referred_by', 'referred_by_details',
-            'workshop_status', 'workshop_location', 'original_technician_snapshot', 'original_location_snapshot', 
+            'workshop_status', 'workshop_location', 'to_be_checked', 'original_technician_snapshot', 'original_location_snapshot', 
             'original_location_snapshot_details', 'original_location_name', 'original_technician', 'original_technician_details',
             'workshop_location_details', 'original_technician_snapshot_details', 'approved_by_details',
             'latest_pickup_at', 'latest_pickup_by', 'latest_pickup_by_details',

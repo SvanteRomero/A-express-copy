@@ -62,19 +62,22 @@ class WorkshopHandler:
         return task
     
     @staticmethod
-    def return_from_workshop(task, workshop_status, user):
+    def return_from_workshop(task, workshop_status, user, to_be_checked=False):
         """
         Return a task from the workshop.
         
         This method:
         - Restores assignment to original technician if available
-        - Clears workshop-related fields
+        - Sets workshop_status to the outcome (Solved/Not Solved)
+        - Sets to_be_checked flag if verification is required
+        - Clears workshop location
         - Creates activity log
         
         Args:
             task: Task instance
             workshop_status: Workshop status ('Solved' or 'Not Solved')
             user: User performing the action
+            to_be_checked: If True, requires verification by original technician
             
         Returns:
             Task: Updated task instance
@@ -87,21 +90,66 @@ class WorkshopHandler:
         if task.original_location_snapshot:
             task.current_location = task.original_location_snapshot
         
-        # Clear workshop fields
+        # Set workshop status to the outcome and clear location
         task.workshop_location = None
-        task.workshop_status = None
+        task.workshop_status = workshop_status  # Keep outcome (Solved/Not Solved)
+        task.to_be_checked = to_be_checked
         
         task.save(update_fields=[
             'assigned_to',
             'current_location',
             'workshop_location',
-            'workshop_status'
+            'workshop_status',
+            'to_be_checked'
         ])
         
         # Log the activity
         ActivityLogger.log_workshop_return(task, user, workshop_status)
         
         return task
+    
+    @staticmethod
+    def verify_workshop_outcome(task, agrees: bool, user):
+        """
+        Original technician verifies workshop outcome.
+        
+        If agrees: clears to_be_checked flag, keeps workshop_status
+        If disagrees: sends task back to workshop for do-over
+        
+        Args:
+            task: Task instance
+            agrees: True if technician confirms workshop assessment
+            user: User performing verification
+            
+        Returns:
+            Tuple[Task, str]: Updated task instance and previous workshop_status
+        """
+        previous_status = task.workshop_status
+        
+        if agrees:
+            # Just clear the flag, keep the workshop_status
+            task.to_be_checked = False
+            task.save(update_fields=['to_be_checked'])
+            ActivityLogger.log_verification_confirmed(task, user, previous_status)
+        else:
+            # Reset workshop_status to 'In Workshop' for do-over
+            # Use the workshop_location if still set, otherwise use original_location_snapshot
+            workshop_location = task.workshop_location or task.original_location_snapshot
+            
+            task.workshop_status = 'In Workshop'
+            task.to_be_checked = False
+            task.current_location = workshop_location
+            task.workshop_location = workshop_location
+            
+            task.save(update_fields=[
+                'workshop_status', 
+                'to_be_checked',
+                'current_location',
+                'workshop_location'
+            ])
+            ActivityLogger.log_verification_disputed(task, user, previous_status)
+        
+        return task, previous_status
     
     @staticmethod
     def update_snapshots_from_activity(task, activity):

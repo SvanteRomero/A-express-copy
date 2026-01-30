@@ -209,6 +209,58 @@ class ActivityLogger:
         )
     
     @staticmethod
+    def log_verification_confirmed(task, user, workshop_status):
+        """
+        Log when original technician confirms workshop assessment.
+        
+        Args:
+            task: Task instance
+            user: User who performed the action
+            workshop_status: The confirmed workshop status (Solved/Not Solved)
+        """
+        message = f"Verified workshop outcome: {workshop_status} confirmed."
+        details = {
+            'action': 'verification_confirmed',
+            'workshop_status': workshop_status,
+            'verified_by_id': user.id,
+            'verified_by_name': user.get_full_name()
+        }
+        
+        return TaskActivity.objects.create(
+            task=task,
+            user=user,
+            type=TaskActivity.ActivityType.WORKSHOP,
+            message=message,
+            details=details
+        )
+    
+    @staticmethod
+    def log_verification_disputed(task, user, previous_status):
+        """
+        Log when original technician disputes workshop assessment.
+        
+        Args:
+            task: Task instance
+            user: User who performed the action
+            previous_status: The disputed workshop status (Solved/Not Solved)
+        """
+        message = f"Disputed workshop outcome: {previous_status}. Task sent back for do-over."
+        details = {
+            'action': 'verification_disputed',
+            'previous_status': previous_status,
+            'disputed_by_id': user.id,
+            'disputed_by_name': user.get_full_name()
+        }
+        
+        return TaskActivity.objects.create(
+            task=task,
+            user=user,
+            type=TaskActivity.ActivityType.WORKSHOP,
+            message=message,
+            details=details
+        )
+    
+    @staticmethod
     def log_rejection(task, user, reason):
         """
         Log task rejection activity.

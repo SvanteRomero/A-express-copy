@@ -68,6 +68,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   const [isSendToWorkshopDialogOpen, setIsSendToWorkshopDialogOpen] = useState(false)
   const [selectedWorkshopLocation, setSelectedWorkshopLocation] = useState<string | undefined>(undefined)
   const [isCompletionOutcomeDialogOpen, setIsCompletionOutcomeDialogOpen] = useState(false)
+  const [toBeCheckedEnabled, setToBeCheckedEnabled] = useState(false)
 
   const updateTaskMutation = useUpdateTask();
 
@@ -127,9 +128,18 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
     showSentToWorkshopToast()
   }
 
-  const handleWorkshopStatusChange = async (newStatus: string) => {
-    updateTaskMutation.mutate({ id: taskId, updates: { workshop_status: newStatus } });
+  const handleWorkshopStatusChange = async (newStatus: string, toBeChecked: boolean = false) => {
+    updateTaskMutation.mutate({ id: taskId, updates: { workshop_status: newStatus, to_be_checked: toBeChecked } });
     showWorkshopStatusChangedToast(newStatus)
+  }
+
+  const handleVerification = async (agrees: boolean) => {
+    updateTaskMutation.mutate({
+      id: taskId,
+      updates: {
+        verification_action: agrees ? 'agree' : 'disagree'
+      }
+    });
   }
 
 
@@ -258,6 +268,9 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
                   {['Solved', 'Not Solved'].includes(task.workshop_status || '') && (
                     <WorkshopStatusBadge status={task.workshop_status || ''} />
                   )}
+                  {task.to_be_checked && (
+                    <WorkshopStatusBadge status="To Be Checked" />
+                  )}
                   {task.workshop_status === 'In Workshop' && (
                     <WorkshopStatusBadge status='In Workshop' />
                   )}
@@ -265,58 +278,74 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                {task && task.status !== 'Completed' && (!task.workshop_status || ['Solved', 'Not Solved'].includes(task.workshop_status)) && (!user?.is_workshop || !task.original_technician) && (
-                  <Button
-                    className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
-                    onClick={handleMarkComplete}
-                    disabled={updating}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Mark as Complete
-                  </Button>
-                )}
-                {task.status === 'In Progress' && task.workshop_status !== 'In Workshop' && !user?.is_workshop && user?.id === task.assigned_to && (
-                  <Dialog open={isSendToWorkshopDialogOpen} onOpenChange={setIsSendToWorkshopDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50 bg-transparent w-full sm:w-auto">
-                        <Users className="h-4 w-4 mr-2" />
-                        Send to Workshop
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Send to Workshop</DialogTitle>
-                        <DialogDescription>
-                          Select a workshop location and technician to send the task to.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                          <label htmlFor="workshop-location">Workshop Location</label>
-                          <Select value={selectedWorkshopLocation} onValueChange={setSelectedWorkshopLocation}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a location" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {workshopLocations?.map(location => (
-                                <SelectItem key={location.id} value={String(location.id)}>{location.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsSendToWorkshopDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSendToWorkshop} disabled={updating}>Send</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                )}
-                {user?.is_workshop && task.workshop_status === 'In Workshop' && (
-                  <WorkshopStatusButtons
-                    onStatusChange={handleWorkshopStatusChange}
-                    updating={updating}
+                {/* Verification Mode: Original tech sees Solved/Not Solved buttons */}
+                {task.to_be_checked && user?.id === task.original_technician_snapshot && (
+                  <VerificationButtons
+                    workshopStatus={task.workshop_status}
+                    onVerify={handleVerification}
+                    updating={updateTaskMutation.isPending}
                   />
+                )}
+
+                {/* Normal Mode: Standard buttons shown when not in verification mode */}
+                {!task.to_be_checked && (
+                  <>
+                    {task && task.status !== 'Completed' && (!task.workshop_status || ['Solved', 'Not Solved'].includes(task.workshop_status)) && (!user?.is_workshop || !task.original_technician) && (
+                      <Button
+                        className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
+                        onClick={handleMarkComplete}
+                        disabled={updating}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Mark as Complete
+                      </Button>
+                    )}
+                    {task.status === 'In Progress' && task.workshop_status !== 'In Workshop' && !user?.is_workshop && user?.id === task.assigned_to && (
+                      <Dialog open={isSendToWorkshopDialogOpen} onOpenChange={setIsSendToWorkshopDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50 bg-transparent w-full sm:w-auto">
+                            <Users className="h-4 w-4 mr-2" />
+                            Send to Workshop
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Send to Workshop</DialogTitle>
+                            <DialogDescription>
+                              Select a workshop location and technician to send the task to.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                              <label htmlFor="workshop-location">Workshop Location</label>
+                              <Select value={selectedWorkshopLocation} onValueChange={setSelectedWorkshopLocation}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a location" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {workshopLocations?.map(location => (
+                                    <SelectItem key={location.id} value={String(location.id)}>{location.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsSendToWorkshopDialogOpen(false)}>Cancel</Button>
+                            <Button onClick={handleSendToWorkshop} disabled={updating}>Send</Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                    {user?.is_workshop && task.workshop_status === 'In Workshop' && (
+                      <WorkshopStatusButtons
+                        onStatusChange={handleWorkshopStatusChange}
+                        updating={updating}
+                        toBeChecked={toBeCheckedEnabled}
+                        onToBeCheckedChange={setToBeCheckedEnabled}
+                      />
+                    )}
+                  </>
                 )}
               </div>
             </CardContent>
@@ -423,43 +452,144 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   )
 }
 
-function WorkshopStatusButtons({ onStatusChange, updating }: { onStatusChange: (status: string) => void, updating: boolean }) {
+function WorkshopStatusButtons({
+  onStatusChange,
+  updating,
+  toBeChecked,
+  onToBeCheckedChange
+}: {
+  onStatusChange: (status: string, toBeChecked: boolean) => void,
+  updating: boolean,
+  toBeChecked: boolean,
+  onToBeCheckedChange: (checked: boolean) => void
+}) {
   return (
-    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button className="bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto" disabled={updating}>Solved</Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will mark the task as solved. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => onStatusChange('Solved')}>Continue</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button className="bg-red-500 hover:bg-red-600 text-white w-full sm:w-auto" disabled={updating}>Not Solved</Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will mark the task as not solved. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => onStatusChange('Not Solved')}>Continue</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+    <div className="flex flex-col gap-3 w-full sm:w-auto">
+      {/* Checkbox for To Be Checked */}
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="to-be-checked"
+          checked={toBeChecked}
+          onChange={(e) => onToBeCheckedChange(e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+        />
+        <label htmlFor="to-be-checked" className="text-sm text-gray-600 cursor-pointer">
+          To Be Checked (require verification by original technician)
+        </label>
+      </div>
+
+      {/* Existing buttons */}
+      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button className="bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto" disabled={updating}>Solved</Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {toBeChecked
+                  ? "This will mark the task as solved and send it to the original technician for verification."
+                  : "This will mark the task as solved. This action cannot be undone."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => onStatusChange('Solved', toBeChecked)}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button className="bg-red-500 hover:bg-red-600 text-white w-full sm:w-auto" disabled={updating}>Not Solved</Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {toBeChecked
+                  ? "This will mark the task as not solved and send it to the original technician for verification."
+                  : "This will mark the task as not solved. This action cannot be undone."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => onStatusChange('Not Solved', toBeChecked)}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
+  )
+}
+
+function VerificationButtons({
+  workshopStatus,
+  onVerify,
+  updating
+}: {
+  workshopStatus: string | null,
+  onVerify: (agrees: boolean) => void,
+  updating: boolean
+}) {
+  const [isDisputeDialogOpen, setIsDisputeDialogOpen] = useState(false)
+
+  const handleClick = (clickedStatus: string) => {
+    if (clickedStatus === workshopStatus) {
+      // User agrees - clear verification
+      onVerify(true)
+    } else {
+      // User disagrees - show confirmation dialog
+      setIsDisputeDialogOpen(true)
+    }
+  }
+
+  return (
+    <>
+      <div className="flex flex-col gap-2 w-full">
+        <p className="text-sm text-gray-500">
+          Workshop marked this as <strong>{workshopStatus}</strong>. Do you agree?
+        </p>
+        <div className="flex gap-2">
+          <Button
+            className="bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto"
+            onClick={() => handleClick('Solved')}
+            disabled={updating}
+          >
+            Solved
+          </Button>
+          <Button
+            className="bg-red-500 hover:bg-red-600 text-white w-full sm:w-auto"
+            onClick={() => handleClick('Not Solved')}
+            disabled={updating}
+          >
+            Not Solved
+          </Button>
+        </div>
+      </div>
+
+      {/* Dispute confirmation dialog */}
+      <AlertDialog open={isDisputeDialogOpen} onOpenChange={setIsDisputeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Dispute Workshop Outcome?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are disputing the workshop&apos;s &quot;{workshopStatus}&quot; assessment.
+              The task will be sent back to the workshop for a do-over.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setIsDisputeDialogOpen(false)
+              onVerify(false)
+            }}>
+              Send Back to Workshop
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

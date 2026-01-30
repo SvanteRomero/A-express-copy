@@ -175,6 +175,30 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
             });
             break;
 
+        case 'workshop_outcome_to_verify':
+            toast({
+                title: '🔍 Verification Required',
+                description: `${data.task_title} marked "${data.workshop_status}" by workshop - please verify`,
+                className: 'bg-orange-600 text-white border-orange-600',
+            });
+            break;
+
+        case 'workshop_outcome_disputed':
+            toast({
+                title: '↩️ Workshop Do-Over Required',
+                description: `${data.task_title} disputed by ${data.disputer_name} - was "${data.previous_status}"`,
+                className: 'bg-red-600 text-white border-red-600',
+            });
+            break;
+
+        case 'workshop_outcome_confirmed':
+            toast({
+                title: '✅ Verification Confirmed',
+                description: `${data.task_title} "${data.workshop_status}" confirmed by ${data.confirmer_name}`,
+                className: 'bg-green-600 text-white border-green-600',
+            });
+            break;
+
         default:
             // Unknown toast type - log for debugging
             console.warn('Unknown WebSocket toast type:', toast_type);

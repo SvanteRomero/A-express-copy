@@ -67,6 +67,7 @@ export interface Task {
     is_debt: boolean;
     is_terminated: boolean;
     workshop_status: string | null;
+    to_be_checked?: boolean;
     sent_out_by: number;
     original_technician_snapshot?: number | null;
     original_location_snapshot?: number | null;  // FK to Location

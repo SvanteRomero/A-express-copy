@@ -191,6 +191,57 @@ class TaskNotificationHandler:
         )
 
     @staticmethod
+    def notify_workshop_outcome_to_verify(task, workshop_status, user):
+        """
+        Notify original technician that a workshop outcome needs verification.
+        """
+        tech_name = user.get_full_name() if hasattr(user, 'get_full_name') else str(user)
+        
+        # Send to original technician specifically
+        if task.original_technician_snapshot:
+            send_toast_to_user(
+                user=task.original_technician_snapshot,
+                toast_type='workshop_outcome_to_verify',
+                data={
+                    'task_title': task.title,
+                    'workshop_status': workshop_status,
+                    'workshop_technician_name': tech_name,
+                }
+            )
+
+    @staticmethod
+    def notify_verification_disputed(task, user, previous_status):
+        """
+        Notify workshop technicians that outcome was disputed and task is back for do-over.
+        """
+        tech_name = user.get_full_name() if hasattr(user, 'get_full_name') else str(user)
+        broadcast_toast_notification(
+            roles=['technician'],  # Workshop technicians
+            toast_type='workshop_outcome_disputed',
+            data={
+                'task_title': task.title,
+                'previous_status': previous_status,
+                'disputer_name': tech_name,
+            }
+        )
+
+    @staticmethod
+    def notify_verification_confirmed(task, user, workshop_status):
+        """
+        Notify relevant parties that verification was confirmed.
+        """
+        tech_name = user.get_full_name() if hasattr(user, 'get_full_name') else str(user)
+        broadcast_toast_notification(
+            roles=['manager'],
+            toast_type='workshop_outcome_confirmed',
+            data={
+                'task_title': task.title,
+                'workshop_status': workshop_status,
+                'confirmer_name': tech_name,
+            }
+        )
+
+    @staticmethod
     def notify_task_updated(task, data, user=None):
         """
         Broadcast generic task update toast and notify new assignee.

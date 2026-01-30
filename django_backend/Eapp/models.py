@@ -93,6 +93,10 @@ class Task(models.Model):
         null=True,
         blank=True
     )
+    to_be_checked = models.BooleanField(
+        default=False,
+        help_text='Indicates task outcome requires verification by original technician'
+    )
     workshop_location = models.ForeignKey(
         'common.Location', on_delete=models.SET_NULL, null=True, blank=True, related_name='workshop_tasks'
     )
