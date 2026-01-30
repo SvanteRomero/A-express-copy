@@ -81,8 +81,8 @@ class TechnicianReportGenerator(ReportGeneratorBase):
             in_workshop_count = sum(1 for t in in_progress_tasks if t.workshop_status == "In Workshop")
             in_progress_count = sum(1 for t in in_progress_tasks if t.workshop_status != "In Workshop")
             
-            # Current tasks (exclude terminal states)
-            current_task_count = len([t for t in tech_tasks if t.status not in ["Completed", "Picked Up", "Terminated"]])
+            # Current tasks (only In Progress)
+            current_task_count = len(in_progress_tasks)
             
             # OPTIMIZED: Workshop rate using workshop_periods field instead of TaskActivity queries
             tasks_sent_to_workshop = sum(1 for t in tech_tasks if t.workshop_periods)
