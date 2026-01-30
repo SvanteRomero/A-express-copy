@@ -71,7 +71,36 @@ class TechnicianReportGenerator(ReportGeneratorBase):
             
             # Completed tasks breakdown (includes Completed, Ready for Pickup, and Picked Up)
             completion_statuses = ["Completed", "Ready for Pickup", "Picked Up"]
-            completed_tasks = [t for t in tech_tasks if t.status in completion_statuses]
+            
+            # Filter by date range if completed_at is set
+            completed_tasks = []
+            for t in tech_tasks:
+                if t.status in completion_statuses:
+                    # If date range filtering is active and task has completion date
+                    if t.completed_at:
+                        task_date = t.completed_at.date() if hasattr(t.completed_at, 'date') else t.completed_at
+                        # Convert start/end to date if they are datetime
+                        s_date = start_date.date() if hasattr(start_date, 'date') else start_date
+                        e_date = end_date.date() if hasattr(end_date, 'date') else end_date
+                        
+                        if s_date and e_date:
+                            if s_date <= task_date <= e_date:
+                                completed_tasks.append(t)
+                        else:
+                            # No date range, include all
+                            completed_tasks.append(t)
+                    else:
+                        # Fallback for tasks without completed_at (should utilize updated_at or similar if needed)
+                        # For now, exclude to be safe or include if you want loose counting
+                        # Using updated_at as fallback
+                        task_date = t.updated_at.date()
+                        s_date = start_date.date() if hasattr(start_date, 'date') else start_date
+                        e_date = end_date.date() if hasattr(end_date, 'date') else end_date
+                         
+                        if s_date and e_date:
+                            if s_date <= task_date <= e_date:
+                                completed_tasks.append(t)
+
             total_completed = len(completed_tasks)
             
             # Solved/Not Solved breakdown
