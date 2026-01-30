@@ -76,9 +76,10 @@ class TechnicianReportGenerator(ReportGeneratorBase):
             not_solved_count = sum(1 for t in completed_tasks if t.workshop_status == "Not Solved")
             
             # In Progress tasks and In Workshop subset
+            # Note: in_progress_count excludes tasks that are In Workshop (they're counted separately)
             in_progress_tasks = [t for t in tech_tasks if t.status == "In Progress"]
-            in_progress_count = len(in_progress_tasks)
             in_workshop_count = sum(1 for t in in_progress_tasks if t.workshop_status == "In Workshop")
+            in_progress_count = sum(1 for t in in_progress_tasks if t.workshop_status != "In Workshop")
             
             # Current tasks (exclude terminal states)
             current_task_count = len([t for t in tech_tasks if t.status not in ["Completed", "Picked Up", "Terminated"]])
@@ -98,6 +99,23 @@ class TechnicianReportGenerator(ReportGeneratorBase):
                 )
             )
             percentage_of_tasks_involved = (tasks_involved_count / total_tasks_in_period * 100) if total_tasks_in_period > 0 else 0
+            
+            # FULL ATTRIBUTION: Calculate average completion hours for tasks this technician was involved in
+            # Each technician gets credit for the full net execution time of tasks they worked on
+            completed_tasks_with_times = [
+                t for t in tech_tasks 
+                if t.first_assigned_at 
+                and t.completed_at
+                and t.execution_technicians
+                and any(tech_data.get('user_id') == tech.id for tech_data in t.execution_technicians)
+            ]
+            
+            total_hours = 0
+            for task in completed_tasks_with_times:
+                net_hours = ReportGeneratorBase.calculate_net_execution_hours(task)
+                total_hours += net_hours
+            
+            avg_completion_hours = (total_hours / len(completed_tasks_with_times)) if completed_tasks_with_times else 0
 
             final_report.append({
                 "technician_id": tech.id,
@@ -113,6 +131,7 @@ class TechnicianReportGenerator(ReportGeneratorBase):
                 "tasks_sent_to_workshop": tasks_sent_to_workshop,
                 "workshop_rate": round(workshop_rate, 2),
                 "percentage_of_tasks_involved": round(percentage_of_tasks_involved, 2),
+                "avg_completion_hours": round(avg_completion_hours, 1),
                 "tasks_by_status": tasks_by_status,
                 "status_counts": {status: len(task_list) for status, task_list in tasks_by_status.items()},
                 "total_tasks_handled": total_tasks,

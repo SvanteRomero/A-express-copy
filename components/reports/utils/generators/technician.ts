@@ -46,15 +46,15 @@ export const generateTechnicianPerformancePDF = (
             tech.completed_tasks_count?.toString() || "0",
             `${tech.solved_count || 0} / ${tech.not_solved_count || 0}`,  // Solved / Not Solved
             tech.in_progress_count?.toString() || "0",
+            tech.in_workshop_count?.toString() || "0",
             tech.current_assigned_tasks?.toString() || "0",
-            formatCurrency(tech.total_revenue_generated),
             tech.avg_completion_hours > 0 ? `${tech.avg_completion_hours.toFixed(1)}h` : "N/A",
-            `${tech.completion_rate?.toFixed(1) || "0"}%`,
-            tech.workload_level || "N/A",
+            `${tech.workshop_rate?.toFixed(1) || "0"}%`,
+            `${tech.percentage_of_tasks_involved?.toFixed(1) || "0"}%`,
         ]);
 
         autoTable(pdf, {
-            head: [["Technician", "Completed", "Solved/Not", "In Progress", "Current", "Revenue", "Avg Time", "Completion Rate", "Workload"]],
+            head: [["Technician", "Completed", "Solved/Not", "In Progress", "In Workshop", "Current", "Avg Time", "Workshop Rate", "% Involved"]],
             body: performanceTableData,
             startY: yPosition,
             theme: "grid",

@@ -111,3 +111,64 @@ class ReportGeneratorBase:
         
         filter_kwargs = {f'{field}__gte': start_datetime, f'{field}__lte': datetime.combine(end_date, time.max)}
         return Q(**filter_kwargs), actual_range, duration_days, duration_description, start_date, end_date
+    
+    @staticmethod
+    def calculate_net_execution_hours(task):
+        """
+        Calculate net execution hours for a task.
+        
+        Net execution time = (completed_at - first_assigned_at) - return_periods - workshop_periods
+        
+        Args:
+            task: Task object with first_assigned_at, completed_at, return_periods, workshop_periods
+            
+        Returns:
+            float: Net execution hours (0 if task not completed or not assigned)
+        """
+        if not task.first_assigned_at or not task.completed_at:
+            return 0
+        
+        # Calculate gross hours
+        gross_duration = task.completed_at - task.first_assigned_at
+        gross_hours = gross_duration.total_seconds() / 3600
+        
+        # Calculate return hours
+        total_return_hours = 0
+        if task.return_periods:
+            for period in task.return_periods:
+                if period.get('returned_at'):
+                    returned_at = datetime.fromisoformat(period['returned_at'])
+                    if timezone.is_naive(returned_at):
+                        returned_at = timezone.make_aware(returned_at)
+                        
+                    if period.get('reassigned_at'):
+                        reassigned_at = datetime.fromisoformat(period['reassigned_at'])
+                        if timezone.is_naive(reassigned_at):
+                            reassigned_at = timezone.make_aware(reassigned_at)
+                    else:
+                        reassigned_at = task.completed_at
+                        
+                    return_duration = reassigned_at - returned_at
+                    total_return_hours += return_duration.total_seconds() / 3600
+        
+        # Calculate workshop hours
+        total_workshop_hours = 0
+        if task.workshop_periods:
+            for period in task.workshop_periods:
+                if period.get('sent_at'):
+                    sent_at = datetime.fromisoformat(period['sent_at'])
+                    if timezone.is_naive(sent_at):
+                        sent_at = timezone.make_aware(sent_at)
+                        
+                    if period.get('returned_at'):
+                        returned_at = datetime.fromisoformat(period['returned_at'])
+                        if timezone.is_naive(returned_at):
+                            returned_at = timezone.make_aware(returned_at)
+                    else:
+                        returned_at = task.completed_at
+                        
+                    workshop_duration = returned_at - sent_at
+                    total_workshop_hours += workshop_duration.total_seconds() / 3600
+        
+        # Return net hours (never negative)
+        return max(0, gross_hours - total_return_hours - total_workshop_hours)
