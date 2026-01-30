@@ -44,6 +44,22 @@ class TechnicianReportGenerator(ReportGeneratorBase):
         for activity in activities:
             activities_by_tech[activity.user_id].append(activity)
 
+        # Calculate unique counts for summary (avoid double-counting when tasks are reassigned/collaborated)
+        # Must be computed before the loop since it's used for percentage calculations
+        unique_completed_task_ids = set()
+        unique_current_task_ids = set()
+        completion_statuses_for_unique = ["Completed", "Ready for Pickup", "Picked Up"]
+        
+        for task in tasks:
+            # Check if task was completed in date range
+            if task.status in completion_statuses_for_unique and task.completed_at:
+                task_date = task.completed_at.date() if hasattr(task.completed_at, 'date') else task.completed_at
+                s_date = start_date.date() if hasattr(start_date, 'date') else start_date
+                e_date = end_date.date() if hasattr(end_date, 'date') else end_date
+                if s_date <= task_date <= e_date:
+                    unique_completed_task_ids.add(task.id)
+            elif task.status == "In Progress":
+                unique_current_task_ids.add(task.id)
 
         final_report = []
         for tech in technicians:
@@ -153,23 +169,6 @@ class TechnicianReportGenerator(ReportGeneratorBase):
             })
 
         final_report.sort(key=lambda x: x["completed_tasks_count"], reverse=True)
-        
-        # Calculate unique counts for summary (avoid double-counting when tasks are reassigned/collaborated)
-        unique_completed_task_ids = set()
-        unique_current_task_ids = set()
-        completion_statuses = ["Completed", "Ready for Pickup", "Picked Up"]
-        
-        # Iterate through all tasks directly
-        for task in tasks:
-            # Check if task was completed in date range
-            if task.status in completion_statuses and task.completed_at:
-                task_date = task.completed_at.date() if hasattr(task.completed_at, 'date') else task.completed_at
-                s_date = start_date.date() if hasattr(start_date, 'date') else start_date
-                e_date = end_date.date() if hasattr(end_date, 'date') else end_date
-                if s_date <= task_date <= e_date:
-                    unique_completed_task_ids.add(task.id)
-            elif task.status == "In Progress":
-                unique_current_task_ids.add(task.id)
 
         return {
             "technician_performance": final_report,
