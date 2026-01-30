@@ -53,7 +53,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                 </Card>
                 <Card>
                     <CardContent className="p-4">
-                        <p className="text-sm text-gray-600">Total Completed Tasks</p>
+                        <p className="text-sm text-gray-600">Total Executed Tasks</p>
                         <p className="text-2xl font-bold text-blue-600">{summary.total_completed_tasks || 0}</p>
                     </CardContent>
                 </Card>
@@ -65,7 +65,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                 </Card>
                 <Card>
                     <CardContent className="p-4">
-                        <p className="text-sm text-gray-600">Total Active Tasks</p>
+                        <p className="text-sm text-gray-600">Total Tasks In Period</p>
                         <p className="text-2xl font-bold text-indigo-600">{summary.total_tasks_in_period || 0}</p>
                     </CardContent>
                 </Card>
@@ -85,7 +85,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Technician</TableHead>
-                                    <TableHead>Completed Tasks</TableHead>
+                                    <TableHead>Executed Tasks</TableHead>
                                     <TableHead>Current Tasks</TableHead>
                                     <TableHead>Avg Time</TableHead>
                                     <TableHead>% of Tasks Involved</TableHead>

@@ -29,7 +29,7 @@ export const generateTechnicianPerformancePDF = (
     const summaryData: [string, string][] = [
         ["Total Technicians", totalTechnicians.toString()],
         ["Date Range", dateRange.replace(/_/g, " ")],
-        ["Total Completed Tasks", summary.total_completed_tasks?.toString() || "0"],
+        ["Total Executed Tasks", summary.total_completed_tasks?.toString() || "0"],
         ["Total Revenue Generated", formatCurrency(summary.total_revenue)],
         ["Average Completion Time", `${summary.avg_completion_hours?.toFixed(1) || "0"} hours`],
         ["Current Active Tasks", summary.total_current_tasks?.toString() || "0"],
@@ -54,7 +54,7 @@ export const generateTechnicianPerformancePDF = (
         ]);
 
         autoTable(pdf, {
-            head: [["Technician", "Completed", "Solved/Not", "In Progress", "In Workshop", "Current", "Avg Time", "Workshop Rate", "% Involved"]],
+            head: [["Technician", "Executed", "Solved/Not", "In Progress", "In Workshop", "Current", "Avg Time", "Workshop Rate", "% Involved"]],
             body: performanceTableData,
             startY: yPosition,
             theme: "grid",
