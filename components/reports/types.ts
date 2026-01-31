@@ -245,6 +245,7 @@ export interface TechnicianPerformance {
     completed_tasks_count: number;
     solved_count?: number;
     not_solved_count?: number;
+    solve_rate?: number;
     total_revenue_generated?: number;
     avg_completion_hours: number;
     current_in_progress_tasks?: number;
@@ -254,6 +255,11 @@ export interface TechnicianPerformance {
     tasks_sent_to_workshop?: number;
     workshop_rate?: number;
     percentage_of_tasks_involved?: number;
+    rank?: number;
+    percentile?: number;
+    rank_by_solve_rate?: number;
+    rank_by_avg_time?: number | null;
+    rank_by_workshop_rate?: number;
     tasks_by_status: {
         [status: string]: TaskDetail[];
     };

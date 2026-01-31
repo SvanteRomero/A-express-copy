@@ -33,6 +33,7 @@ export const generateTechnicianPerformancePDF = (
         ["Total Revenue Generated", formatCurrency(summary.total_revenue)],
         ["Average Completion Time", `${summary.avg_completion_hours?.toFixed(1) || "0"} hours`],
         ["Current Active Tasks", summary.total_current_tasks?.toString() || "0"],
+        ["Average Solve Rate", `${technicianData.length > 0 ? (technicianData.reduce((sum: number, t: any) => sum + (t.solve_rate || 0), 0) / technicianData.length).toFixed(1) : "0"}%`],
     ];
 
     yPosition = addSummaryTable(pdf, summaryData, yPosition, PDF_COLORS.technician.primary);
@@ -43,34 +44,30 @@ export const generateTechnicianPerformancePDF = (
 
         const performanceTableData = technicianData.map((tech: any) => [
             tech.technician_name,
+            `#${tech.rank || "-"}`,
             tech.completed_tasks_count?.toString() || "0",
-            `${tech.solved_count || 0} / ${tech.not_solved_count || 0}`,  // Solved / Not Solved
-            tech.in_progress_count?.toString() || "0",
-            tech.in_workshop_count?.toString() || "0",
-            tech.current_assigned_tasks?.toString() || "0",
+            `${tech.solve_rate?.toFixed(1) || "0"}%`,
             tech.avg_completion_hours > 0 ? `${tech.avg_completion_hours.toFixed(1)}h` : "N/A",
             `${tech.workshop_rate?.toFixed(1) || "0"}%`,
             `${tech.percentage_of_tasks_involved?.toFixed(1) || "0"}%`,
         ]);
 
         autoTable(pdf, {
-            head: [["Technician", "Executed", "Solved/Not", "In Progress", "In Workshop", "Current", "Avg Time", "Workshop Rate", "% Involved"]],
+            head: [["Technician", "Rank", "Tasks", "Solve Rate", "Avg Time", "Workshop %", "Involvement %"]],
             body: performanceTableData,
             startY: yPosition,
             theme: "grid",
             headStyles: { fillColor: PDF_COLORS.technician.secondary },
             margin: { left: 20, right: 20 },
-            styles: { fontSize: 8, cellPadding: 3 },
+            styles: { fontSize: 9, cellPadding: 3 },
             columnStyles: {
-                0: { cellWidth: "auto" },
-                1: { cellWidth: "auto" },
-                2: { cellWidth: "auto" },
-                3: { cellWidth: "auto" },
-                4: { cellWidth: "auto" },
-                5: { cellWidth: "auto" },
-                6: { cellWidth: "auto" },
-                7: { cellWidth: "auto" },
-                8: { cellWidth: "auto" },
+                0: { cellWidth: 50 },
+                1: { cellWidth: 20 },
+                2: { cellWidth: 25 },
+                3: { cellWidth: 30 },
+                4: { cellWidth: 25 },
+                5: { cellWidth: 30 },
+                6: { cellWidth: 30 },
             },
         });
 
@@ -90,32 +87,56 @@ export const generateTechnicianPerformancePDF = (
             pdf.text(`${tech.technician_name} - ${tech.technician_email}`, 20, yPosition);
             yPosition += 8;
 
-            // Status Breakdown
+            // Performance Metrics
             pdf.setFontSize(9);
             pdf.setTextColor(...PDF_COLORS.neutral);
-            pdf.text("Task Status Breakdown:", 20, yPosition);
+            pdf.text("Key Performance Metrics:", 20, yPosition);
             yPosition += 6;
 
-            // Status counts in columns
-            const statusCounts = tech.status_counts || {};
-            let statusX = 20;
-            let statusCount = 0;
+            // KPIs in a compact format
+            const kpis = [
+                `Solve Rate: ${tech.solve_rate?.toFixed(1) || "0"}% (${tech.solved_count || 0}/${tech.completed_tasks_count})`,
+                `Tasks Executed: ${tech.completed_tasks_count}`,
+                `Avg Time: ${tech.avg_completion_hours > 0 ? tech.avg_completion_hours.toFixed(1) + "h" : "N/A"}`,
+                `Workshop Rate: ${tech.workshop_rate?.toFixed(1) || "0"}%`,
+                `Task Involvement: ${tech.percentage_of_tasks_involved?.toFixed(1) || "0"}%`,
+            ];
 
-            for (const [status, count] of Object.entries(statusCounts)) {
-                pdf.text(`${status}: ${count}`, statusX, yPosition);
-                statusCount++;
-
-                if (statusCount % 3 === 0) {
+            let kpiX = 20;
+            let kpiCount = 0;
+            for (const kpi of kpis) {
+                pdf.text(kpi, kpiX, yPosition);
+                kpiCount++;
+                if (kpiCount % 2 === 0) {
                     yPosition += 5;
-                    statusX = 20;
+                    kpiX = 20;
                 } else {
-                    statusX += 60;
+                    kpiX = 110;
                 }
             }
+            if (kpis.length % 2 !== 0) yPosition += 5;
+            yPosition += 3;
 
-            if (statusCount % 3 !== 0) {
+            // Peer Comparison
+            if (tech.rank) {
+                pdf.setTextColor(...PDF_COLORS.success);
+                pdf.text("Peer Comparison:", 20, yPosition);
+                yPosition += 6;
+                pdf.setTextColor(...PDF_COLORS.neutral);
+                pdf.text(`Overall Rank: #${tech.rank} of ${technicianData.length} (Top ${(100 - (tech.percentile || 0)).toFixed(0)}%)`, 20, yPosition);
                 yPosition += 5;
+                pdf.text(`Solve Rate Rank: #${tech.rank_by_solve_rate || "-"}  |  Speed Rank: #${tech.rank_by_avg_time || "N/A"}  |  Workshop Efficiency: #${tech.rank_by_workshop_rate || "-"}`, 20, yPosition);
+                yPosition += 8;
             }
+
+            // Current Workload
+            pdf.setTextColor(...PDF_COLORS.neutral);
+            pdf.text("Current Workload:", 20, yPosition);
+            yPosition += 6;
+
+            // Show current workload summary
+            pdf.text(`In Progress: ${tech.in_progress_count || 0}  |  In Workshop: ${tech.in_workshop_count || 0}  |  Total Current: ${tech.current_assigned_tasks}`, 20, yPosition);
+            yPosition += 8;
 
             // Recent Completed Tasks
             const completedTasks = tech.completed_tasks_detail || [];

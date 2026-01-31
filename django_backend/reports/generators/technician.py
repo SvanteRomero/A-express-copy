@@ -152,6 +152,9 @@ class TechnicianReportGenerator(ReportGeneratorBase):
                 status = task.status
                 status_counts[status] = status_counts.get(status, 0) + 1
 
+            # Calculate solve rate
+            solve_rate = (solved_count / total_completed * 100) if total_completed > 0 else 0
+            
             final_report.append({
                 "technician_id": tech.id,
                 "technician_name": tech.get_full_name(),
@@ -159,6 +162,7 @@ class TechnicianReportGenerator(ReportGeneratorBase):
                 "completed_tasks_count": total_completed,
                 "solved_count": solved_count,
                 "not_solved_count": not_solved_count,
+                "solve_rate": round(solve_rate, 2),
                 "in_progress_count": in_progress_count,
                 "in_workshop_count": in_workshop_count,
                 "current_assigned_tasks": current_task_count,
@@ -168,7 +172,53 @@ class TechnicianReportGenerator(ReportGeneratorBase):
                 "status_counts": status_counts,
             })
 
+        # Sort by completed tasks count
         final_report.sort(key=lambda x: x["completed_tasks_count"], reverse=True)
+        
+        # Calculate peer rankings
+        total_techs = len(final_report)
+        for idx, tech_data in enumerate(final_report):
+            # Overall rank based on completed tasks
+            tech_data["rank"] = idx + 1
+            tech_data["percentile"] = round((total_techs - idx) / total_techs * 100, 1) if total_techs > 0 else 0
+        
+        # Rank by solve rate (higher is better)
+        sorted_by_solve_rate = sorted(final_report, key=lambda x: x["solve_rate"], reverse=True)
+        for idx, tech_data in enumerate(sorted_by_solve_rate):
+            tech_id = tech_data["technician_id"]
+            for tech in final_report:
+                if tech["technician_id"] == tech_id:
+                    tech["rank_by_solve_rate"] = idx + 1
+                    break
+        
+        # Rank by average time (lower is better, but handle 0 values)
+        techs_with_time = [t for t in final_report if t["avg_completion_hours"] > 0]
+        techs_without_time = [t for t in final_report if t["avg_completion_hours"] == 0]
+        sorted_by_time = sorted(techs_with_time, key=lambda x: x["avg_completion_hours"])
+        
+        for idx, tech_data in enumerate(sorted_by_time):
+            tech_id = tech_data["technician_id"]
+            for tech in final_report:
+                if tech["technician_id"] == tech_id:
+                    tech["rank_by_avg_time"] = idx + 1
+                    break
+        
+        # Assign N/A rank to technicians without completion time
+        for tech_data in techs_without_time:
+            tech_id = tech_data["technician_id"]
+            for tech in final_report:
+                if tech["technician_id"] == tech_id:
+                    tech["rank_by_avg_time"] = None
+                    break
+        
+        # Rank by workshop rate (lower is better)
+        sorted_by_workshop = sorted(final_report, key=lambda x: x["workshop_rate"])
+        for idx, tech_data in enumerate(sorted_by_workshop):
+            tech_id = tech_data["technician_id"]
+            for tech in final_report:
+                if tech["technician_id"] == tech_id:
+                    tech["rank_by_workshop_rate"] = idx + 1
+                    break
 
         return {
             "technician_performance": final_report,

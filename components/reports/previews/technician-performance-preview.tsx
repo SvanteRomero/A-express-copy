@@ -161,34 +161,175 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                         {/* Expanded Details */}
                                         {expandedTechnician === tech.technician_id && (
                                             <TableRow key={`${tech.technician_id}-details`}>
-                                                <TableCell colSpan={5} className="p-4">
-                                                    <div className="space-y-4">
-                                                        {/* Task Status Breakdown */}
+                                                <TableCell colSpan={6} className="p-6 bg-gradient-to-br from-gray-50 to-white">
+                                                    <div className="space-y-6">
+                                                        {/* Key Performance Indicators */}
                                                         <div>
-                                                            <h4 className="font-semibold mb-2">Performance Metrics</h4>
-                                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                                                {Object.entries(tech.status_counts).map(([status, count]) => (
-                                                                    <div key={`${tech.technician_id}-status-${status}`} className="text-center p-2 bg-white rounded border">
-                                                                        <div className="font-semibold">{count}</div>
-                                                                        <div className="text-sm text-gray-600">{status}</div>
+                                                            <h4 className="font-semibold text-base mb-3 flex items-center gap-2">
+                                                                <span className="w-1 h-5 bg-blue-600 rounded"></span>
+                                                                Key Performance Indicators
+                                                            </h4>
+                                                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                                                {/* Solve Rate */}
+                                                                <div className="bg-white rounded-lg border-2 border-gray-200 p-3 hover:shadow-md transition-shadow">
+                                                                    <div className="text-xs text-gray-600 mb-1.5">Solve Rate</div>
+                                                                    <div className="flex items-baseline gap-1.5">
+                                                                        <div className={`text-xl font-bold ${(tech.solve_rate ?? 0) >= 80 ? 'text-green-600' :
+                                                                            (tech.solve_rate ?? 0) >= 50 ? 'text-yellow-600' :
+                                                                                'text-red-600'
+                                                                            }`}>
+                                                                            {(tech.solve_rate ?? 0).toFixed(1)}%
+                                                                        </div>
+                                                                        <div className="text-[10px] text-gray-500">
+                                                                            {tech.solved_count ?? 0}/{tech.completed_tasks_count}
+                                                                        </div>
                                                                     </div>
-                                                                ))}
+                                                                    <div className="mt-1.5 w-full bg-gray-200 rounded-full h-1.5">
+                                                                        <div
+                                                                            className={`h-1.5 rounded-full transition-all ${(tech.solve_rate ?? 0) >= 80 ? 'bg-green-600' :
+                                                                                (tech.solve_rate ?? 0) >= 50 ? 'bg-yellow-600' :
+                                                                                    'bg-red-600'
+                                                                                }`}
+                                                                            style={{ width: `${Math.min(tech.solve_rate ?? 0, 100)}%` }}
+                                                                        ></div>
+                                                                    </div>
+                                                                </div>
 
-                                                                <div className="text-center p-2 bg-white rounded border">
-                                                                    <div className="font-semibold">{(tech.workshop_rate ?? 0).toFixed(1)}%</div>
-                                                                    <div className="text-sm text-gray-600">Workshop Rate</div>
+                                                                {/* Tasks Executed */}
+                                                                <div className="bg-white rounded-lg border-2 border-blue-200 p-3 hover:shadow-md transition-shadow">
+                                                                    <div className="text-xs text-gray-600 mb-1.5">Tasks Executed</div>
+                                                                    <div className="text-xl font-bold text-blue-600">
+                                                                        {tech.completed_tasks_count}
+                                                                    </div>
+                                                                    <div className="text-[10px] text-gray-500 mt-0.5">
+                                                                        in this period
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Average Time */}
+                                                                <div className="bg-white rounded-lg border-2 border-purple-200 p-3 hover:shadow-md transition-shadow">
+                                                                    <div className="text-xs text-gray-600 mb-1.5">Avg Time</div>
+                                                                    <div className="text-xl font-bold text-purple-600">
+                                                                        {(tech.avg_completion_hours ?? 0) > 0 ? `${tech.avg_completion_hours?.toFixed(1)}h` : 'N/A'}
+                                                                    </div>
+                                                                    <div className="text-[10px] text-gray-500 mt-0.5">
+                                                                        per task
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Workshop Rate */}
+                                                                <div className="bg-white rounded-lg border-2 border-orange-200 p-3 hover:shadow-md transition-shadow">
+                                                                    <div className="text-xs text-gray-600 mb-1.5">Workshop Rate</div>
+                                                                    <div className={`text-xl font-bold ${(tech.workshop_rate ?? 0) >= 50 ? 'text-red-600' :
+                                                                        (tech.workshop_rate ?? 0) >= 25 ? 'text-orange-600' :
+                                                                            'text-green-600'
+                                                                        }`}>
+                                                                        {(tech.workshop_rate ?? 0).toFixed(1)}%
+                                                                    </div>
+                                                                    <div className="text-[10px] text-gray-500 mt-0.5">
+                                                                        tasks to workshop
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Task Involvement */}
+                                                                <div className="bg-white rounded-lg border-2 border-indigo-200 p-3 hover:shadow-md transition-shadow">
+                                                                    <div className="text-xs text-gray-600 mb-1.5">Task Involvement</div>
+                                                                    <div className="text-xl font-bold text-indigo-600">
+                                                                        {(tech.percentage_of_tasks_involved ?? 0).toFixed(1)}%
+                                                                    </div>
+                                                                    <div className="text-[10px] text-gray-500 mt-0.5">
+                                                                        of all tasks
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
 
+                                                        {/* Peer Comparison */}
+                                                        {tech.rank && (
+                                                            <div>
+                                                                <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                                                                    <span className="w-1 h-6 bg-purple-600 rounded"></span>
+                                                                    Peer Comparison
+                                                                </h4>
+                                                                <div className="bg-white rounded-lg border-2 border-gray-200 p-5">
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                        {/* Overall Performance */}
+                                                                        <div className="space-y-3">
+                                                                            <div className="flex items-center justify-between">
+                                                                                <span className="text-sm font-medium text-gray-700">Overall Rank</span>
+                                                                                <Badge
+                                                                                    variant={tech.rank === 1 ? "default" : "secondary"}
+                                                                                    className={`text-base px-3 py-1 ${tech.rank === 1 ? 'bg-yellow-500 hover:bg-yellow-600' :
+                                                                                        tech.rank === 2 ? 'bg-gray-400 hover:bg-gray-500' :
+                                                                                            tech.rank === 3 ? 'bg-orange-600 hover:bg-orange-700' :
+                                                                                                'bg-blue-600 hover:bg-blue-700'
+                                                                                        }`}
+                                                                                >
+                                                                                    #{tech.rank} of {technicianPerformance.length}
+                                                                                </Badge>
+                                                                            </div>
+                                                                            <div className="flex items-center justify-between">
+                                                                                <span className="text-sm font-medium text-gray-700">Percentile</span>
+                                                                                <span className="text-lg font-bold text-indigo-600">
+                                                                                    Top {(100 - (tech.percentile ?? 0)).toFixed(0)}%
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
 
+                                                                        {/* Specific Rankings */}
+                                                                        <div className="space-y-3">
+                                                                            <div className="flex items-center justify-between">
+                                                                                <span className="text-sm font-medium text-gray-700">Solve Rate Rank</span>
+                                                                                <Badge variant="outline" className="border-green-600 text-green-700">
+                                                                                    #{tech.rank_by_solve_rate}
+                                                                                </Badge>
+                                                                            </div>
+                                                                            <div className="flex items-center justify-between">
+                                                                                <span className="text-sm font-medium text-gray-700">Speed Rank</span>
+                                                                                <Badge variant="outline" className="border-purple-600 text-purple-700">
+                                                                                    {tech.rank_by_avg_time ? `#${tech.rank_by_avg_time}` : 'N/A'}
+                                                                                </Badge>
+                                                                            </div>
+                                                                            <div className="flex items-center justify-between">
+                                                                                <span className="text-sm font-medium text-gray-700">Workshop Efficiency</span>
+                                                                                <Badge variant="outline" className="border-orange-600 text-orange-700">
+                                                                                    #{tech.rank_by_workshop_rate}
+                                                                                </Badge>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
 
-                                                        {/* Current Tasks by Status */}
+                                                        {/* Current Tasks Summary */}
                                                         <div>
-                                                            <h4 className="font-semibold mb-2">Current Tasks</h4>
-                                                            .
-                                                            .
-                                                            .
+                                                            <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                                                                <span className="w-1 h-6 bg-green-600 rounded"></span>
+                                                                Current Workload
+                                                            </h4>
+                                                            <div className="bg-white rounded-lg border border-gray-200 p-4">
+                                                                <div className="flex flex-wrap gap-3">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                                                        <span className="text-sm text-gray-700">
+                                                                            <span className="font-semibold">{tech.in_progress_count ?? 0}</span> In Progress
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                                                                        <span className="text-sm text-gray-700">
+                                                                            <span className="font-semibold">{tech.in_workshop_count ?? 0}</span> In Workshop
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                                                                        <span className="text-sm text-gray-700">
+                                                                            <span className="font-semibold">{tech.current_assigned_tasks}</span> Total Current
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </TableCell>
