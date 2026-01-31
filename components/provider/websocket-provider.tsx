@@ -19,11 +19,12 @@ import {
     TransactionRequestMessage,
     DebtRequestMessage,
     DebtRequestResolvedMessage,
+    TransactionRequestResolvedMessage,
     ConnectionQuality,
 } from '@/lib/websocket';
 import { showSchedulerNotificationToast } from '@/components/notifications/toast';
 import { dispatchWebSocketToast } from '@/components/notifications/toast/websocket-toasts';
-import { showTransactionRequestToast } from '@/components/notifications/toast/transaction-request-toast';
+import { showTransactionRequestToast, dismissTransactionRequestToast } from '@/components/notifications/toast/transaction-request-toast';
 import { showDebtRequestToast, dismissDebtRequestToast } from '@/components/notifications/toast/debt-request-toast';
 
 interface WebSocketContextType {
@@ -173,6 +174,12 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         if (message.type === 'debt_request_resolved') {
             const data = message as DebtRequestResolvedMessage;
             dismissDebtRequestToast(data.request_id);
+        }
+
+        // Handle transaction request resolved - dismiss toast for all managers
+        if (message.type === 'transaction_request_resolved') {
+            const data = message as TransactionRequestResolvedMessage;
+            dismissTransactionRequestToast(data.request_id);
         }
     }, []); // Empty deps - uses refs for stable reference
 

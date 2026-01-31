@@ -128,3 +128,15 @@ export function showTransactionRequestToast(
     // Store dismiss function for later use
     dismissFunctions.set(request_id, dismiss);
 }
+
+/**
+ * Dismiss a transaction request toast by its request ID.
+ * Called when another manager resolves the request.
+ */
+export function dismissTransactionRequestToast(requestId: number) {
+    const dismiss = dismissFunctions.get(requestId);
+    if (dismiss) {
+        dismiss();
+        dismissFunctions.delete(requestId);
+    }
+}

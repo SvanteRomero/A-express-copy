@@ -199,6 +199,22 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
             });
             break;
 
+        case 'transaction_request_approved':
+            toast({
+                title: '✅ Transaction Request Approved',
+                description: `Your request was approved by ${data.approver_name}`,
+                className: 'bg-green-600 text-white border-green-600',
+            });
+            break;
+
+        case 'transaction_request_rejected':
+            toast({
+                title: '❌ Transaction Request Rejected',
+                description: `Your request was rejected by ${data.approver_name}`,
+                className: 'bg-red-600 text-white border-red-600',
+            });
+            break;
+
         default:
             // Unknown toast type - log for debugging
             console.warn('Unknown WebSocket toast type:', toast_type);

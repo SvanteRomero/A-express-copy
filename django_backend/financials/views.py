@@ -309,6 +309,9 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Store data before deletion
+        requester_id = transaction.requester.id
+
         transaction.status = TransactionRequest.Status.APPROVED
         transaction.approver = request.user
         transaction.save()
@@ -323,7 +326,14 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
         # Delete the processed request - no longer needed
         transaction.delete()
 
-        from .broadcasts import broadcast_transaction_update
+        # Broadcast dismissal to all managers and notify requester
+        from .broadcasts import broadcast_transaction_resolved, broadcast_transaction_update
+        broadcast_transaction_resolved(
+            request_id=pk,
+            approved=True,
+            approver=request.user,
+            requester_id=requester_id
+        )
         broadcast_transaction_update()
 
         return Response(response_data)
@@ -337,6 +347,9 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Store data before deletion
+        requester_id = transaction.requester.id
+
         transaction.status = TransactionRequest.Status.REJECTED
         transaction.approver = request.user
         transaction.save()
@@ -348,7 +361,14 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
         # Delete rejected request immediately - serves no purpose
         transaction.delete()
 
-        from .broadcasts import broadcast_transaction_update
+        # Broadcast dismissal to all managers and notify requester
+        from .broadcasts import broadcast_transaction_resolved, broadcast_transaction_update
+        broadcast_transaction_resolved(
+            request_id=pk,
+            approved=False,
+            approver=request.user,
+            requester_id=requester_id
+        )
         broadcast_transaction_update()
 
         return Response(response_data)

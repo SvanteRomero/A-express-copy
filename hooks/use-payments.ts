@@ -35,7 +35,7 @@ interface RevenueOverview {
 const getPayments = async (filters: PaymentFilters = {}) => {
   try {
     const params = new URLSearchParams();
-    if (filters.method && filters.method !== 'all') params.append('method_name', filters.method);
+    if (filters.method && filters.method !== 'all') params.append('method', filters.method);
     if (filters.category && filters.category !== 'all') params.append('category', filters.category);
     if (filters.is_refunded) params.append('is_refunded', String(filters.is_refunded));
     if (filters.date) params.append('date', filters.date);

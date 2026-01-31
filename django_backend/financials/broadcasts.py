@@ -128,6 +128,92 @@ def broadcast_transaction_request(request_id: int, transaction_type: str, descri
         logger.error(f"Failed to broadcast transaction request to managers: {e}")
 
 
+def broadcast_transaction_resolved(request_id: int, approved: bool, approver, requester_id: int):
+    """
+    Broadcast transaction request resolution.
+    1. Dismisses toast for all managers
+    2. Notifies the requester of the outcome
+    
+    Args:
+        request_id: The ID of the transaction request
+        approved: Whether the request was approved
+        approver: The User who approved/rejected
+        requester_id: ID of the user who made the request
+    """
+    from notifications.utils import generate_toast_id
+    from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
+    
+    channel_layer = get_channel_layer()
+    
+    if not channel_layer:
+        logger.warning("Channel layer not available - skipping transaction resolved broadcast")
+        return
+    
+    # 1. Dismiss toast for all managers
+    dismiss_data = {
+        'type': 'transaction_request_resolved',
+        'request_id': request_id,
+    }
+    
+    try:
+        async_to_sync(channel_layer.group_send)(
+            'notifications_manager',
+            {
+                'type': 'data.update',
+                'data': dismiss_data,
+            }
+        )
+        logger.info(f"Broadcast transaction request dismissal for {request_id}")
+    except Exception as e:
+        logger.error(f"Failed to broadcast transaction dismissal: {e}")
+    
+    # 2. Notify the requester
+    from Eapp.models import User
+    try:
+        requester = User.objects.get(id=requester_id)
+    except User.DoesNotExist:
+        logger.warning(f"Requester {requester_id} not found - skipping notification")
+        return
+    
+    # Map role to group name
+    role_to_group = {
+        'Front Desk': 'front_desk',
+        'Accountant': 'accountant',
+        'Technician': 'technician',
+        'Manager': 'manager',
+        'Administrator': 'admin',
+    }
+    requester_group = role_to_group.get(requester.role)
+    
+    if not requester_group:
+        logger.warning(f"Unknown role {requester.role} - skipping notification")
+        return
+    
+    approver_name = approver.get_full_name() or approver.username
+    
+    toast_data = {
+        'type': 'toast_notification',
+        'id': generate_toast_id(),
+        'toast_type': 'transaction_request_approved' if approved else 'transaction_request_rejected',
+        'data': {
+            'approver_name': approver_name,
+        },
+    }
+    
+    try:
+        async_to_sync(channel_layer.group_send)(
+            f'notifications_{requester_group}',
+            {
+                'type': 'data.update',
+                'data': toast_data,
+            }
+        )
+        logger.info(f"Notified requester {requester.username} of transaction {'approval' if approved else 'rejection'}")
+    except Exception as e:
+        logger.error(f"Failed to notify requester: {e}")
+
+
 def broadcast_transaction_update():
     """
     Broadcast an update to transaction requests list (created, approved, rejected, deleted).
