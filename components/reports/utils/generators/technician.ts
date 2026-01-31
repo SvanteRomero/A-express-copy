@@ -28,10 +28,7 @@ export const generateTechnicianPerformancePDF = (
 
     const summaryData: [string, string][] = [
         ["Total Technicians", totalTechnicians.toString()],
-        ["Date Range", dateRange.replace(/_/g, " ")],
         ["Total Executed Tasks", summary.total_completed_tasks?.toString() || "0"],
-        ["Total Revenue Generated", formatCurrency(summary.total_revenue)],
-        ["Average Completion Time", `${summary.avg_completion_hours?.toFixed(1) || "0"} hours`],
         ["Current Active Tasks", summary.total_current_tasks?.toString() || "0"],
         ["Average Solve Rate", `${technicianData.length > 0 ? (technicianData.reduce((sum: number, t: any) => sum + (t.solve_rate || 0), 0) / technicianData.length).toFixed(1) : "0"}%`],
     ];
@@ -60,14 +57,15 @@ export const generateTechnicianPerformancePDF = (
             headStyles: { fillColor: PDF_COLORS.technician.secondary },
             margin: { left: 20, right: 20 },
             styles: { fontSize: 9, cellPadding: 3 },
+            tableWidth: 'auto',
             columnStyles: {
-                0: { cellWidth: 50 },
-                1: { cellWidth: 20 },
-                2: { cellWidth: 25 },
-                3: { cellWidth: 30 },
-                4: { cellWidth: 25 },
-                5: { cellWidth: 30 },
-                6: { cellWidth: 30 },
+                0: { cellWidth: 'auto' },
+                1: { cellWidth: 'auto' },
+                2: { cellWidth: 'auto' },
+                3: { cellWidth: 'auto' },
+                4: { cellWidth: 'auto' },
+                5: { cellWidth: 'auto' },
+                6: { cellWidth: 'auto' },
             },
         });
 
@@ -91,7 +89,7 @@ export const generateTechnicianPerformancePDF = (
             pdf.setFontSize(9);
             pdf.setTextColor(...PDF_COLORS.neutral);
             pdf.text("Key Performance Metrics:", 20, yPosition);
-            yPosition += 6;
+            yPosition += 7;
 
             // KPIs in a compact format
             const kpis = [
@@ -108,35 +106,35 @@ export const generateTechnicianPerformancePDF = (
                 pdf.text(kpi, kpiX, yPosition);
                 kpiCount++;
                 if (kpiCount % 2 === 0) {
-                    yPosition += 5;
+                    yPosition += 6;
                     kpiX = 20;
                 } else {
                     kpiX = 110;
                 }
             }
-            if (kpis.length % 2 !== 0) yPosition += 5;
-            yPosition += 3;
+            if (kpis.length % 2 !== 0) yPosition += 6;
+            yPosition += 5;
 
             // Peer Comparison
             if (tech.rank) {
                 pdf.setTextColor(...PDF_COLORS.success);
                 pdf.text("Peer Comparison:", 20, yPosition);
-                yPosition += 6;
+                yPosition += 7;
                 pdf.setTextColor(...PDF_COLORS.neutral);
                 pdf.text(`Overall Rank: #${tech.rank} of ${technicianData.length} (Top ${(100 - (tech.percentile || 0)).toFixed(0)}%)`, 20, yPosition);
-                yPosition += 5;
+                yPosition += 6;
                 pdf.text(`Solve Rate Rank: #${tech.rank_by_solve_rate || "-"}  |  Speed Rank: #${tech.rank_by_avg_time || "N/A"}  |  Workshop Efficiency: #${tech.rank_by_workshop_rate || "-"}`, 20, yPosition);
-                yPosition += 8;
+                yPosition += 10;
             }
 
             // Current Workload
             pdf.setTextColor(...PDF_COLORS.neutral);
             pdf.text("Current Workload:", 20, yPosition);
-            yPosition += 6;
+            yPosition += 7;
 
             // Show current workload summary
             pdf.text(`In Progress: ${tech.in_progress_count || 0}  |  In Workshop: ${tech.in_workshop_count || 0}  |  Total Current: ${tech.current_assigned_tasks}`, 20, yPosition);
-            yPosition += 8;
+            yPosition += 10;
 
             // Recent Completed Tasks
             const completedTasks = tech.completed_tasks_detail || [];
