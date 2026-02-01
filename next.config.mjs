@@ -12,10 +12,13 @@ const nextConfig = {
     unoptimized: true,
   },
   async rewrites() {
+    // Railway: use internal URL (free egress), Local: use localhost
+    const djangoUrl = process.env.DJANGO_INTERNAL_URL || 'http://127.0.0.1:8000';
+    
     return [
       {
         source: '/api/:path*',
-        destination: 'http://127.0.0.1:8000/api/:path*',
+        destination: `${djangoUrl}/api/:path*`,
       },
     ]
   },
