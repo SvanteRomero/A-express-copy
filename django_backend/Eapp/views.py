@@ -35,7 +35,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         # Only add annotations for list and retrieve actions
         # Skip for update/partial_update to avoid potential query issues
-        if self.action in ['list', 'retrieve', None]:
+        if self.action in ['list', 'retrieve', 'debts', None]:
             # Annotate total_cost and paid_amount
             queryset = queryset.annotate(
                 calculated_total_cost=Coalesce(
