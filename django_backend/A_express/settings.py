@@ -71,7 +71,7 @@ if not DEBUG:
 
 # Railway provides RAILWAY_PUBLIC_DOMAIN
 RAILWAY_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "DJANGO_INTERNAL_URL", "http://localhost:3000")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
 ALLOWED_HOSTS = [
     "localhost",
