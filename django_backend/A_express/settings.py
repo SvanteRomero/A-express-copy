@@ -71,14 +71,13 @@ if not DEBUG:
 
 # Railway provides RAILWAY_PUBLIC_DOMAIN
 RAILWAY_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "DJANGO_INTERNAL_URL", "http://localhost:3000")
 
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     "healthcheck.railway.app",  # Railway healthcheck
     ".railway.app",  # All Railway subdomains
-    ".railway.internal",  # Railway internal network (for Next.js proxy)
 ]
 if RAILWAY_DOMAIN:
     ALLOWED_HOSTS.append(RAILWAY_DOMAIN)
@@ -180,7 +179,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "A_express.urls"
-APPEND_SLASH = True
 
 
 TEMPLATES = [

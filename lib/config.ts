@@ -11,34 +11,42 @@ export const API_CONFIG = {
 } as const;
 
 function getBaseApiUrl() {
-  // Browser: use relative URL to leverage Next.js rewrites
-  // This routes through Next.js server which uses internal Railway URL (free egress)
+  // 1. If explicitly set in environment variables, use that
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+
+  // 2. If running in the browser (client-side), detect the deployment URL
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
     const protocol = window.location.protocol;
 
-    // GitHub Codespaces / Gitpod: direct connection to backend port
+    // Detect GitHub Codespaces (app.github.dev) or Gitpod
     if (
       host.includes("github.dev") ||
       host.includes("gitpod.io") ||
       host.includes("app.github.dev")
     ) {
+      // If we are on the frontend port (usually 3000), switch to backend port (8000)
+      // Standard Format: name-3000.app.github.dev -> name-8000.app.github.dev
       if (host.includes("-3000")) {
         const backendHost = host.replace("-3000", "-8000");
         return `${protocol}//${backendHost}/api`;
       }
     }
 
-    // Railway & other deployments: use relative URL (goes through Next.js rewrites)
-    return "/api";
+    // Detect Railway deployment (*.up.railway.app)
+    if (host.includes("railway.app")) {
+      // For Railway, the backend URL should be set via NEXT_PUBLIC_API_URL
+      // This is a fallback message - you should set the env var in Railway
+      console.warn(
+        "Running on Railway but NEXT_PUBLIC_API_URL is not set. " +
+        "Set this environment variable to your Django backend URL."
+      );
+    }
   }
 
-  // Server-side: use internal URL directly (for SSR if needed)
-  if (process.env.DJANGO_INTERNAL_URL) {
-    return `${process.env.DJANGO_INTERNAL_URL}/api`;
-  }
-
-  // Local development fallback
+  // 3. Fallback for local development (your machine)
   return "http://localhost:8000/api";
 }
 

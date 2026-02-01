@@ -11,22 +11,11 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Preserve trailing slashes for API routes (Django expects them)
-  skipTrailingSlashRedirect: true,
   async rewrites() {
-    // Railway: use internal URL (free egress), Local: use localhost
-    const djangoUrl = process.env.DJANGO_INTERNAL_URL || 'http://127.0.0.1:8000';
-
     return [
-      // Explicit rule for trailing slash URLs (Django expects these)
-      {
-        source: '/api/:path*/',
-        destination: `${djangoUrl}/api/:path*/`,
-      },
-      // Fallback for URLs without trailing slash
       {
         source: '/api/:path*',
-        destination: `${djangoUrl}/api/:path*`,
+        destination: 'http://127.0.0.1:8000/api/:path*',
       },
     ]
   },
