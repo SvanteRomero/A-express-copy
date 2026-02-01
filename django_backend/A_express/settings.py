@@ -180,6 +180,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "A_express.urls"
+APPEND_SLASH = False  # Prevent 301 redirects for API URLs without trailing slashes
 
 
 TEMPLATES = [
