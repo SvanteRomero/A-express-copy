@@ -225,6 +225,11 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 # Prefer PgBouncer for connection pooling if available
 ACTIVE_DB_URL = PGBOUNCER_URL if PGBOUNCER_URL else DATABASE_URL
 
+# DEBUG: Log which database URL is being used (remove after debugging)
+print(f"[DB CONFIG] PGBOUNCER_URL set: {bool(PGBOUNCER_URL)}")
+print(f"[DB CONFIG] PGBOUNCER_URL value: {PGBOUNCER_URL[:50] if PGBOUNCER_URL else 'None'}...")
+print(f"[DB CONFIG] Using: {'PgBouncer' if PGBOUNCER_URL else 'Direct PostgreSQL'}")
+
 if ACTIVE_DB_URL:
     # Production: Use PostgreSQL (via PgBouncer if PGBOUNCER_URL is set)
     DATABASES = {
