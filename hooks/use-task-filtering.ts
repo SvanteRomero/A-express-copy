@@ -15,6 +15,7 @@ export interface UseTaskFilteringProps {
     excludeStatus?: string // e.g., for "Not Completed" tabs
     exactStatus?: string  // e.g., for "Completed" tabs
     extraParams?: Record<string, any> // For specific filters like unpaid_tasks: true
+    isWorkshopContext?: boolean
 }
 
 export function useTaskFiltering(props: UseTaskFilteringProps = {}) {
@@ -45,12 +46,21 @@ export function useTaskFiltering(props: UseTaskFilteringProps = {}) {
         : (taskStatusFilter === "all" ? props.initialStatus : taskStatusFilter)
 
     // Construct API params
+    const assignedToParam = props.isWorkshopContext && technicianFilter !== "all"
+        ? undefined
+        : (technicianFilter === "all" ? undefined : Number(technicianFilter))
+
+    const workshopTechUserParam = props.isWorkshopContext && technicianFilter !== "all"
+        ? Number(technicianFilter)
+        : undefined
+
     const { data: tasksData, isLoading, isError, error, refetch } = useTasks({
         page,
         page_size: props.pageSize || 10,
         search: searchQuery,
         status: apiStatus,
-        assigned_to: technicianFilter === "all" ? undefined : Number(technicianFilter),
+        assigned_to: assignedToParam,
+        workshop_tech_user: workshopTechUserParam,
         urgency: urgencyFilter === "all" ? undefined : urgencyFilter,
         location: locationFilter === "all" ? undefined : locationFilter,
         workshop_status: deviceStatusFilter === "all" ? undefined : deviceStatusFilter,

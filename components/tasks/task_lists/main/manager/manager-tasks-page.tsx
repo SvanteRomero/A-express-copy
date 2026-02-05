@@ -48,14 +48,10 @@ export function ManagerTasksPage() {
   // 3. My Tasks Hook (for workshop managers or general assigned)
   const isWorkshopManager = user?.is_workshop || false;
   const myTasks = useTaskFiltering({
-    // Logic for My Tasks: "assigned_to" me OR "in workshop" queue if I'm workshop manager
-    // This hook is a bit generic, so for "My Tasks" complex logic we might need to customize or use raw useTasks
-    // BUT, let's try to fit it. 
-    // The previous implementation had complex merging logic. 
-    // For now, let's just use it for "Assigned To Me" and if we need workshop queue, we can handle it.
     initialTechnician: user?.id,
     excludeStatus: "Completed", // usually My Tasks are active ones
-    pageSize: 15
+    pageSize: 15,
+    isWorkshopContext: isWorkshopManager
   });
 
   // RE-visit "My Tasks" complex merging logic:
