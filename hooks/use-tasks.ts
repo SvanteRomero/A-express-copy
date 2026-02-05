@@ -51,6 +51,7 @@ export function useTasks(filters?: {
   urgency?: string
   current_location?: string
   location?: string
+  exclude_status?: string
 }) {
   return useQuery<PaginatedTasks>({
     queryKey: ['tasks', filters],

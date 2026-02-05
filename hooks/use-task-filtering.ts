@@ -54,6 +54,7 @@ export function useTaskFiltering(props: UseTaskFilteringProps = {}) {
         urgency: urgencyFilter === "all" ? undefined : urgencyFilter,
         location: locationFilter === "all" ? undefined : locationFilter,
         workshop_status: deviceStatusFilter === "all" ? undefined : deviceStatusFilter,
+        exclude_status: props.excludeStatus,
         ...props.extraParams
     })
 
@@ -90,11 +91,11 @@ export function useTaskFiltering(props: UseTaskFilteringProps = {}) {
 
     const clearFilters = () => {
         setSearchQuery("")
-        setTaskStatusFilter("all")
-        setTechnicianFilter("all")
-        setUrgencyFilter("all")
-        setDeviceStatusFilter("all")
-        setLocationFilter("all")
+        setTaskStatusFilter(props.initialStatus || "all")
+        setTechnicianFilter(props.initialTechnician || "all")
+        setUrgencyFilter(props.initialUrgency || "all")
+        setDeviceStatusFilter(props.initialDeviceStatus || "all")
+        setLocationFilter(props.initialLocation || "all")
         setPage(1)
     }
 
