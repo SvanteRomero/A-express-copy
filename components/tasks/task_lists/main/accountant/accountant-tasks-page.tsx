@@ -31,7 +31,7 @@ export default function AccountantTasksPage() {
     technicians,
     next,
     previous
-  } = useServerSideTaskFiltering({
+  } = useTaskFiltering({
     pageSize: 15,
     extraParams: { unpaid_tasks: true }
   });
