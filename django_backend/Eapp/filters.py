@@ -35,6 +35,9 @@ class TaskFilter(django_filters.FilterSet):
     # Ideally frontend should send 'assigned_to' with the ID. 
     technician = django_filters.NumberFilter(field_name='assigned_to__id')
 
+    # Filter to exclude specific statuses (comma separated)
+    exclude_status = django_filters.CharFilter(method='filter_exclude_status')
+
     class Meta:
         model = Task
         fields = {
@@ -49,6 +52,10 @@ class TaskFilter(django_filters.FilterSet):
     def filter_status(self, queryset, name, value):
         statuses = value.split(',')
         return queryset.filter(status__in=statuses)
+
+    def filter_exclude_status(self, queryset, name, value):
+        statuses = value.split(',')
+        return queryset.exclude(status__in=statuses)
 
     def filter_activity_user(self, queryset, name, value):
         return queryset.filter(activities__user_id=value).distinct()
