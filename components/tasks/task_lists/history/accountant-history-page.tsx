@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from "react";
-import { useTasks } from '@/hooks/use-tasks';
+import { useTaskFiltering } from "@/hooks/use-task-filtering";
 import { TasksDisplay } from '../../task_utils/tasks-display';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/core/button";
@@ -9,19 +8,32 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function AccountantHistoryPage() {
   const router = useRouter();
-  const [page, setPage] = useState(1);
 
-  const { data: tasksData, isLoading, isError, error } = useTasks({
-    payment_status: 'Fully Paid',
+  const {
+    tasks,
+    count,
+    isLoading,
+    isError,
+    error,
     page,
-    page_size: 15,
+    setPage,
+    next,
+    previous,
+    searchQuery,
+    setSearchQuery,
+    serverSideFilters,
+    filterOptions
+  } = useTaskFiltering({
+    extraParams: { payment_status: 'Fully Paid' },
+    initialPage: 1,
+    pageSize: 15,
   });
 
   const handleRowClick = (task: any) => {
     router.push(`/dashboard/tasks/${task.title}`);
   };
 
-  if (isLoading) {
+  if (isLoading && page === 1) {
     return (
       <div className="flex-1 space-y-6 p-6">
         <div className="flex items-center justify-center">
@@ -34,16 +46,12 @@ export default function AccountantHistoryPage() {
   if (isError) {
     return (
       <div className="flex-1 space-y-6 p-6">
-        <div className="text-red-500">Error: {error.message}</div>
+        <div className="text-red-500">Error: {(error as any).message}</div>
       </div>
     )
   }
 
-  const tasks = tasksData?.results || [];
-  const totalCount = tasksData?.count || 0;
-  const totalPages = Math.ceil(totalCount / 15);
-  const hasNext = !!tasksData?.next;
-  const hasPrevious = !!tasksData?.previous;
+  const totalPages = Math.ceil(count / 15);
 
   return (
     <div className="flex-1 space-y-6 p-6">
@@ -54,12 +62,21 @@ export default function AccountantHistoryPage() {
           <p className="text-gray-600 mt-2">A list of all fully paid tasks.</p>
         </div>
         <div className="text-sm text-gray-500">
-          {totalCount} total task{totalCount !== 1 ? 's' : ''}
+          {count} total task{count !== 1 ? 's' : ''}
         </div>
       </div>
 
       {/* Main Content */}
-      <TasksDisplay tasks={tasks} technicians={[]} onRowClick={handleRowClick} showActions={false} />
+      <TasksDisplay
+        tasks={tasks}
+        technicians={[]}
+        onRowClick={handleRowClick}
+        showActions={false}
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        serverSideFilters={serverSideFilters}
+        filterOptions={filterOptions}
+      />
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
@@ -72,7 +89,7 @@ export default function AccountantHistoryPage() {
               variant="outline"
               size="sm"
               onClick={() => setPage(p => p - 1)}
-              disabled={!hasPrevious}
+              disabled={!previous}
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
               Previous
@@ -81,7 +98,7 @@ export default function AccountantHistoryPage() {
               variant="outline"
               size="sm"
               onClick={() => setPage(p => p + 1)}
-              disabled={!hasNext}
+              disabled={!next}
             >
               Next
               <ChevronRight className="h-4 w-4 ml-1" />

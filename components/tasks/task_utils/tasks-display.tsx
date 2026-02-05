@@ -103,7 +103,7 @@ export function TasksDisplay({
     if (externalSearchQuery !== undefined && externalSearchQuery !== internalSearchQuery) {
       setInternalSearchQuery(externalSearchQuery)
     }
-  }, [externalSearchQuery, internalSearchQuery])
+  }, [externalSearchQuery])
 
   // Debounce search updates
   useEffect(() => {

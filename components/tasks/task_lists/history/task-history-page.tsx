@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/core/button";
 import { TasksDisplay } from "../../task_utils/tasks-display";
-import { useTasks } from "@/hooks/use-tasks";
+import { useTaskFiltering } from "@/hooks/use-task-filtering";
 import { useTechnicians } from "@/hooks/use-users";
 import { ReturnTaskDialog } from "../../return-task-dialog";
 
@@ -26,16 +26,33 @@ export function TaskHistoryPage({
   isManagerView = false,
 }: GenericTaskHistoryPageProps) {
   const router = useRouter();
-  const [page, setPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
 
   const twoWeeksAgo = new Date();
   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
-  const { data: tasksData, isLoading, isError, error } = useTasks({
+  const {
+    tasks,
+    isLoading,
+    isError,
+    error,
     page,
-    status: statusFilter,
-    updated_at_after: showDateFilter && !showAll ? twoWeeksAgo.toISOString().split('T')[0] : undefined,
+    setPage,
+    next,
+    previous,
+    searchQuery,
+    setSearchQuery,
+    serverSideFilters,
+    filterOptions
+  } = useTaskFiltering({
+    initialStatus: statusFilter,
+    initialPage: 1,
+    pageSize: 10,
+    // Add date filter if needed, currently useTaskFiltering might need update for updated_at_after
+    // But since it accepts extraParams, we can pass it there.
+    extraParams: {
+      updated_at_after: showDateFilter && !showAll ? twoWeeksAgo.toISOString().split('T')[0] : undefined
+    }
   });
 
   const { data: technicians } = useTechnicians();
@@ -51,9 +68,9 @@ export function TaskHistoryPage({
     setIsReturnDialogOpen(true);
   };
 
-  const tasks = useMemo(() => tasksData?.results || [], [tasksData]);
+  // const tasks = useMemo(() => tasksData?.results || [], [tasksData]); // No longer needed
 
-  if (isLoading) {
+  if (isLoading && page === 1) {
     return (
       <div className="flex-1 space-y-6 p-6">
         <div className="flex items-center justify-center">
@@ -66,7 +83,7 @@ export function TaskHistoryPage({
   if (isError) {
     return (
       <div className="flex-1 space-y-6 p-6">
-        <div className="text-red-500">Error: {error.message}</div>
+        <div className="text-red-500">Error: {(error as any)?.message}</div>
       </div>
     )
   }
@@ -89,11 +106,15 @@ export function TaskHistoryPage({
         onReturnTask={isFrontDeskView ? handleReturnTask : undefined}
         isCompletedTab={true}
         isManagerView={isManagerView}
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        serverSideFilters={serverSideFilters}
+        filterOptions={filterOptions}
       />
 
       <div className="flex justify-end space-x-2 mt-4">
-        <Button onClick={() => setPage(page - 1)} disabled={!tasksData?.previous}>Previous</Button>
-        <Button onClick={() => setPage(page + 1)} disabled={!tasksData?.next}>Next</Button>
+        <Button onClick={() => setPage(page - 1)} disabled={!previous}>Previous</Button>
+        <Button onClick={() => setPage(page + 1)} disabled={!next}>Next</Button>
       </div>
 
       {selectedTask && isFrontDeskView && (
