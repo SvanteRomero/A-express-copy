@@ -22,7 +22,7 @@ export function useTaskFiltering(props: UseTaskFilteringProps = {}) {
     const [searchQuery, setSearchQuery] = useState("")
 
     // Filter states
-    const [taskStatusFilter, setTaskStatusFilter] = useState(props.initialStatus || "all")
+    const [taskStatusFilter, setTaskStatusFilter] = useState("all")
     const [technicianFilter, setTechnicianFilter] = useState<string | number>(props.initialTechnician || "all")
     const [urgencyFilter, setUrgencyFilter] = useState(props.initialUrgency || "all")
     const [deviceStatusFilter, setDeviceStatusFilter] = useState(props.initialDeviceStatus || "all")
@@ -42,7 +42,7 @@ export function useTaskFiltering(props: UseTaskFilteringProps = {}) {
     // Derived filters for API
     const apiStatus = props.exactStatus
         ? props.exactStatus
-        : (taskStatusFilter === "all" ? undefined : taskStatusFilter)
+        : (taskStatusFilter === "all" ? props.initialStatus : taskStatusFilter)
 
     // Construct API params
     const { data: tasksData, isLoading, isError, error, refetch } = useTasks({
@@ -91,7 +91,7 @@ export function useTaskFiltering(props: UseTaskFilteringProps = {}) {
 
     const clearFilters = () => {
         setSearchQuery("")
-        setTaskStatusFilter(props.initialStatus || "all")
+        setTaskStatusFilter("all")
         setTechnicianFilter(props.initialTechnician || "all")
         setUrgencyFilter(props.initialUrgency || "all")
         setDeviceStatusFilter(props.initialDeviceStatus || "all")
