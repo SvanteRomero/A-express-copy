@@ -24,6 +24,17 @@ class TaskFilter(django_filters.FilterSet):
     # Takes user_id as a separate parameter to avoid conflict with assigned_to filter
     workshop_tech_user = django_filters.NumberFilter(method='filter_workshop_tech_view')
 
+    # New filters for server-side filtering
+    urgency = django_filters.CharFilter(lookup_expr='iexact')
+    current_location = django_filters.CharFilter(field_name='current_location__name', lookup_expr='iexact')
+    location = django_filters.CharFilter(field_name='current_location__name', lookup_expr='iexact') # Alias for convenience
+    workshop_status = django_filters.CharFilter(lookup_expr='iexact')
+    # Use 'assigned_to' for direct ID filtering, which is the default behavior if we don't override it.
+    # But let's add an explicit alias 'technician' that maps to assigned_to__id for clarity if needed, 
+    # though standard 'assigned_to' is effectively ID based in DjangoFilter for FK.
+    # Ideally frontend should send 'assigned_to' with the ID. 
+    technician = django_filters.NumberFilter(field_name='assigned_to__id')
+
     class Meta:
         model = Task
         fields = {

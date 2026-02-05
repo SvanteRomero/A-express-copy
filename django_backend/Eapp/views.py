@@ -89,6 +89,10 @@ class TaskViewSet(viewsets.ModelViewSet):
     def urgency_options(self, request):
         return Response(Task.Urgency.choices)
 
+    @action(detail=False, methods=['get'], url_path='workshop-status-options')
+    def workshop_status_options(self, request):
+        return Response(Task.WorkshopStatus.choices)
+
     def get_serializer_class(self):
         if self.action == 'list':
             return TaskListSerializer

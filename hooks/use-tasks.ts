@@ -24,6 +24,16 @@ export const getTaskUrgencyOptions = async () => {
   }
 };
 
+export const getTaskWorkshopStatusOptions = async () => {
+  try {
+    const response = await apiClient.get('/tasks/workshop-status-options/');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching workshop status options:', error);
+    throw error;
+  }
+};
+
 export function useTasks(filters?: {
   status?: string
   technician?: string
@@ -38,6 +48,9 @@ export function useTasks(filters?: {
   assigned_to?: number
   workshop_status?: string
   workshop_tech_user?: number
+  urgency?: string
+  current_location?: string
+  location?: string
 }) {
   return useQuery<PaginatedTasks>({
     queryKey: ['tasks', filters],
@@ -227,16 +240,18 @@ export function useTechnicianTasks(
   userId: string | undefined,
   isWorkshopTech: boolean = false,
   activeTab: string = "in-progress",
-  page: number = 1
+  page: number = 1,
+  search?: string
 ) {
   return useQuery<PaginatedTasks>({
-    queryKey: ['technicianTasks', userId, isWorkshopTech, activeTab, page],
+    queryKey: ['technicianTasks', userId, isWorkshopTech, activeTab, page, search],
     queryFn: async () => {
       if (!userId) return { count: 0, next: null, previous: null, results: [] };
 
       const params: any = {
         page,
         page_size: 10,
+        search, // Pass search param
       };
 
       if (activeTab === 'in-progress') {
@@ -300,6 +315,16 @@ export function useTaskUrgencyOptions() {
     queryKey: ['taskUrgencyOptions'],
     queryFn: async () => {
       const response = await getTaskUrgencyOptions();
+      return response;
+    },
+  });
+}
+
+export function useTaskWorkshopStatusOptions() {
+  return useQuery<string[][]>({
+    queryKey: ['taskWorkshopStatusOptions'],
+    queryFn: async () => {
+      const response = await getTaskWorkshopStatusOptions();
       return response;
     },
   });

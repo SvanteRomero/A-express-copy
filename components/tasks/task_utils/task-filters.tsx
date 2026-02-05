@@ -10,8 +10,8 @@ interface TaskFiltersProps {
   setSearchQuery: (query: string) => void
   taskStatusFilter: string
   setTaskStatusFilter: (status: string) => void
-  technicianFilter: string
-  setTechnicianFilter: (technician: string) => void
+  technicianFilter: string | number
+  setTechnicianFilter: (technician: string | number) => void
   urgencyFilter: string
   setUrgencyFilter: (urgency: string) => void
   deviceStatusFilter?: string
@@ -22,7 +22,7 @@ interface TaskFiltersProps {
   uniqueTechnicians: { id: number; full_name: string }[]
   uniqueUrgencies: string[]
   uniqueDeviceStatuses?: string[]
-  uniqueLocations?: string[]
+  uniqueLocations?: { id: number; name: string }[] | string[]
   clearAllFilters: () => void
   showDeviceStatusFilter?: boolean
   showLocationFilter?: boolean
@@ -58,14 +58,14 @@ export function TaskFilters({ searchQuery, setSearchQuery, taskStatusFilter, set
           </SelectContent>
         </Select>
 
-        <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
+        <Select value={String(technicianFilter)} onValueChange={(val) => setTechnicianFilter(val === "all" ? "all" : Number(val))}>
           <SelectTrigger>
             <SelectValue placeholder="All Technicians" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Technicians</SelectItem>
             {uniqueTechnicians.map((technician) => (
-              <SelectItem key={technician.id} value={technician.full_name}>
+              <SelectItem key={technician.id} value={String(technician.id)}>
                 {technician.full_name}
               </SelectItem>
             ))}
@@ -109,11 +109,15 @@ export function TaskFilters({ searchQuery, setSearchQuery, taskStatusFilter, set
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Locations</SelectItem>
-              {uniqueLocations.map((location) => (
-                <SelectItem key={location} value={location}>
-                  {location}
-                </SelectItem>
-              ))}
+              {uniqueLocations.map((location) => {
+                const locValue = typeof location === 'string' ? location : location.name;
+                const locKey = typeof location === 'string' ? location : location.id;
+                return (
+                  <SelectItem key={locKey} value={locValue}>
+                    {locValue}
+                  </SelectItem>
+                )
+              })}
             </SelectContent>
           </Select>
         )}

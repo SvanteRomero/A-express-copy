@@ -1,36 +1,40 @@
 'use client';
 
-import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { deleteTask, addTaskPayment } from "@/lib/api-client";
+import { addTaskPayment } from "@/lib/api-client";
 import { TasksDisplay } from "@/components/tasks/task_utils/tasks-display";
-import { useTasks } from "@/hooks/use-tasks";
-import { useTechnicians } from "@/hooks/use-users";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/core/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTaskFiltering } from "@/hooks/use-task-filtering";
 
 export default function AccountantTasksPage() {
   const { user } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [page, setPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
 
-  const handleSearchChange = useCallback((query: string) => {
-    setSearchQuery(query);
-    setPage(1);
-  }, []);
-
-  const { data: tasksData, isLoading, isError, error } = useTasks({
-    unpaid_tasks: true,
+  // useTasks from hooks/use-tasks accepts unpaid_tasks via extraParams
+  const {
+    tasks,
+    count,
+    isLoading,
+    isError,
+    error,
     page,
-    page_size: 15,
-    search: searchQuery,
+    setPage,
+    searchQuery,
+    setSearchQuery,
+    serverSideFilters,
+    filterOptions,
+    technicians,
+    next,
+    previous
+  } = useServerSideTaskFiltering({
+    pageSize: 15,
+    extraParams: { unpaid_tasks: true }
   });
-  const { data: technicians } = useTechnicians();
 
   const addTaskPaymentMutation = useMutation({
     mutationFn: ({ taskId, amount, methodId }: { taskId: string; amount: number; methodId: number }) =>
@@ -52,7 +56,7 @@ export default function AccountantTasksPage() {
     addTaskPaymentMutation.mutate({ taskId, amount, methodId: paymentMethodId });
   };
 
-  if (isLoading) {
+  if (isLoading && page === 1) {
     return (
       <div className="flex-1 space-y-6 p-6">
         <div className="flex items-center justify-center">
@@ -65,16 +69,12 @@ export default function AccountantTasksPage() {
   if (isError) {
     return (
       <div className="flex-1 space-y-6 p-6">
-        <div className="text-red-500">Error: {error.message}</div>
+        <div className="text-red-500">Error: {error?.message}</div>
       </div>
     )
   }
 
-  const tasks = tasksData?.results || [];
-  const totalCount = tasksData?.count || 0;
-  const totalPages = Math.ceil(totalCount / 15);
-  const hasNext = !!tasksData?.next;
-  const hasPrevious = !!tasksData?.previous;
+  const totalPages = Math.ceil(count / 15);
 
   return (
     <div className="flex-1 space-y-6 p-6">
@@ -85,20 +85,22 @@ export default function AccountantTasksPage() {
           <p className="text-gray-600 mt-2">Tasks with outstanding payments.</p>
         </div>
         <div className="text-sm text-gray-500">
-          {totalCount} total task{totalCount !== 1 ? 's' : ''}
+          {count} total task{count !== 1 ? 's' : ''}
         </div>
       </div>
 
       {/* Main Content */}
       <TasksDisplay
         tasks={tasks}
-        technicians={technicians || []}
+        technicians={technicians}
         onRowClick={handleRowClick}
         showActions={true}
         onAddPayment={handleAddPayment}
         isAccountantView={true}
         searchQuery={searchQuery}
-        onSearchQueryChange={handleSearchChange}
+        onSearchQueryChange={setSearchQuery}
+        serverSideFilters={serverSideFilters}
+        filterOptions={filterOptions}
       />
 
       {/* Pagination Controls */}
@@ -112,7 +114,7 @@ export default function AccountantTasksPage() {
               variant="outline"
               size="sm"
               onClick={() => setPage(p => p - 1)}
-              disabled={!hasPrevious}
+              disabled={!previous}
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
               Previous
@@ -121,7 +123,7 @@ export default function AccountantTasksPage() {
               variant="outline"
               size="sm"
               onClick={() => setPage(p => p + 1)}
-              disabled={!hasNext}
+              disabled={!next}
             >
               Next
               <ChevronRight className="h-4 w-4 ml-1" />

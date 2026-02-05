@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/core/button";
 import { Plus } from "lucide-react";
@@ -14,60 +13,40 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/feedback/dialog";
-import { useTasks, useUpdateTask } from "@/hooks/use-tasks";
+import { useUpdateTask } from "@/hooks/use-tasks";
 import {
   showTaskApprovalErrorToast,
   showPickupErrorToast,
   showPaymentRequiredToast,
 } from "@/components/notifications/toast";
-import { useTechnicians } from "@/hooks/use-users";
 import { useAuth } from "@/hooks/use-auth";
-
-type PageState = {
-  "not-completed": number;
-  completed: number;
-  pickup: number;
-};
+import { useState, useCallback } from "react";
+import { useTaskFiltering } from "@/hooks/use-task-filtering";
+import Link from "next/link";
 
 export function FrontDeskTasksPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [pages, setPages] = useState<PageState>({
-    "not-completed": 1,
-    completed: 1,
-    pickup: 1,
+
+  // Use independent hooks for each tab
+  // 1. Not Completed
+  const notCompletedTasks = useTaskFiltering({
+    initialStatus: "Pending,In Progress",
+    pageSize: 10
   });
 
-  const handleSearchChange = useCallback((query: string) => {
-    setSearchQuery(query);
-    // Reset all pages to 1 when search changes
-    setPages({
-      "not-completed": 1,
-      completed: 1,
-      pickup: 1,
-    });
-  }, []);
-
-  const { data: notCompletedTasksData, isLoading: isLoadingNotCompleted } = useTasks({
-    page: pages["not-completed"],
-    status: "Pending,In Progress",
-    search: searchQuery,
+  // 2. Completed
+  const completedTasks = useTaskFiltering({
+    initialStatus: "Completed",
+    pageSize: 10
   });
 
-  const { data: completedTasksData, isLoading: isLoadingCompleted } = useTasks({
-    page: pages.completed,
-    status: "Completed",
-    search: searchQuery,
+  // 3. Ready for Pickup
+  const pickupTasks = useTaskFiltering({
+    initialStatus: "Ready for Pickup",
+    pageSize: 10
   });
 
-  const { data: pickupTasksData, isLoading: isLoadingPickup } = useTasks({
-    page: pages.pickup,
-    status: "Ready for Pickup",
-    search: searchQuery,
-  });
-
-  const { data: technicians } = useTechnicians();
   const updateTaskMutation = useUpdateTask();
   const [approvingTaskId, setApprovingTaskId] = useState<string | null>(null);
   const [isBrandModalOpen, setIsBrandModalOpen] = useState(false);
@@ -94,6 +73,9 @@ export function FrontDeskTasksPage() {
         updates,
       });
       // Toast handled via WebSocket
+      // Invalidate queries? The hook relies on useTasks which uses react-query, 
+      // so if we invalidate "tasks" key, all hooks should update.
+      // useUpdateTask should probably handle invalidation or we do it here if needed.
     } catch (error) {
       showTaskApprovalErrorToast();
     } finally {
@@ -104,13 +86,13 @@ export function FrontDeskTasksPage() {
   const handleApprove = useCallback(async (taskTitle: string) => {
     if (user) {
       // Find the task from the completed tasks data
-      const task = completedTasksData?.results?.find((t: any) => t.title === taskTitle);
+      const task = completedTasks.tasks.find((t: any) => t.title === taskTitle);
 
       if (!task) return;
 
       confirmApproval(task);
     }
-  }, [user, completedTasksData, approvingTaskId, updateTaskMutation]);
+  }, [user, completedTasks.tasks, approvingTaskId, updateTaskMutation]);
 
   const handleReject = useCallback(async (taskTitle: string, notes: string) => {
     updateTaskMutation.mutate({ id: taskTitle, updates: { status: "In Progress", note: notes, workshop_status: null } });
@@ -151,14 +133,7 @@ export function FrontDeskTasksPage() {
     alert(`Notifying ${customerName} for task ${taskTitle}`);
   }, []);
 
-  const handlePageChange = (tab: keyof PageState, direction: 'next' | 'previous') => {
-    setPages(prev => ({
-      ...prev,
-      [tab]: direction === 'next' ? prev[tab] + 1 : prev[tab] - 1,
-    }));
-  };
-
-  const isLoading = isLoadingNotCompleted || isLoadingCompleted || isLoadingPickup;
+  const isLoading = notCompletedTasks.isLoading || completedTasks.isLoading || pickupTasks.isLoading;
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-6">
@@ -183,10 +158,10 @@ export function FrontDeskTasksPage() {
             </DialogContent>
           </Dialog>
           <Button asChild className="bg-red-600 hover:bg-red-700 text-white">
-            <a href="/dashboard/tasks/new">
+            <Link href="/dashboard/tasks/new">
               <Plus className="mr-2 h-4 w-4" />
               Create New Task
-            </a>
+            </Link>
           </Button>
         </div>
       </div>
@@ -199,53 +174,59 @@ export function FrontDeskTasksPage() {
         </TabsList>
         <TabsContent value="not-completed">
           <TasksDisplay
-            tasks={notCompletedTasksData?.results || []}
-            technicians={technicians || []}
+            tasks={notCompletedTasks.tasks}
+            technicians={notCompletedTasks.technicians}
             onRowClick={handleRowClick}
             showActions={false}
             isManagerView={true}
-            searchQuery={searchQuery}
-            onSearchQueryChange={handleSearchChange}
+            searchQuery={notCompletedTasks.searchQuery}
+            onSearchQueryChange={notCompletedTasks.setSearchQuery}
+            serverSideFilters={notCompletedTasks.serverSideFilters}
+            filterOptions={notCompletedTasks.filterOptions}
           />
           <div className="flex justify-end space-x-2 mt-4">
-            <Button onClick={() => handlePageChange('not-completed', 'previous')} disabled={!notCompletedTasksData?.previous}>Previous</Button>
-            <Button onClick={() => handlePageChange('not-completed', 'next')} disabled={!notCompletedTasksData?.next}>Next</Button>
+            <Button onClick={() => notCompletedTasks.setPage(p => p - 1)} disabled={!notCompletedTasks.previous}>Previous</Button>
+            <Button onClick={() => notCompletedTasks.setPage(p => p + 1)} disabled={!notCompletedTasks.next}>Next</Button>
           </div>
         </TabsContent>
         <TabsContent value="completed">
           <TasksDisplay
-            tasks={completedTasksData?.results || []}
-            technicians={technicians || []}
+            tasks={completedTasks.tasks}
+            technicians={completedTasks.technicians}
             onRowClick={handleRowClick}
             showActions={true}
             onApprove={handleApprove}
             onReject={handleReject}
             isFrontDeskCompletedView={true}
             approvingTaskId={approvingTaskId}
-            searchQuery={searchQuery}
-            onSearchQueryChange={handleSearchChange}
+            searchQuery={completedTasks.searchQuery}
+            onSearchQueryChange={completedTasks.setSearchQuery}
+            serverSideFilters={completedTasks.serverSideFilters}
+            filterOptions={completedTasks.filterOptions}
           />
           <div className="flex justify-end space-x-2 mt-4">
-            <Button onClick={() => handlePageChange('completed', 'previous')} disabled={!completedTasksData?.previous}>Previous</Button>
-            <Button onClick={() => handlePageChange('completed', 'next')} disabled={!completedTasksData?.next}>Next</Button>
+            <Button onClick={() => completedTasks.setPage(p => p - 1)} disabled={!completedTasks.previous}>Previous</Button>
+            <Button onClick={() => completedTasks.setPage(p => p + 1)} disabled={!completedTasks.next}>Next</Button>
           </div>
         </TabsContent>
         <TabsContent value="pickup">
           <TasksDisplay
-            tasks={pickupTasksData?.results || []}
-            technicians={technicians || []}
+            tasks={pickupTasks.tasks}
+            technicians={pickupTasks.technicians}
             onRowClick={handleRowClick}
             showActions={true}
             isPickupView={true}
             onPickedUp={handlePickedUp}
             onNotifyCustomer={handleNotifyCustomer}
             pickingUpTaskId={pickingUpTaskId}
-            searchQuery={searchQuery}
-            onSearchQueryChange={handleSearchChange}
+            searchQuery={pickupTasks.searchQuery}
+            onSearchQueryChange={pickupTasks.setSearchQuery}
+            serverSideFilters={pickupTasks.serverSideFilters}
+            filterOptions={pickupTasks.filterOptions}
           />
           <div className="flex justify-end space-x-2 mt-4">
-            <Button onClick={() => handlePageChange('pickup', 'previous')} disabled={!pickupTasksData?.previous}>Previous</Button>
-            <Button onClick={() => handlePageChange('pickup', 'next')} disabled={!pickupTasksData?.next}>Next</Button>
+            <Button onClick={() => pickupTasks.setPage(p => p - 1)} disabled={!pickupTasks.previous}>Previous</Button>
+            <Button onClick={() => pickupTasks.setPage(p => p + 1)} disabled={!pickupTasks.next}>Next</Button>
           </div>
         </TabsContent>
       </Tabs>
