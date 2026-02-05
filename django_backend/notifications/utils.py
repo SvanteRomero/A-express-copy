@@ -11,6 +11,13 @@ from channels.layers import get_channel_layer
 logger = logging.getLogger(__name__)
 
 
+def generate_toast_id():
+    """
+    Generate a unique ID for toast notifications.
+    """
+    return str(uuid.uuid4())
+
+
 def broadcast_scheduler_notification(notification):
     """
     Broadcast a scheduler notification to all managers and front_desk users.
@@ -97,7 +104,7 @@ def broadcast_toast_notification(roles: list, toast_type: str, data: dict = None
     
     message_data = {
         'type': 'toast_notification',
-        'id': str(uuid.uuid4()),
+        'id': generate_toast_id(),
         'toast_type': toast_type,
         'data': data or {},
     }
@@ -175,7 +182,7 @@ def send_toast_to_user(user, toast_type: str, data: dict = None):
 
     message_data = {
         'type': 'toast_notification',
-        'id': str(uuid.uuid4()),
+        'id': generate_toast_id(),
         'toast_type': toast_type,
         'data': data or {},
     }
