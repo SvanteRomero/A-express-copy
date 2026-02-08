@@ -72,11 +72,9 @@ export function useTaskFiltering(props: UseTaskFilteringProps = {}) {
         workshop_tech_user: workshopTechUserParam,
         urgency: urgencyFilter === "all" ? undefined : urgencyFilter,
         location: locationFilter === "all" ? undefined : locationFilter,
-        workshop_status: deviceStatusFilter === "all"
-            ? undefined
-            : (props.isWorkshopContext && isFilteringBySpecificTechnician
-                ? "In Workshop"  // When filtering by specific technician, only show workshop tasks
-                : deviceStatusFilter),
+        workshop_status: (props.isWorkshopContext && isFilteringBySpecificTechnician)
+            ? "In Workshop"  // Workshop managers filtering by specific technician: only show workshop tasks
+            : (deviceStatusFilter === "all" ? undefined : deviceStatusFilter),
         exclude_status: props.excludeStatus,
         ...props.extraParams
     })
