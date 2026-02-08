@@ -26,9 +26,10 @@ interface TaskFiltersProps {
   clearAllFilters: () => void
   showDeviceStatusFilter?: boolean
   showLocationFilter?: boolean
+  showTechnicianFilter?: boolean
 }
 
-export function TaskFilters({ searchQuery, setSearchQuery, taskStatusFilter, setTaskStatusFilter, technicianFilter, setTechnicianFilter, urgencyFilter, setUrgencyFilter, deviceStatusFilter, setDeviceStatusFilter, locationFilter, setLocationFilter, uniqueStatuses, uniqueTechnicians, uniqueUrgencies, uniqueDeviceStatuses, uniqueLocations, clearAllFilters, showDeviceStatusFilter = true, showLocationFilter = false }: TaskFiltersProps) {
+export function TaskFilters({ searchQuery, setSearchQuery, taskStatusFilter, setTaskStatusFilter, technicianFilter, setTechnicianFilter, urgencyFilter, setUrgencyFilter, deviceStatusFilter, setDeviceStatusFilter, locationFilter, setLocationFilter, uniqueStatuses, uniqueTechnicians, uniqueUrgencies, uniqueDeviceStatuses, uniqueLocations, clearAllFilters, showDeviceStatusFilter = true, showLocationFilter = false, showTechnicianFilter = true }: TaskFiltersProps) {
   return (
     <div className="space-y-4">
       {/* Search Bar */}
@@ -58,19 +59,21 @@ export function TaskFilters({ searchQuery, setSearchQuery, taskStatusFilter, set
           </SelectContent>
         </Select>
 
-        <Select value={String(technicianFilter)} onValueChange={(val) => setTechnicianFilter(val === "all" ? "all" : Number(val))}>
-          <SelectTrigger>
-            <SelectValue placeholder="All Technicians" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Technicians</SelectItem>
-            {uniqueTechnicians.map((technician) => (
-              <SelectItem key={technician.id} value={String(technician.id)}>
-                {technician.full_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {showTechnicianFilter && (
+          <Select value={String(technicianFilter)} onValueChange={(val) => setTechnicianFilter(val === "all" ? "all" : Number(val))}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Technicians" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Technicians</SelectItem>
+              {uniqueTechnicians.map((technician) => (
+                <SelectItem key={technician.id} value={String(technician.id)}>
+                  {technician.full_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         <Select value={urgencyFilter} onValueChange={setUrgencyFilter}>
           <SelectTrigger>

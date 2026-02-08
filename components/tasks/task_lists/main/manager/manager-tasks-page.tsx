@@ -198,11 +198,15 @@ export function ManagerTasksPage() {
               isMyTasksTab={true}
               searchQuery={myTasks.searchQuery}
               onSearchQueryChange={myTasks.setSearchQuery}
-              serverSideFilters={{
-                ...myTasks.serverSideFilters,
-                technicianId: undefined, // Hide technician filter for My Tasks
-                setTechnicianId: undefined
-              }}
+              serverSideFilters={
+                isWorkshopManager 
+                  ? myTasks.serverSideFilters  // Workshop managers: show technician filter
+                  : {
+                      ...myTasks.serverSideFilters,
+                      technicianId: undefined,
+                      setTechnicianId: undefined  // Normal managers: hide technician filter
+                    }
+              }
               filterOptions={myTasks.filterOptions}
             />
             <div className="flex justify-end space-x-2 mt-4">

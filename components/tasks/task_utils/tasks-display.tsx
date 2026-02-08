@@ -241,6 +241,9 @@ export function TasksDisplay({
     setSortDirection(null);
   }
 
+  // Determine if technician filter should be shown
+  const showTechnicianFilter = serverSideFilters?.setTechnicianId !== undefined;
+
   useEffect(() => {
     const fetchStatusOptions = async () => {
       try {
@@ -289,6 +292,7 @@ export function TasksDisplay({
         clearAllFilters={handleClearFilters}
         showDeviceStatusFilter={!isCurrentTasks}
         showLocationFilter={isCurrentTasks}
+        showTechnicianFilter={showTechnicianFilter}
       />
 
       {isMobile ? (
