@@ -48,8 +48,8 @@ export function ManagerTasksPage() {
   // 3. My Tasks Hook (for workshop managers or general assigned)
   const isWorkshopManager = user?.is_workshop || false;
   const myTasks = useTaskFiltering({
-    initialTechnician: user?.id,
-    excludeStatus: "Completed", // usually My Tasks are active ones
+    initialTechnician: isWorkshopManager ? "all" : user?.id, // Workshop managers see all by default
+    excludeStatus: "Completed,Ready for Pickup,Picked Up", // Exclude all finished statuses
     pageSize: 15,
     isWorkshopContext: isWorkshopManager
   });
@@ -199,13 +199,13 @@ export function ManagerTasksPage() {
               searchQuery={myTasks.searchQuery}
               onSearchQueryChange={myTasks.setSearchQuery}
               serverSideFilters={
-                isWorkshopManager 
+                isWorkshopManager
                   ? myTasks.serverSideFilters  // Workshop managers: show technician filter
                   : {
-                      ...myTasks.serverSideFilters,
-                      technicianId: undefined,
-                      setTechnicianId: undefined  // Normal managers: hide technician filter
-                    }
+                    ...myTasks.serverSideFilters,
+                    technicianId: undefined,
+                    setTechnicianId: undefined  // Normal managers: hide technician filter
+                  }
               }
               filterOptions={myTasks.filterOptions}
             />
