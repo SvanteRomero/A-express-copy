@@ -16,6 +16,7 @@ export interface UseTaskFilteringProps {
     exactStatus?: string  // e.g., for "Completed" tabs
     extraParams?: Record<string, any> // For specific filters like unpaid_tasks: true
     isWorkshopContext?: boolean
+    workshopUserId?: string | number // Actual user ID for workshop managers
 }
 
 export function useTaskFiltering(props: UseTaskFilteringProps = {}) {
@@ -48,18 +49,18 @@ export function useTaskFiltering(props: UseTaskFilteringProps = {}) {
     // Construct API params
     // For workshop managers in My Tasks:
     //   - If "all" selected: use workshop_tech_user with current user ID (shows assigned + workshop queue)
-    //   - If specific technician selected: use assigned_to (shows only that technician's tasks)
+    //   - If specific technician selected: use workshop_tech_user with that technician ID (shows only workshop tasks for that technician)
     // For normal managers:
     //   - If "all" selected: no filter
     //   - If specific technician selected: use assigned_to
     const isFilteringBySpecificTechnician = technicianFilter !== "all";
 
     const assignedToParam = isFilteringBySpecificTechnician
-        ? Number(technicianFilter)  // When filtering by specific technician, use assigned_to
+        ? Number(technicianFilter)  // Filter by assigned_to for specific technician
         : undefined
 
-    const workshopTechUserParam = props.isWorkshopContext && !isFilteringBySpecificTechnician && props.initialTechnician
-        ? Number(props.initialTechnician)  // Workshop managers with "all" selected: show assigned + workshop queue
+    const workshopTechUserParam = props.isWorkshopContext && !isFilteringBySpecificTechnician && props.workshopUserId
+        ? Number(props.workshopUserId)  // Workshop managers with "all" selected: show assigned + workshop queue
         : undefined
 
     const { data: tasksData, isLoading, isError, error, refetch } = useTasks({
@@ -71,7 +72,11 @@ export function useTaskFiltering(props: UseTaskFilteringProps = {}) {
         workshop_tech_user: workshopTechUserParam,
         urgency: urgencyFilter === "all" ? undefined : urgencyFilter,
         location: locationFilter === "all" ? undefined : locationFilter,
-        workshop_status: deviceStatusFilter === "all" ? undefined : deviceStatusFilter,
+        workshop_status: deviceStatusFilter === "all"
+            ? undefined
+            : (props.isWorkshopContext && isFilteringBySpecificTechnician
+                ? "In Workshop"  // When filtering by specific technician, only show workshop tasks
+                : deviceStatusFilter),
         exclude_status: props.excludeStatus,
         ...props.extraParams
     })

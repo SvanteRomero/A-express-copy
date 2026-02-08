@@ -51,7 +51,8 @@ export function ManagerTasksPage() {
     initialTechnician: isWorkshopManager ? "all" : user?.id, // Workshop managers see all by default
     excludeStatus: "Completed,Ready for Pickup,Picked Up", // Exclude all finished statuses
     pageSize: 15,
-    isWorkshopContext: isWorkshopManager
+    isWorkshopContext: isWorkshopManager,
+    workshopUserId: isWorkshopManager ? user?.id : undefined // Pass actual user ID for workshop filter
   });
 
   // RE-visit "My Tasks" complex merging logic:
