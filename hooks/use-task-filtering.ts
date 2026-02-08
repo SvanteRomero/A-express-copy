@@ -46,8 +46,14 @@ export function useTaskFiltering(props: UseTaskFilteringProps = {}) {
         : (taskStatusFilter === "all" ? props.initialStatus : taskStatusFilter)
 
     // Construct API params
-    const assignedToParam = props.isWorkshopContext && technicianFilter !== "all"
-        ? undefined
+    // For workshop managers:
+    //   - If "all" selected: no technician filter (show all tasks)
+    //   - If specific technician selected: use workshop_tech_user (shows assigned + workshop queue)
+    // For normal managers:
+    //   - If "all" selected: no filter
+    //   - If specific technician selected: use assigned_to
+    const assignedToParam = props.isWorkshopContext
+        ? undefined  // Workshop managers never use assigned_to
         : (technicianFilter === "all" ? undefined : Number(technicianFilter))
 
     const workshopTechUserParam = props.isWorkshopContext && technicianFilter !== "all"
