@@ -10,7 +10,7 @@ import { ToastAction } from '@/components/ui/feedback/toast';
 import { approveDebt, rejectDebt } from '@/lib/api-client';
 
 interface DebtRequestData {
-    request_id: string;
+    request_id: number;  // Changed from string (UUID) to number (DB ID)
     task_id: string;
     task_title: string;
     requester_name: string;
@@ -18,7 +18,7 @@ interface DebtRequestData {
 }
 
 // Store for dismiss functions by request ID (enables global dismissal)
-const dismissFunctions = new Map<string, () => void>();
+const dismissFunctions = new Map<number, () => void>();  // Changed from string to number
 
 /**
  * Show an interactive toast for debt request approval.
@@ -84,7 +84,7 @@ export function showDebtRequestToast(
                 <span>requests to mark <span className="font-semibold">{task_title}</span> as debt</span>
             </div>
         ),
-        duration: Infinity, // Stay until dismissed
+        duration: 15000, // Auto-dismiss after 15 seconds (users can check Requests tab)
         action: (
             <div className="flex flex-col gap-1">
                 <ToastAction
@@ -113,7 +113,7 @@ export function showDebtRequestToast(
  * Dismiss a debt request toast by its request ID.
  * Called when another manager resolves the request.
  */
-export function dismissDebtRequestToast(requestId: string) {
+export function dismissDebtRequestToast(requestId: number) {  // Changed from string to number
     const dismiss = dismissFunctions.get(requestId);
     if (dismiss) {
         dismiss();

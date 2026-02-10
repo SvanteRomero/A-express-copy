@@ -202,6 +202,43 @@ export const approveTransactionRequest = (id: number) => apiClient.post(`/transa
 export const rejectTransactionRequest = (id: number) => apiClient.post(`/transaction-requests/${id}/reject/`);
 export const deleteTransactionRequest = (id: number) => apiClient.delete(`/transaction-requests/${id}/`);
 
+// ============================================================================
+// Debt Requests
+// ============================================================================
+export interface DebtRequestParams {
+  page?: number;
+  page_size?: number;
+  status?: string;
+  [key: string]: any;
+}
+
+export const getDebtRequests = async (params: DebtRequestParams = {}): Promise<PaginatedResponse<any>> => {
+  const response = await apiClient.get('/debt-requests/', { params });
+  return response.data;
+};
+
+export const approveDebtRequestFromList = (id: number) =>
+  apiClient.post(`/debt-requests/${id}/approve/`).then(res => res.data);
+
+export const rejectDebtRequestFromList = (id: number) =>
+  apiClient.post(`/debt-requests/${id}/reject/`).then(res => res.data);
+
+// ============================================================================
+// Unified Approval Requests (Read-only, shows both Transaction and Debt)
+// ============================================================================
+export interface UnifiedApprovalRequestParams {
+  page?: number;
+  page_size?: number;
+  status?: string;
+  request_type?: 'transaction' | 'debt';
+  [key: string]: any;
+}
+
+export const getUnifiedApprovalRequests = async (params: UnifiedApprovalRequestParams = {}): Promise<PaginatedResponse<any>> => {
+  const response = await apiClient.get('/unified-approval-requests/', { params });
+  return response.data;
+};
+
 // List managers for approver selection
 export const listManagers = () => apiClient.get('/list/managers/');
 
@@ -307,13 +344,13 @@ export const acknowledgeSchedulerNotification = (id: number) =>
 // Debt Request (for Front Desk/Accountant to request, Manager to approve/reject)
 export const requestDebt = (taskId: string) =>
   apiClient.post(`/tasks/${taskId}/request-debt/`).then(res => res.data);
-export const approveDebt = (taskId: string, requesterId: number, requestId: string, requesterName: string) =>
+export const approveDebt = (taskId: string, requesterId: number, requestId: number, requesterName: string) =>
   apiClient.post(`/tasks/${taskId}/approve-debt/`, {
     requester_id: requesterId,
     request_id: requestId,
     requester_name: requesterName
   }).then(res => res.data);
-export const rejectDebt = (taskId: string, requesterId: number, requestId: string) =>
+export const rejectDebt = (taskId: string, requesterId: number, requestId: number) =>
   apiClient.post(`/tasks/${taskId}/reject-debt/`, {
     requester_id: requesterId,
     request_id: requestId

@@ -9,7 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { usePayments, usePaymentMethods, usePaymentCategories, useRevenueOverview } from "@/hooks/use-payments"
 import { useAuth } from "@/hooks/use-auth"
 import { AddTransactionDialog } from "../add-transaction-dialog"
-import { TransactionRequestsList } from "../transaction-requests-list"
+import { RequestsList } from "../requests-list"
 import { FinancialSummaryPreview } from "./financial-summary-preview"
 import { PaymentsTable } from "./payments-table"
 import { RevenueStatsCards } from "./revenue-stats-cards"
@@ -189,7 +189,7 @@ export function PaymentsOverview() {
 
             {canAddTransactions && (
               <TabsContent value='requests'>
-                <TransactionRequestsList />
+                <RequestsList />
               </TabsContent>
             )}
           </Tabs>

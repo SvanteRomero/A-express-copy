@@ -104,7 +104,7 @@ export function showTransactionRequestToast(
                 <span className={`font-bold ${colorClass}`}>TSH {Number(amount).toLocaleString()}</span>
             </div>
         ),
-        duration: Infinity, // Stay until dismissed
+        duration: 15000, // Auto-dismiss after 15 seconds (users can check Requests tab)
         action: (
             <div className="flex flex-col gap-1">
                 <ToastAction

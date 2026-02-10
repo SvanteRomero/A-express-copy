@@ -16,7 +16,7 @@ def generate_debt_request_id():
     return str(uuid.uuid4())
 
 
-def broadcast_debt_request(task, requester):
+def broadcast_debt_request(task, requester, request_id):
     """
     Broadcast a debt request to managers for approval.
     Shows an interactive toast with approve/reject buttons.
@@ -24,6 +24,7 @@ def broadcast_debt_request(task, requester):
     Args:
         task: The Task instance
         requester: The User who made the request
+        request_id: The DebtRequest ID (integer from database)
     """
     channel_layer = get_channel_layer()
     
@@ -31,11 +32,9 @@ def broadcast_debt_request(task, requester):
         logger.warning("Channel layer not available - skipping debt request broadcast")
         return None
     
-    request_id = generate_debt_request_id()
-    
     data = {
         'type': 'debt_request',
-        'request_id': request_id,
+        'request_id': request_id,  # Now an integer from DebtRequest.id
         'task_id': task.title,
         'task_title': task.title,
         'requester_name': requester.get_full_name() or requester.username,

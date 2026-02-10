@@ -280,7 +280,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     def request_debt(self, request, task_id=None):
         """
         Front Desk/Accountant requests debt marking.
-        Broadcasts an interactive approval toast to all managers.
+        Creates a DebtRequest record and broadcasts to managers.
         """
         user = request.user
         if user.role not in ['Front Desk', 'Accountant']:
@@ -303,22 +303,27 @@ class TaskViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Broadcast to managers
-        from .broadcasts import broadcast_debt_request
-        request_id = broadcast_debt_request(task, user)
-        
-        if request_id:
-            return Response({'status': 'request_sent', 'request_id': request_id})
-        return Response(
-            {"error": "Failed to send debt request."},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        # Create DebtRequest record
+        from financials.models import DebtRequest
+        debt_request = DebtRequest.objects.create(
+            task=task,
+            requester=user,
+            requester_name=user.get_full_name() or user.username,
+            task_title=task.title,
+            status='Pending'
         )
+        
+        # Broadcast to managers with DB record ID
+        from .broadcasts import broadcast_debt_request
+        broadcast_debt_request(task, user, debt_request.id)
+        
+        return Response({'status': 'request_sent', 'request_id': debt_request.id})
 
     @action(detail=True, methods=['post'], url_path='approve-debt')
     def approve_debt(self, request, task_id=None):
         """
         Manager approves a debt request.
-        Marks the task as debt, logs activity, and dismisses all manager toasts.
+        Updates DebtRequest record, marks task as debt, and broadcasts resolution.
         """
         user = request.user
         if user.role != 'Manager' and not user.is_superuser:
@@ -328,14 +333,28 @@ class TaskViewSet(viewsets.ModelViewSet):
             )
         
         task = self.get_object()
-        requester_id = request.data.get('requester_id')
         request_id = request.data.get('request_id')
-        requester_name = request.data.get('requester_name', 'Unknown')
         
         if not request_id:
             return Response(
                 {"error": "request_id is required."},
                 status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get and update DebtRequest record
+        from financials.models import DebtRequest
+        try:
+            debt_request = DebtRequest.objects.get(id=request_id)
+            debt_request.status = 'Approved'
+            debt_request.approver = user
+            debt_request.save()
+            
+            requester_id = debt_request.requester.id if debt_request.requester else None
+            requester_name = debt_request.requester_name
+        except DebtRequest.DoesNotExist:
+            return Response(
+                {"error": "Debt request not found."},
+                status=status.HTTP_404_NOT_FOUND
             )
         
         # Mark task as debt
@@ -363,7 +382,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     def reject_debt(self, request, task_id=None):
         """
         Manager rejects a debt request.
-        Dismisses all manager toasts and notifies the requester.
+        Updates DebtRequest record and broadcasts resolution.
         """
         user = request.user
         if user.role != 'Manager' and not user.is_superuser:
@@ -373,13 +392,27 @@ class TaskViewSet(viewsets.ModelViewSet):
             )
         
         task = self.get_object()
-        requester_id = request.data.get('requester_id')
         request_id = request.data.get('request_id')
         
         if not request_id:
             return Response(
                 {"error": "request_id is required."},
                 status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get and update DebtRequest record
+        from financials.models import DebtRequest
+        try:
+            debt_request = DebtRequest.objects.get(id=request_id)
+            debt_request.status = 'Rejected'
+            debt_request.approver = user
+            debt_request.save()
+            
+            requester_id = debt_request.requester.id if debt_request.requester else None
+        except DebtRequest.DoesNotExist:
+            return Response(
+                {"error": "Debt request not found."},
+                status=status.HTTP_404_NOT_FOUND
             )
         
         # Dismiss toast for all managers and notify requester

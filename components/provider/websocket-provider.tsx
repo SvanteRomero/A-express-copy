@@ -24,7 +24,7 @@ import {
 } from '@/lib/websocket';
 import { showSchedulerNotificationToast } from '@/components/notifications/toast';
 import { dispatchWebSocketToast } from '@/components/notifications/toast/websocket-toasts';
-import { showTransactionRequestToast, dismissTransactionRequestToast } from '@/components/notifications/toast/transaction-request-toast';
+import { showTransactionRequestToast, dismissTransactionRequestToast } from '@/components/notifications/toast/request-toast';
 import { showDebtRequestToast, dismissDebtRequestToast } from '@/components/notifications/toast/debt-request-toast';
 
 interface WebSocketContextType {

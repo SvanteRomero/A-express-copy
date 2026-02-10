@@ -76,7 +76,7 @@ export interface TransactionRequestMessage {
 // Debt request message (from Front Desk/Accountant to Managers)
 export interface DebtRequestMessage {
     type: 'debt_request';
-    request_id: string;
+    request_id: number;  // Changed from string (UUID) to number (DB ID)
     task_id: string;
     task_title: string;
     requester_name: string;
@@ -86,7 +86,7 @@ export interface DebtRequestMessage {
 // Debt request resolved message (dismisses toast for all managers)
 export interface DebtRequestResolvedMessage {
     type: 'debt_request_resolved';
-    request_id: string;
+    request_id: number;  // Changed from string (UUID) to number (DB ID)
 }
 
 // Transaction request resolved message (dismisses toast for all managers)

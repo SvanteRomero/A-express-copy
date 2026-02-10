@@ -15,6 +15,18 @@ router.register(
     views.TransactionRequestViewSet,
     basename="transaction-request",
 )
+# Debt requests endpoint
+router.register(
+    r"debt-requests",
+    views.DebtRequestViewSet,
+    basename="debt-request",
+)
+# Unified approval requests (read-only, shows both transaction and debt requests)
+router.register(
+    r"unified-approval-requests",
+    views.UnifiedApprovalRequestViewSet,
+    basename="unified-approval-request",
+)
 # Backwards compatibility - same viewset, different URL
 router.register(
     r"expenditure-requests",

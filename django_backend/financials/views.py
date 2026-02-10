@@ -8,7 +8,9 @@ from .models import (
     PaymentMethod,
     Account,
     CostBreakdown,
+    ApprovalRequest,
     TransactionRequest,
+    DebtRequest,
     ExpenditureRequest,  # Backwards compatibility alias
 )
 from .serializers import (
@@ -17,7 +19,10 @@ from .serializers import (
     PaymentMethodSerializer,
     AccountSerializer,
     CostBreakdownSerializer,
+    ApprovalRequestSerializer,
     TransactionRequestSerializer,
+    DebtRequestSerializer,
+    UnifiedApprovalRequestSerializer,
     ExpenditureRequestSerializer,  # Backwards compatibility alias
     FinancialSummarySerializer,
 )
@@ -377,6 +382,176 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
         super().perform_destroy(instance)
         from .broadcasts import broadcast_transaction_update
         broadcast_transaction_update()
+
+
+class DebtRequestViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Debt Requests.
+    Allows Front Desk/Accountant to request debt marking, and Managers to approve/reject.
+    """
+    queryset = DebtRequest.objects.select_related('task', 'requester', 'approver', 'task__customer')
+    serializer_class = DebtRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = CustomPagination
+    
+    def get_queryset(self):
+        user = self.request.user
+        queryset = super().get_queryset()
+        
+        # Non-managers can only see their own requests
+        if not user.is_staff and user.role not in ["Manager", "Admin"]:
+            queryset = queryset.filter(requester=user)
+        
+        # Filter by status
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        return queryset.order_by("-created_at")
+    
+    def get_permissions(self):
+        if self.action in ["approve", "reject"]:
+            self.permission_classes = [IsManager]
+        elif self.action == "create":
+            self.permission_classes = [IsAdminOrManagerOrFrontDeskOrAccountant]
+        return super().get_permissions()
+    
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """Approve a debt request and mark task as debt."""
+        debt_request = self.get_object()
+        
+        if debt_request.status != DebtRequest.Status.PENDING:
+            return Response(
+                {"error": "This request has already been processed."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update request status
+        debt_request.status = DebtRequest.Status.APPROVED
+        debt_request.approver = request.user
+        debt_request.save()
+        
+        # Mark task as debt
+        debt_request.task.is_debt = True
+        debt_request.task.save(update_fields=['is_debt'])
+        
+        # Log activity
+        from Eapp.services import ActivityLogger
+        ActivityLogger.log_debt_marking(
+            debt_request.task,
+            request.user,
+            f"Debt requested by {debt_request.requester_name}, approved by {request.user.get_full_name() or request.user.username}"
+        )
+        
+        # Broadcast resolution
+        from Eapp.broadcasts import broadcast_debt_resolved
+        broadcast_debt_resolved(
+            debt_request.task,
+            approved=True,
+            approver=request.user,
+            requester_id=debt_request.requester.id if debt_request.requester else None,
+            request_id=debt_request.id
+        )
+        
+        return Response(self.get_serializer(debt_request).data)
+    
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """Reject a debt request."""
+        debt_request = self.get_object()
+        
+        if debt_request.status != DebtRequest.Status.PENDING:
+            return Response(
+                {"error": "This request has already been processed."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update request status
+        debt_request.status = DebtRequest.Status.REJECTED
+        debt_request.approver = request.user
+        debt_request.save()
+        
+        # Broadcast resolution
+        from Eapp.broadcasts import broadcast_debt_resolved
+        broadcast_debt_resolved(
+            debt_request.task,
+            approved=False,
+            approver=request.user,
+            requester_id=debt_request.requester.id if debt_request.requester else None,
+            request_id=debt_request.id
+        )
+        
+        return Response(self.get_serializer(debt_request).data)
+
+
+class UnifiedApprovalRequestViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Unified read-only view for all approval requests.
+    Returns polymorphic list of TransactionRequest and DebtRequest.
+    """
+    serializer_class = UnifiedApprovalRequestSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrManagerOrAccountant]
+    pagination_class = CustomPagination
+    
+    def get_queryset(self):
+        user = self.request.user
+        
+        # Get both types of requests
+        transaction_qs = TransactionRequest.objects.select_related(
+            'requester', 'approver', 'category', 'payment_method', 'task'
+        )
+        debt_qs = DebtRequest.objects.select_related(
+            'requester', 'approver', 'task', 'task__customer'
+        )
+        
+        # Apply user-based filtering
+        if not user.is_staff and user.role not in ["Manager", "Admin"]:
+            transaction_qs = transaction_qs.filter(requester=user)
+            debt_qs = debt_qs.filter(requester=user)
+        
+        # Apply status filter
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            transaction_qs = transaction_qs.filter(status=status_filter)
+            debt_qs = debt_qs.filter(status=status_filter)
+        
+        # Apply transaction_type filter (only affects TransactionRequests)
+        transaction_type = self.request.query_params.get("transaction_type")
+        if transaction_type:
+            transaction_qs = transaction_qs.filter(transaction_type=transaction_type)
+        
+        # Apply request_type filter
+        request_type = self.request.query_params.get("request_type")
+        if request_type == "transaction":
+            debt_qs = DebtRequest.objects.none()
+        elif request_type == "debt":
+            transaction_qs = TransactionRequest.objects.none()
+        
+        # Apply search filter
+        search = self.request.query_params.get("search")
+        if search:
+            from django.db.models import Q
+            # Search in transaction requests (description, requester name, category name)
+            transaction_qs = transaction_qs.filter(
+                Q(description__icontains=search) |
+                Q(requester_name__icontains=search) |
+                Q(category__name__icontains=search) |
+                Q(task__title__icontains=search)
+            )
+            # Search in debt requests (task title, customer name, requester name)
+            debt_qs = debt_qs.filter(
+                Q(task_title__icontains=search) |
+                Q(requester_name__icontains=search) |
+                Q(task__customer__name__icontains=search)
+            )
+        
+        # Combine and sort by created_at
+        # Note: This returns a list, not a QuerySet
+        combined = list(transaction_qs) + list(debt_qs)
+        combined.sort(key=lambda x: x.created_at, reverse=True)
+        
+        return combined
 
 
 # Backwards compatibility alias
