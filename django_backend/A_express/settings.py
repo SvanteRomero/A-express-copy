@@ -225,22 +225,28 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 # Prefer PgBouncer for connection pooling if available
 ACTIVE_DB_URL = PGBOUNCER_URL if PGBOUNCER_URL else DATABASE_URL
 
-# DEBUG: Log which database URL is being used (remove after debugging)
+# DEBUG: Log which database URL is being used
 print(f"[DB CONFIG] PGBOUNCER_URL set: {bool(PGBOUNCER_URL)}")
 print(f"[DB CONFIG] PGBOUNCER_URL value: {PGBOUNCER_URL[:50] if PGBOUNCER_URL else 'None'}...")
+print(f"[DB CONFIG] DATABASE_URL set: {bool(DATABASE_URL)}")
 print(f"[DB CONFIG] Using: {'PgBouncer' if PGBOUNCER_URL else 'Direct PostgreSQL'}")
 
 if ACTIVE_DB_URL:
     # Production: Use PostgreSQL (via PgBouncer if PGBOUNCER_URL is set)
+    # IMPORTANT: Use dj_database_url.parse() instead of .config() because .config()
+    # reads the DATABASE_URL env var directly, ignoring our PGBOUNCER_URL override.
+    # .parse() explicitly parses the URL string we provide.
     DATABASES = {
-        "default": dj_database_url.config(
-            default=ACTIVE_DB_URL,
+        "default": dj_database_url.parse(
+            ACTIVE_DB_URL,
             # Disable Django's connection pooling when using PgBouncer (conn_max_age=0)
             # Otherwise use 10-minute pooling for direct PostgreSQL connections
             conn_max_age=0 if PGBOUNCER_URL else 600,
             conn_health_checks=True,
         )
     }
+    print(f"[DB CONFIG] Parsed ENGINE: {DATABASES['default'].get('ENGINE', 'MISSING')}")
+    print(f"[DB CONFIG] Parsed HOST: {DATABASES['default'].get('HOST', 'MISSING')}")
 else:
     # Local development: Try MySQL, fallback to SQLite
     try:
