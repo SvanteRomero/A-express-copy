@@ -108,6 +108,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://127.0.0.1:8000",
     "https://*.app.github.dev",
     "https://*.railway.app",
+    "https://*.railway.internal"
 ]
 if FRONTEND_URL.startswith("https://"):
     CSRF_TRUSTED_ORIGINS.append(FRONTEND_URL)
@@ -219,23 +220,61 @@ CHANNEL_LAYERS = {
 
 # Use DATABASE_URL from Railway if available
 # Support for PgBouncer: If PGBOUNCER_URL is set, use it instead for better connection pooling
-PGBOUNCER_URL = os.environ.get("PGBOUNCER_URL")
-DATABASE_URL = os.environ.get("DATABASE_URL")
+_PGBOUNCER_RAW = os.environ.get("PGBOUNCER_URL", "")
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+
+def _build_pgbouncer_url(pgbouncer_raw, database_url):
+    """
+    Build a proper PgBouncer connection URL.
+    
+    PGBOUNCER_URL can be:
+    1. A full URL: postgresql://user:pass@host:port/db  -> use as-is
+    2. Just hostname: pgbouncer.railway.internal         -> swap host in DATABASE_URL
+    3. Hostname:port: pgbouncer.railway.internal:6432    -> swap host+port in DATABASE_URL
+    """
+    if not pgbouncer_raw:
+        return ""
+    
+    # If it already has a scheme, it's a full URL - use as-is
+    if pgbouncer_raw.startswith("postgres://") or pgbouncer_raw.startswith("postgresql://"):
+        return pgbouncer_raw
+    
+    # It's just a hostname (or host:port) - construct URL from DATABASE_URL
+    if not database_url:
+        print("[DB CONFIG] WARNING: PGBOUNCER_URL is a hostname but DATABASE_URL is not set!")
+        print("[DB CONFIG] Set PGBOUNCER_URL to a full URL like: postgresql://user:pass@host:port/dbname")
+        return ""
+    
+    from urllib.parse import urlparse, urlunparse
+    parsed = urlparse(database_url)
+    
+    # Parse host:port from pgbouncer value
+    if ":" in pgbouncer_raw:
+        new_host, new_port = pgbouncer_raw.rsplit(":", 1)
+    else:
+        new_host = pgbouncer_raw
+        new_port = "6432"  # Default PgBouncer port
+    
+    # Replace host and port in the original DATABASE_URL
+    new_netloc = f"{parsed.username}:{parsed.password}@{new_host}:{new_port}" if parsed.password else f"{parsed.username}@{new_host}:{new_port}"
+    rebuilt = urlunparse((parsed.scheme, new_netloc, parsed.path, parsed.params, parsed.query, parsed.fragment))
+    print(f"[DB CONFIG] Built PgBouncer URL from DATABASE_URL with host={new_host}, port={new_port}")
+    return rebuilt
+
+PGBOUNCER_URL = _build_pgbouncer_url(_PGBOUNCER_RAW, DATABASE_URL)
 
 # Prefer PgBouncer for connection pooling if available
 ACTIVE_DB_URL = PGBOUNCER_URL if PGBOUNCER_URL else DATABASE_URL
 
 # DEBUG: Log which database URL is being used
-print(f"[DB CONFIG] PGBOUNCER_URL set: {bool(PGBOUNCER_URL)}")
-print(f"[DB CONFIG] PGBOUNCER_URL value: {PGBOUNCER_URL[:50] if PGBOUNCER_URL else 'None'}...")
+print(f"[DB CONFIG] PGBOUNCER_URL raw: {_PGBOUNCER_RAW[:50] if _PGBOUNCER_RAW else 'None'}")
+print(f"[DB CONFIG] PGBOUNCER_URL resolved: {bool(PGBOUNCER_URL)}")
 print(f"[DB CONFIG] DATABASE_URL set: {bool(DATABASE_URL)}")
 print(f"[DB CONFIG] Using: {'PgBouncer' if PGBOUNCER_URL else 'Direct PostgreSQL'}")
 
 if ACTIVE_DB_URL:
     # Production: Use PostgreSQL (via PgBouncer if PGBOUNCER_URL is set)
-    # IMPORTANT: Use dj_database_url.parse() instead of .config() because .config()
-    # reads the DATABASE_URL env var directly, ignoring our PGBOUNCER_URL override.
-    # .parse() explicitly parses the URL string we provide.
+    # Use dj_database_url.parse() to explicitly parse the URL we provide
     DATABASES = {
         "default": dj_database_url.parse(
             ACTIVE_DB_URL,
