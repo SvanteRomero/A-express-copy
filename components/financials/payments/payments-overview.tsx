@@ -71,7 +71,7 @@ export function PaymentsOverview() {
   const hasNextPage = !!paymentsData?.next
   const hasPreviousPage = !!paymentsData?.previous
 
-  const revenuePayments = activeTab === 'revenue' ? payments.filter((p: Payment) => parseFloat(p.amount) > 0) : []
+  const revenuePayments = activeTab === 'revenue' ? payments : []
   const expenditurePayments = activeTab === 'expenditure' ? payments : []
 
   const formatCurrency = (amount: number) => {
