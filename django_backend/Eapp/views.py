@@ -351,6 +351,9 @@ class TaskViewSet(viewsets.ModelViewSet):
             
             requester_id = debt_request.requester.id if debt_request.requester else None
             requester_name = debt_request.requester_name
+            
+            # Delete the processed request - no longer needed
+            debt_request.delete()
         except DebtRequest.DoesNotExist:
             return Response(
                 {"error": "Debt request not found."},
@@ -409,6 +412,9 @@ class TaskViewSet(viewsets.ModelViewSet):
             debt_request.save()
             
             requester_id = debt_request.requester.id if debt_request.requester else None
+            
+            # Delete the rejected request - no longer needed
+            debt_request.delete()
         except DebtRequest.DoesNotExist:
             return Response(
                 {"error": "Debt request not found."},

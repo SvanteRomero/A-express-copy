@@ -427,34 +427,47 @@ class DebtRequestViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Store data before deletion
+        requester_id = debt_request.requester.id if debt_request.requester else None
+        requester_name = debt_request.requester_name
+        task = debt_request.task
+        debt_request_id = debt_request.id
+        
         # Update request status
         debt_request.status = DebtRequest.Status.APPROVED
         debt_request.approver = request.user
         debt_request.save()
         
         # Mark task as debt
-        debt_request.task.is_debt = True
-        debt_request.task.save(update_fields=['is_debt'])
+        task.is_debt = True
+        task.save(update_fields=['is_debt'])
         
         # Log activity
         from Eapp.services import ActivityLogger
         ActivityLogger.log_debt_marking(
-            debt_request.task,
+            task,
             request.user,
-            f"Debt requested by {debt_request.requester_name}, approved by {request.user.get_full_name() or request.user.username}"
+            f"Debt requested by {requester_name}, approved by {request.user.get_full_name() or request.user.username}"
         )
+        
+        # Serialize before deletion for the response
+        serializer = self.get_serializer(debt_request)
+        response_data = serializer.data
+        
+        # Delete the processed request - no longer needed
+        debt_request.delete()
         
         # Broadcast resolution
         from Eapp.broadcasts import broadcast_debt_resolved
         broadcast_debt_resolved(
-            debt_request.task,
+            task,
             approved=True,
             approver=request.user,
-            requester_id=debt_request.requester.id if debt_request.requester else None,
-            request_id=debt_request.id
+            requester_id=requester_id,
+            request_id=debt_request_id
         )
         
-        return Response(self.get_serializer(debt_request).data)
+        return Response(response_data)
     
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
@@ -467,22 +480,34 @@ class DebtRequestViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Store data before deletion
+        requester_id = debt_request.requester.id if debt_request.requester else None
+        task = debt_request.task
+        debt_request_id = debt_request.id
+        
         # Update request status
         debt_request.status = DebtRequest.Status.REJECTED
         debt_request.approver = request.user
         debt_request.save()
         
+        # Serialize before deletion for the response
+        serializer = self.get_serializer(debt_request)
+        response_data = serializer.data
+        
+        # Delete rejected request - no longer needed
+        debt_request.delete()
+        
         # Broadcast resolution
         from Eapp.broadcasts import broadcast_debt_resolved
         broadcast_debt_resolved(
-            debt_request.task,
+            task,
             approved=False,
             approver=request.user,
-            requester_id=debt_request.requester.id if debt_request.requester else None,
-            request_id=debt_request.id
+            requester_id=requester_id,
+            request_id=debt_request_id
         )
         
-        return Response(self.get_serializer(debt_request).data)
+        return Response(response_data)
 
 
 class UnifiedApprovalRequestViewSet(viewsets.ReadOnlyModelViewSet):
