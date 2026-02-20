@@ -2,6 +2,6 @@
 builder = "railpack"
 
 [deploy]
-startCommand = "python manage.py collectstatic --noinput && python manage.py migrate && python manage.py reconcile_models && python manage.py deduplicate_models&& python manage.py backfill_ready_timestamps && python manage.py create_superuser_from_env && daphne -b 0.0.0.0 -p $PORT A_express.asgi:application"
+startCommand = "python manage.py collectstatic --noinput && python manage.py migrate && python manage.py reconcile_models && python manage.py deduplicate_models && python manage.py backfill_ready_timestamps && python manage.py clear_paid_debts && python manage.py create_superuser_from_env && daphne -b 0.0.0.0 -p $PORT A_express.asgi:application"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3 
