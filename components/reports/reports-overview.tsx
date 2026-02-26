@@ -204,15 +204,21 @@ export function ReportsOverview() {
 
   return (
     <div className="flex-1 space-y-8 p-6">
-      {/* Print Tasks Button */}
-      <div className="flex justify-end">
-        <button
-          onClick={() => setShowPrintTasksModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm shadow-sm"
-        >
-          <Printer className="h-4 w-4" />
-          Print Tasks
-        </button>
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
+          <p className="text-muted-foreground">Generate and view business reports and analytics</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setShowPrintTasksModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm shadow-sm"
+          >
+            <Printer className="h-4 w-4" />
+            Print Tasks
+          </button>
+        </div>
       </div>
 
       {/* Report Categories */}
