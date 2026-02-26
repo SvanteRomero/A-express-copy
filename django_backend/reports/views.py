@@ -306,3 +306,62 @@ def get_outstanding_payments(request):
         "report": report_data, 
         "type": "outstanding_payments"
     })
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated, IsAdminOrManagerOrFrontDeskOrAccountant])
+@api_view_try_except
+def get_print_tasks(request):
+    """Get a flat list of tasks for PDF printing, filtered by date range."""
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+
+    if not start_date or not end_date:
+        return Response(
+            {"success": False, "error": "start_date and end_date are required."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    from reports.generators.base import ReportGeneratorBase
+
+    date_filter, _, duration_days, duration_desc, actual_start, actual_end = (
+        ReportGeneratorBase.get_date_filter(
+            start_date=start_date, end_date=end_date, field="date_in"
+        )
+    )
+
+    tasks = (
+        Task.objects.filter(date_filter)
+        .select_related("customer", "brand", "laptop_model", "current_location", "assigned_to")
+        .order_by("-date_in")
+    )
+
+    task_list = []
+    for t in tasks:
+        task_list.append({
+            "task_title": t.title,
+            "customer_name": t.customer.name if t.customer else "N/A",
+            "brand": t.brand.name if t.brand else "N/A",
+            "laptop_model": str(t.laptop_model) if t.laptop_model else "N/A",
+            "location": t.current_location.name if t.current_location else "N/A",
+            "status": t.status or "N/A",
+            "workshop_status": t.workshop_status or "N/A",
+            "technician": t.assigned_to.get_full_name() if t.assigned_to else "Unassigned",
+            "urgency": t.urgency or "N/A",
+            "is_debt": t.is_debt,
+        })
+
+    return Response({
+        "success": True,
+        "type": "print_tasks",
+        "report": {
+            "tasks": task_list,
+            "summary": {
+                "total_tasks": len(task_list),
+                "start_date": str(actual_start),
+                "end_date": str(actual_end),
+                "duration_days": duration_days,
+                "duration_description": duration_desc,
+            },
+        },
+    })

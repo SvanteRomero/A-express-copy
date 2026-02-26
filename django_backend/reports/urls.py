@@ -50,4 +50,9 @@ urlpatterns = [
         views.get_dashboard_data,
         name="dashboard_data",
     ),
+    path(
+        "reports/print-tasks/",
+        views.get_print_tasks,
+        name="print_tasks",
+    ),
 ]

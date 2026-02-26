@@ -4,7 +4,10 @@ import { useState, useEffect, useCallback } from "react"
 import { ReportSection } from "./report-section"
 import { financialReports, operationalReports, technicianReports, SelectedReport } from "./report-data"
 import { generatePDF } from "./utils/pdf-generator"
+import { generatePrintTasksPDF } from "./utils/generators"
 import { ReportViewerModal } from "./report-viewer-modal"
+import { PrintTasksModal } from "./print-tasks-modal"
+import { Printer } from "lucide-react"
 import { API_CONFIG } from "@/lib/config"
 
 
@@ -12,6 +15,7 @@ export function ReportsOverview() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState<string | null>(null)
   const [selectedReport, setSelectedReport] = useState<SelectedReport | null>(null)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
+  const [showPrintTasksModal, setShowPrintTasksModal] = useState(false)
 
   // Handle PDF generation
   const handleGeneratePDF = async (reportId: string) => {
@@ -166,6 +170,19 @@ export function ReportsOverview() {
     setTimeout(() => setSelectedReport(null), 300)
   }, [])
 
+  // Handle print tasks
+  const handlePrintTasks = useCallback(async (startDate: string, endDate: string) => {
+    const { apiClient } = await import('@/lib/api-client')
+    const response = await apiClient.get('/reports/print-tasks/', {
+      params: { start_date: startDate, end_date: endDate }
+    })
+    const data = response.data
+    if (!data.success || !data.report) {
+      throw new Error('Failed to fetch tasks data')
+    }
+    generatePrintTasksPDF(data.report)
+  }, [])
+
   // Escape key and backdrop click handling
   useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
@@ -187,6 +204,17 @@ export function ReportsOverview() {
 
   return (
     <div className="flex-1 space-y-8 p-6">
+      {/* Print Tasks Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowPrintTasksModal(true)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm shadow-sm"
+        >
+          <Printer className="h-4 w-4" />
+          Print Tasks
+        </button>
+      </div>
+
       {/* Report Categories */}
       <div className="space-y-8">
         <ReportSection
@@ -224,6 +252,14 @@ export function ReportsOverview() {
           onPageChange={handlePageChange}
           onSearch={handleSearch}
           reports={[...financialReports, ...operationalReports, ...technicianReports]}
+        />
+      )}
+
+      {/* Print Tasks Modal */}
+      {showPrintTasksModal && (
+        <PrintTasksModal
+          onClose={() => setShowPrintTasksModal(false)}
+          onPrint={handlePrintTasks}
         />
       )}
     </div>

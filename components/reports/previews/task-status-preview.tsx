@@ -2,32 +2,16 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table"
-import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts"
+import * as recharts from "recharts"
 
 const ChartContainer = ({ children, className }: any) => {
     return <div className={className}>{children}</div>
 }
 
 const ChartTooltip = (props: any) => {
-    return <Tooltip {...props} />
+    return <recharts.Tooltip {...props} />
 }
 
-interface TaskStatusReport {
-    statuses: {
-        name: string
-        value: number
-        color: string
-    }[]
-    summary: {
-        total_tasks: number
-        completed_tasks: number
-        in_progress_tasks: number
-    },
-    popular_brand: string;
-    popular_model: string;
-    top_brands: { brand__name: string; count: number }[];
-    top_models: { laptop_model: string; count: number }[];
-}
 
 export const TaskStatusPreview = ({ report }: { report: any }) => {
     // Use the actual data structure from your API response
@@ -96,16 +80,16 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
                     </CardHeader>
                     <CardContent>
                         <ChartContainer className="h-[300px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={topBrands}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="brand__name" />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Legend />
-                                    <Bar dataKey="count" fill="#8884d8" />
-                                </BarChart>
-                            </ResponsiveContainer>
+                            <recharts.ResponsiveContainer width="100%" height="100%">
+                                <recharts.BarChart data={topBrands}>
+                                    <recharts.CartesianGrid strokeDasharray="3 3" />
+                                    <recharts.XAxis dataKey="brand__name" />
+                                    <recharts.YAxis />
+                                    <recharts.Tooltip />
+                                    <recharts.Legend />
+                                    <recharts.Bar dataKey="count" fill="#8884d8" />
+                                </recharts.BarChart>
+                            </recharts.ResponsiveContainer>
                         </ChartContainer>
                     </CardContent>
                 </Card>
@@ -115,16 +99,16 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
                     </CardHeader>
                     <CardContent>
                         <ChartContainer className="h-[300px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={topModels}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="laptop_model" />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Legend />
-                                    <Bar dataKey="count" fill="#82ca9d" />
-                                </BarChart>
-                            </ResponsiveContainer>
+                            <recharts.ResponsiveContainer width="100%" height="100%">
+                                <recharts.BarChart data={topModels}>
+                                    <recharts.CartesianGrid strokeDasharray="3 3" />
+                                    <recharts.XAxis dataKey="laptop_model" />
+                                    <recharts.YAxis />
+                                    <recharts.Tooltip />
+                                    <recharts.Legend />
+                                    <recharts.Bar dataKey="count" fill="#82ca9d" />
+                                </recharts.BarChart>
+                            </recharts.ResponsiveContainer>
                         </ChartContainer>
                     </CardContent>
                 </Card>
@@ -137,9 +121,9 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
                     </CardHeader>
                     <CardContent>
                         <ChartContainer className="h-[300px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
+                            <recharts.ResponsiveContainer width="100%" height="100%">
+                                <recharts.PieChart>
+                                    <recharts.Pie
                                         data={statusDistribution}
                                         cx="50%"
                                         cy="50%"
@@ -149,7 +133,7 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
                                         dataKey="count"
                                     >
                                         {statusDistribution.map((entry: any, index: number) => (
-                                            <Cell
+                                            <recharts.Cell
                                                 key={`cell-${index}`}
                                                 fill={
                                                     entry.status === 'Completed' ? '#22c55e' :
@@ -160,7 +144,7 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
                                                 }
                                             />
                                         ))}
-                                    </Pie>
+                                    </recharts.Pie>
                                     <ChartTooltip
                                         content={({ active, payload }: any) => {
                                             if (active && payload && payload.length) {
@@ -177,9 +161,9 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
                                             return null
                                         }}
                                     />
-                                    <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
+                                    <recharts.Legend />
+                                </recharts.PieChart>
+                            </recharts.ResponsiveContainer>
                         </ChartContainer>
                     </CardContent>
                 </Card>
