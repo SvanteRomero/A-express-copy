@@ -158,9 +158,13 @@ const DebtsPage = () => {
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Debts</h1>
-      <p className="mb-4">Tasks that are "Picked Up" but not "Fully Paid".</p>
+    <div className="space-y-6 p-4 md:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Debts</h1>
+          <p className="text-muted-foreground">Tasks that are &quot;Picked Up&quot; but not &quot;Fully Paid&quot;</p>
+        </div>
+      </div>
       <TasksDisplay
         tasks={tasksData?.results || []}
         technicians={[]}
