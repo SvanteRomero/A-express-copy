@@ -1,14 +1,9 @@
 import os
 from datetime import datetime
-from decimal import Decimal
 
-import dj_database_url
+import psycopg2
 from django.core.management.base import BaseCommand
-from django.db.models import DecimalField, Sum, Value, CharField
-from django.db.models.functions import Coalesce
 from django.utils import timezone
-
-from financials.models import Payment
 
 
 class Command(BaseCommand):
@@ -16,16 +11,6 @@ class Command(BaseCommand):
         'Get the opening balance for any day within the payment history. '
         'The opening balance is the net sum of all payments before the given date.'
     )
-
-    def _use_public_db(self):
-        """Override default DB connection with DATABASE_PUBLIC_URL if available."""
-        public_url = os.environ.get('DATABASE_PUBLIC_URL')
-        if public_url:
-            from django.conf import settings
-            from django import db
-            db.connections.close_all()
-            settings.DATABASES['default'] = dj_database_url.parse(public_url)
-            db.connections = db.ConnectionHandler(settings.DATABASES)
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -39,9 +24,22 @@ class Command(BaseCommand):
             help='Show a breakdown of the opening balance by payment method.',
         )
 
-    def handle(self, *args, **options):
-        self._use_public_db()
+    def _get_connection(self):
+        """
+        Return a psycopg2 connection, preferring DATABASE_PUBLIC_URL
+        for local/CLI use, falling back to DATABASE_URL.
+        """
+        url = (
+            os.environ.get('DATABASE_PUBLIC_URL')
+            or os.environ.get('DATABASE_URL')
+        )
+        if not url:
+            raise RuntimeError(
+                'Neither DATABASE_PUBLIC_URL nor DATABASE_URL is set.'
+            )
+        return psycopg2.connect(url)
 
+    def handle(self, *args, **options):
         # Resolve target date
         date_str = options.get('date')
         if date_str:
@@ -55,47 +53,48 @@ class Command(BaseCommand):
         else:
             target_date = timezone.localdate()
 
-        # Query all payments before the target date
-        payments_before = Payment.objects.filter(date__lt=target_date)
-        total = payments_before.aggregate(
-            total=Coalesce(
-                Sum('amount'),
-                Value(Decimal('0'), output_field=DecimalField()),
-            )
-        )['total']
-
-        self.stdout.write(
-            self.style.SUCCESS(
-                f'Opening balance for {target_date}: {total:,.2f}'
-            )
-        )
-
-        # Optional breakdown by payment method
-        if options['breakdown']:
-            method_totals = (
-                payments_before
-                .annotate(
-                    method_label=Coalesce(
-                        'payment_method_name',
-                        Value('(No method)'),
-                        output_field=CharField(),
-                    )
+        conn = self._get_connection()
+        try:
+            with conn.cursor() as cur:
+                # Opening balance = sum of all payments before target date
+                cur.execute(
+                    'SELECT COALESCE(SUM(amount), 0) '
+                    'FROM financials_payment WHERE date < %s',
+                    [target_date],
                 )
-                .values('method_label')
-                .annotate(method_total=Sum('amount'))
-                .order_by('-method_total')
-            )
+                total = cur.fetchone()[0]
 
-            if method_totals:
-                self.stdout.write('')
-                self.stdout.write('Breakdown by payment method:')
-                for entry in method_totals:
-                    label = entry['method_label']
-                    amount = entry['method_total']
-                    self.stdout.write(f'  {label:20s} {amount:>12,.2f}')
-            else:
                 self.stdout.write(
-                    self.style.WARNING(
-                        'No payments found before this date.'
+                    self.style.SUCCESS(
+                        f'Opening balance for {target_date}: {total:,.2f}'
                     )
                 )
+
+                # Optional breakdown by payment method
+                if options['breakdown']:
+                    cur.execute(
+                        'SELECT COALESCE(payment_method_name, %(fallback)s), '
+                        '       SUM(amount) '
+                        'FROM financials_payment '
+                        'WHERE date < %(dt)s '
+                        'GROUP BY payment_method_name '
+                        'ORDER BY SUM(amount) DESC',
+                        {'dt': target_date, 'fallback': '(No method)'},
+                    )
+                    rows = cur.fetchall()
+
+                    if rows:
+                        self.stdout.write('')
+                        self.stdout.write('Breakdown by payment method:')
+                        for label, amount in rows:
+                            self.stdout.write(
+                                f'  {label:20s} {amount:>12,.2f}'
+                            )
+                    else:
+                        self.stdout.write(
+                            self.style.WARNING(
+                                'No payments found before this date.'
+                            )
+                        )
+        finally:
+            conn.close()
