@@ -25,9 +25,7 @@ class Command(BaseCommand):
             from django import db
             db.connections.close_all()
             settings.DATABASES['default'] = dj_database_url.parse(public_url)
-            # Clear the cached connection wrapper so Django re-reads settings
-            if 'default' in db.connections._connections:
-                del db.connections._connections['default']
+            db.connections = db.ConnectionHandler(settings.DATABASES)
 
     def add_arguments(self, parser):
         parser.add_argument(
