@@ -74,6 +74,8 @@ class Command(BaseCommand):
                 if options['breakdown']:
                     cur.execute(
                         'SELECT COALESCE(payment_method_name, %(fallback)s), '
+                        '       COALESCE(SUM(CASE WHEN amount > 0 THEN amount END), 0), '
+                        '       COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) END), 0), '
                         '       SUM(amount) '
                         'FROM financials_payment '
                         'WHERE date < %(dt)s '
@@ -85,10 +87,15 @@ class Command(BaseCommand):
 
                     if rows:
                         self.stdout.write('')
-                        self.stdout.write('Breakdown by payment method:')
-                        for label, amount in rows:
+                        self.stdout.write(
+                            f'  {"Method":20s} {"Revenue":>12s} '
+                            f'{"Expenditure":>12s} {"Net":>12s}'
+                        )
+                        self.stdout.write(f'  {"-" * 58}')
+                        for label, revenue, expenditure, net in rows:
                             self.stdout.write(
-                                f'  {label:20s} {amount:>12,.2f}'
+                                f'  {label:20s} {revenue:>12,.2f} '
+                                f'{expenditure:>12,.2f} {net:>12,.2f}'
                             )
                     else:
                         self.stdout.write(
