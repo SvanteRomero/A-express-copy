@@ -8,6 +8,10 @@ import { toast } from '@/hooks/use-toast';
 import type { ToastNotificationMessage } from '@/lib/websocket';
 import { isToastEnabled } from '@/components/provider/notification-preferences';
 
+// Module-level deduplication set (replaces global window.__processedToastIds)
+const processedToastIds = new Set<string>();
+const MAX_PROCESSED_IDS = 100;
+
 /**
  * Dispatch a toast notification based on WebSocket message type.
  * Called by the WebSocketProvider when a toast_notification message is received.
@@ -17,21 +21,16 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
     const { toast_type, data, id } = message;
 
     // Robust deduplication using unique message ID from server
-    if ((window as any).__processedToastIds?.has(id)) {
+    if (processedToastIds.has(id)) {
         console.warn(`[WebSocketToast] Duplicate skipped by ID: ${id}`);
         return;
     }
 
-    // Initialize storage if needed
-    if (!(window as any).__processedToastIds) {
-        (window as any).__processedToastIds = new Set();
-    }
-
     // Add to processed set and limit size
-    (window as any).__processedToastIds.add(id);
-    if ((window as any).__processedToastIds.size > 100) {
-        const iterator = (window as any).__processedToastIds.values();
-        (window as any).__processedToastIds.delete(iterator.next().value);
+    processedToastIds.add(id);
+    if (processedToastIds.size > MAX_PROCESSED_IDS) {
+        const oldest = processedToastIds.values().next().value;
+        if (oldest) processedToastIds.delete(oldest);
     }
 
     // Check if user has disabled this notification category

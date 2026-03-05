@@ -3,17 +3,15 @@ Broadcast utilities for the Eapp app.
 Handles WebSocket broadcasts for debt requests.
 """
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 import logging
-import uuid
+
+from notifications.utils import (
+    generate_toast_id,
+    get_group_for_role,
+    _send_to_groups,
+)
 
 logger = logging.getLogger(__name__)
-
-
-def generate_debt_request_id():
-    """Generate a unique ID for tracking debt request toasts."""
-    return str(uuid.uuid4())
 
 
 def broadcast_debt_request(task, requester, request_id):
@@ -26,36 +24,18 @@ def broadcast_debt_request(task, requester, request_id):
         requester: The User who made the request
         request_id: The DebtRequest ID (integer from database)
     """
-    channel_layer = get_channel_layer()
-    
-    if not channel_layer:
-        logger.warning("Channel layer not available - skipping debt request broadcast")
-        return None
-    
     data = {
         'type': 'debt_request',
-        'request_id': request_id,  # Now an integer from DebtRequest.id
+        'request_id': request_id,
         'task_id': task.title,
         'task_title': task.title,
         'requester_name': requester.get_full_name() or requester.username,
         'requester_id': requester.id,
     }
     
-    # Broadcast to managers who can approve requests
-    group_name = 'notifications_manager'
-    try:
-        async_to_sync(channel_layer.group_send)(
-            group_name,
-            {
-                'type': 'data.update',
-                'data': data,
-            }
-        )
-        logger.info(f"Broadcast debt request {request_id} for task {task.title} to managers")
-    except Exception as e:
-        logger.error(f"Failed to broadcast debt request to managers: {e}")
-        return None
-    
+    # Use data.update handler — this is a direct message, not a toast
+    _send_to_groups(['notifications_manager'], 'data.update', data)
+    logger.info(f"Broadcast debt request {request_id} for task {task.title} to managers")
     return request_id
 
 
@@ -72,33 +52,15 @@ def broadcast_debt_resolved(task, approved: bool, approver, requester_id: int, r
         requester_id: ID of the user who made the request
         request_id: The unique ID of the debt request toast
     """
-    from notifications.utils import generate_toast_id
-    
-    channel_layer = get_channel_layer()
-    
-    if not channel_layer:
-        logger.warning("Channel layer not available - skipping debt resolved broadcast")
-        return
-    
     # 1. Dismiss toast for all managers
     dismiss_data = {
         'type': 'debt_request_resolved',
         'request_id': request_id,
     }
+    _send_to_groups(['notifications_manager'], 'data.update', dismiss_data)
+    logger.info(f"Broadcast debt request dismissal for {request_id}")
     
-    try:
-        async_to_sync(channel_layer.group_send)(
-            'notifications_manager',
-            {
-                'type': 'data.update',
-                'data': dismiss_data,
-            }
-        )
-        logger.info(f"Broadcast debt request dismissal for {request_id}")
-    except Exception as e:
-        logger.error(f"Failed to broadcast debt dismissal: {e}")
-    
-    # 2. Notify the requester
+    # 2. Notify the requester via toast
     from Eapp.models import User
     try:
         requester = User.objects.get(id=requester_id)
@@ -106,16 +68,7 @@ def broadcast_debt_resolved(task, approved: bool, approver, requester_id: int, r
         logger.warning(f"Requester {requester_id} not found - skipping notification")
         return
     
-    # Map role to group name
-    role_to_group = {
-        'Front Desk': 'front_desk',
-        'Accountant': 'accountant',
-        'Technician': 'technician',
-        'Manager': 'manager',
-        'Administrator': 'admin',
-    }
-    requester_group = role_to_group.get(requester.role)
-    
+    requester_group = get_group_for_role(requester.role)
     if not requester_group:
         logger.warning(f"Unknown role {requester.role} - skipping notification")
         return
@@ -132,14 +85,10 @@ def broadcast_debt_resolved(task, approved: bool, approver, requester_id: int, r
         },
     }
     
-    try:
-        async_to_sync(channel_layer.group_send)(
-            f'notifications_{requester_group}',
-            {
-                'type': 'data.update',
-                'data': toast_data,
-            }
-        )
-        logger.info(f"Notified requester {requester.username} of debt {'approval' if approved else 'rejection'}")
-    except Exception as e:
-        logger.error(f"Failed to notify requester: {e}")
+    # Use toast.notification handler for toast messages
+    _send_to_groups(
+        [f'notifications_{requester_group}'],
+        'toast.notification',
+        toast_data
+    )
+    logger.info(f"Notified requester {requester.username} of debt {'approval' if approved else 'rejection'}")

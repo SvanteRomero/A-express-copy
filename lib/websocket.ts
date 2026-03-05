@@ -459,10 +459,16 @@ export class NotificationWebSocket {
 
     private cleanup(): void {
         this.stopPing();
+        this.stopHeartbeatMonitor();
 
         if (this.reconnectTimeout) {
             clearTimeout(this.reconnectTimeout);
             this.reconnectTimeout = null;
+        }
+
+        if (this.reconnectResetTimeout) {
+            clearTimeout(this.reconnectResetTimeout);
+            this.reconnectResetTimeout = null;
         }
 
         if (this.ws) {
