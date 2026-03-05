@@ -15,6 +15,7 @@ import {
     Clock,
     Wallet,
     Calendar,
+    AlertCircle,
 } from "lucide-react"
 import { getSystemSettings, updateSystemSettings } from "@/lib/api-client"
 import {
@@ -30,8 +31,18 @@ export function MessagingSettingsPage() {
     const [isSaving, setIsSaving] = useState(false)
 
     // SMS Trigger Toggles
+    const [autoSmsOnTaskCreation, setAutoSmsOnTaskCreation] = useState(true)
     const [autoSmsOnReadyForPickup, setAutoSmsOnReadyForPickup] = useState(true)
     const [autoSmsOnPickedUp, setAutoSmsOnPickedUp] = useState(true)
+
+    // Pickup Reminder Settings
+    const [autoPickupRemindersEnabled, setAutoPickupRemindersEnabled] = useState(false)
+    const [pickupReminderHours, setPickupReminderHours] = useState(24)
+
+    // Debt Reminder Settings
+    const [autoDebtRemindersEnabled, setAutoDebtRemindersEnabled] = useState(false)
+    const [debtReminderHours, setDebtReminderHours] = useState(72)
+    const [debtReminderMaxDays, setDebtReminderMaxDays] = useState(30)
 
     // Template Configuration
     const [storageFeePerDay, setStorageFeePerDay] = useState(3000)
@@ -43,8 +54,14 @@ export function MessagingSettingsPage() {
         const fetchSettings = async () => {
             try {
                 const settings = await getSystemSettings()
+                setAutoSmsOnTaskCreation(settings.auto_sms_on_task_creation)
                 setAutoSmsOnReadyForPickup(settings.auto_sms_on_ready_for_pickup)
                 setAutoSmsOnPickedUp(settings.auto_sms_on_picked_up)
+                setAutoPickupRemindersEnabled(settings.auto_pickup_reminders_enabled)
+                setPickupReminderHours(settings.pickup_reminder_hours)
+                setAutoDebtRemindersEnabled(settings.auto_debt_reminders_enabled)
+                setDebtReminderHours(settings.debt_reminder_hours)
+                setDebtReminderMaxDays(settings.debt_reminder_max_days)
                 setStorageFeePerDay(settings.storage_fee_per_day)
                 setPickupDeadlineDays(settings.pickup_deadline_days)
                 setLastUpdated(settings.updated_at)
@@ -62,8 +79,14 @@ export function MessagingSettingsPage() {
         setIsSaving(true)
         try {
             const updated = await updateSystemSettings({
+                auto_sms_on_task_creation: autoSmsOnTaskCreation,
                 auto_sms_on_ready_for_pickup: autoSmsOnReadyForPickup,
                 auto_sms_on_picked_up: autoSmsOnPickedUp,
+                auto_pickup_reminders_enabled: autoPickupRemindersEnabled,
+                pickup_reminder_hours: pickupReminderHours,
+                auto_debt_reminders_enabled: autoDebtRemindersEnabled,
+                debt_reminder_hours: debtReminderHours,
+                debt_reminder_max_days: debtReminderMaxDays,
                 storage_fee_per_day: storageFeePerDay,
                 pickup_deadline_days: pickupDeadlineDays,
             })
@@ -104,7 +127,7 @@ export function MessagingSettingsPage() {
                             Messaging Settings
                         </h1>
                         <p className="text-gray-600 mt-2">
-                            Configure SMS triggers, template values, and messaging behavior
+                            Configure SMS triggers, automated reminders, and template values
                         </p>
                     </div>
                 </div>
@@ -123,14 +146,34 @@ export function MessagingSettingsPage() {
                 <CardHeader>
                     <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-3">
                         <Send className="h-6 w-6 text-blue-600" />
-                        Automatic SMS Triggers
+                        SMS Notifications
                     </CardTitle>
                     <CardDescription>
-                        Control which lifecycle events automatically send SMS to customers.
-                        Task registration and reminder settings are managed in Notification Settings.
+                        Control which lifecycle events automatically send SMS to customers
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                    {/* Auto SMS on Task Creation */}
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="space-y-1">
+                            <Label className="text-base font-medium text-gray-900">
+                                Auto SMS on Task Registration
+                            </Label>
+                            <p className="text-sm text-gray-600">
+                                Automatically send an SMS to customers when a new task is created,
+                                notifying them that their device has been received and registered.
+                            </p>
+                            <p className="text-xs text-gray-500 mt-2">
+                                Message includes: Customer name, device info, registration date, job number,
+                                and pickup instructions.
+                            </p>
+                        </div>
+                        <Switch
+                            checked={autoSmsOnTaskCreation}
+                            onCheckedChange={setAutoSmsOnTaskCreation}
+                        />
+                    </div>
+
                     {/* Auto SMS on Ready for Pickup */}
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                         <div className="space-y-1">
@@ -138,12 +181,12 @@ export function MessagingSettingsPage() {
                                 Auto SMS on Ready for Pickup
                             </Label>
                             <p className="text-sm text-gray-600">
-                                Automatically send an SMS to customers when their task is approved and
-                                ready for pickup. The message varies based on whether the repair was
+                                Automatically send an SMS when a task is approved and
+                                ready for pickup. Message varies based on whether the repair was
                                 solved or not solved.
                             </p>
                             <p className="text-xs text-gray-500 mt-2">
-                                Message includes: Customer name, device info, job number, cost,
+                                Includes: Customer name, device info, job number, cost,
                                 pickup deadline, and storage fee.
                             </p>
                         </div>
@@ -164,14 +207,123 @@ export function MessagingSettingsPage() {
                                 Sends a thank-you message for normal pickups, or a debt reminder
                                 if there&apos;s an outstanding balance.
                             </p>
-                            <p className="text-xs text-gray-500 mt-2">
-                                Normal pickup: Thank you message. Debt pickup: Outstanding balance reminder.
-                            </p>
                         </div>
                         <Switch
                             checked={autoSmsOnPickedUp}
                             onCheckedChange={setAutoSmsOnPickedUp}
                         />
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Automated Reminders */}
+            <Card className="border-gray-200">
+                <CardHeader>
+                    <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-3">
+                        <Clock className="h-6 w-6 text-purple-600" />
+                        Automated Reminders
+                    </CardTitle>
+                    <CardDescription>
+                        Configure scheduled SMS reminders sent automatically by the system
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {/* Auto Pickup Reminders */}
+                    <div className="p-4 bg-gray-50 rounded-lg space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <Label className="text-base font-medium text-gray-900">
+                                    Automatic Pickup Reminders
+                                </Label>
+                                <p className="text-sm text-gray-600">
+                                    Automatically send reminder SMS to customers whose tasks are ready
+                                    for pickup but haven&apos;t been collected yet.
+                                </p>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Reminds customers of the pickup deadline and storage fees.
+                                </p>
+                            </div>
+                            <Switch
+                                checked={autoPickupRemindersEnabled}
+                                onCheckedChange={setAutoPickupRemindersEnabled}
+                            />
+                        </div>
+
+                        {autoPickupRemindersEnabled && (
+                            <div className="flex items-center gap-3 pt-3 border-t border-gray-200">
+                                <Clock className="h-5 w-5 text-gray-500" />
+                                <Label className="text-sm text-gray-700">
+                                    Send reminder every
+                                </Label>
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    max={168}
+                                    value={pickupReminderHours}
+                                    onChange={(e) => setPickupReminderHours(parseInt(e.target.value) || 24)}
+                                    className="w-20 text-center"
+                                />
+                                <span className="text-sm text-gray-700">hours</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Auto Debt Reminders */}
+                    <div className="p-4 bg-amber-50 rounded-lg space-y-4 border border-amber-200">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <Label className="text-base font-medium text-gray-900 flex items-center gap-2">
+                                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                                    Automatic Debt Reminders
+                                </Label>
+                                <p className="text-sm text-gray-600">
+                                    Automatically send reminder SMS to customers who have outstanding
+                                    debts (picked up devices without full payment).
+                                </p>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Reminds customers of their outstanding balance.
+                                </p>
+                            </div>
+                            <Switch
+                                checked={autoDebtRemindersEnabled}
+                                onCheckedChange={setAutoDebtRemindersEnabled}
+                            />
+                        </div>
+
+                        {autoDebtRemindersEnabled && (
+                            <div className="space-y-3 pt-3 border-t border-amber-200">
+                                <div className="flex items-center gap-3">
+                                    <Clock className="h-5 w-5 text-gray-500" />
+                                    <Label className="text-sm text-gray-700">
+                                        Send reminder every
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        max={720}
+                                        value={debtReminderHours}
+                                        onChange={(e) => setDebtReminderHours(parseInt(e.target.value) || 72)}
+                                        className="w-20 text-center"
+                                    />
+                                    <span className="text-sm text-gray-700">hours</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <AlertCircle className="h-5 w-5 text-gray-500" />
+                                    <Label className="text-sm text-gray-700">
+                                        Stop reminders after
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        max={365}
+                                        value={debtReminderMaxDays}
+                                        onChange={(e) => setDebtReminderMaxDays(parseInt(e.target.value) || 30)}
+                                        className="w-20 text-center"
+                                    />
+                                    <span className="text-sm text-gray-700">days since pickup</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>
@@ -184,7 +336,7 @@ export function MessagingSettingsPage() {
                         Template Values
                     </CardTitle>
                     <CardDescription>
-                        Configure values used in SMS message templates. Changes here will be
+                        Configure values used in SMS message templates. Changes are
                         reflected in all outgoing messages.
                     </CardDescription>
                 </CardHeader>
