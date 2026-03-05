@@ -1,6 +1,8 @@
+import os
 from datetime import datetime
 from decimal import Decimal
 
+import dj_database_url
 from django.core.management.base import BaseCommand
 from django.db.models import DecimalField, Sum, Value, CharField
 from django.db.models.functions import Coalesce
@@ -15,6 +17,15 @@ class Command(BaseCommand):
         'The opening balance is the net sum of all payments before the given date.'
     )
 
+    def _use_public_db(self):
+        """Override default DB connection with DATABASE_PUBLIC_URL if available."""
+        public_url = os.environ.get('DATABASE_PUBLIC_URL')
+        if public_url:
+            from django.conf import settings
+            settings.DATABASES['default'] = dj_database_url.parse(public_url)
+            from django import db
+            db.connections.close_all()
+
     def add_arguments(self, parser):
         parser.add_argument(
             '--date',
@@ -28,6 +39,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        self._use_public_db()
+
         # Resolve target date
         date_str = options.get('date')
         if date_str:
