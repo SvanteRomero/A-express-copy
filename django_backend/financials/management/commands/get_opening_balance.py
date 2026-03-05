@@ -1,7 +1,8 @@
 from datetime import datetime
+from decimal import Decimal
 
 from django.core.management.base import BaseCommand
-from django.db.models import Sum, Value, CharField
+from django.db.models import DecimalField, Sum, Value, CharField
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -43,7 +44,10 @@ class Command(BaseCommand):
         # Query all payments before the target date
         payments_before = Payment.objects.filter(date__lt=target_date)
         total = payments_before.aggregate(
-            total=Coalesce(Sum('amount'), 0)
+            total=Coalesce(
+                Sum('amount'),
+                Value(Decimal('0'), output_field=DecimalField()),
+            )
         )['total']
 
         self.stdout.write(
