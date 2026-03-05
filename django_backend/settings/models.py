@@ -48,6 +48,26 @@ class SystemSettings(models.Model):
         help_text='Stop sending reminders after this many days since pickup'
     )
     
+    # SMS Trigger Toggles
+    auto_sms_on_ready_for_pickup = models.BooleanField(
+        default=True,
+        help_text='Automatically send SMS when task is approved/ready for pickup'
+    )
+    auto_sms_on_picked_up = models.BooleanField(
+        default=True,
+        help_text='Automatically send SMS when task is picked up (thank you / debt reminder)'
+    )
+    
+    # Configurable Template Values
+    storage_fee_per_day = models.PositiveIntegerField(
+        default=3000,
+        help_text='Daily storage fee in TSH, used in SMS templates'
+    )
+    pickup_deadline_days = models.PositiveIntegerField(
+        default=7,
+        help_text='Number of days customers have to pick up their devices'
+    )
+    
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

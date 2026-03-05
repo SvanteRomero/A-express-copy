@@ -14,6 +14,10 @@ class SystemSettingsSerializer(serializers.ModelSerializer):
             'auto_debt_reminders_enabled',
             'debt_reminder_hours',
             'debt_reminder_max_days',
+            'auto_sms_on_ready_for_pickup',
+            'auto_sms_on_picked_up',
+            'storage_fee_per_day',
+            'pickup_deadline_days',
             'updated_at'
         ]
         read_only_fields = ['updated_at']

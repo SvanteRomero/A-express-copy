@@ -321,6 +321,10 @@ export interface SystemSettings {
   auto_debt_reminders_enabled: boolean;
   debt_reminder_hours: number;
   debt_reminder_max_days: number;
+  auto_sms_on_ready_for_pickup: boolean;
+  auto_sms_on_picked_up: boolean;
+  storage_fee_per_day: number;
+  pickup_deadline_days: number;
   updated_at: string;
 }
 export const getSystemSettings = () => apiClient.get<SystemSettings>('/system-settings/').then(res => res.data);

@@ -45,6 +45,14 @@ class MessageBuilder:
     def company_phones(self) -> list:
         return self.system_settings.company_phone_numbers or []
     
+    @property
+    def storage_fee(self) -> int:
+        return self.system_settings.storage_fee_per_day or 3000
+    
+    @property
+    def pickup_deadline_days(self) -> int:
+        return self.system_settings.pickup_deadline_days or 7
+    
     def get_device_name(self) -> str:
         """Build device name from brand and model."""
         device_parts = []
@@ -80,13 +88,13 @@ class MessageBuilder:
         return f"{outstanding:,.0f}"
     
     def get_hours_remaining(self) -> str:
-        """Calculate hours remaining until 7-day deadline from when task was approved."""
+        """Calculate hours remaining until pickup deadline from when task was approved."""
         approved_at = self.task.approved_at
         if not approved_at:
             return "N/A"
         
-        # 7-day deadline in hours
-        deadline_hours = 7 * 24  # 168 hours
+        # Configurable deadline in hours
+        deadline_hours = self.pickup_deadline_days * 24
         
         # Hours elapsed since ready
         now = timezone.now()
@@ -115,6 +123,8 @@ class MessageBuilder:
         message = message.replace('{company_name}', self.company_name)
         message = message.replace('{status}', self.task.status or '')
         message = message.replace('{hours_remaining}', self.get_hours_remaining())
+        message = message.replace('{storage_fee}', f'{self.storage_fee:,}')
+        message = message.replace('{pickup_deadline_days}', str(self.pickup_deadline_days))
         return message
     
     @staticmethod
@@ -136,8 +146,8 @@ class MessageBuilder:
             f"na kusajiliwa rasmi tarehe {date_str} (Job No.: {self.task.title})."
             f"{device_notes_section} "
             f"Pindi utakapopokea meseji ya kukamilika au kutokamilika kwa huduma, "
-            f"chukua kifaa ndani ya siku 7; baada ya hapo, gharama ya uhifadhi "
-            f"TSH 3,000/siku itatozwa.{self.get_contact_info()} Asante, {self.company_name}."
+            f"chukua kifaa ndani ya siku {self.pickup_deadline_days}; baada ya hapo, gharama ya uhifadhi "
+            f"TSH {self.storage_fee:,}/siku itatozwa.{self.get_contact_info()} Asante, {self.company_name}."
         )
         return self.sanitize(message)
     

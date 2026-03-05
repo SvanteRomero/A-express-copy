@@ -75,20 +75,23 @@ class TaskNotificationHandler:
         """
         sms_result = {'success': False, 'phone': None}
         
-        # 1. Send SMS
+        # 1. Send SMS (if enabled)
         try:
+            from settings.models import SystemSettings
             from messaging.services import send_ready_for_pickup_sms
             from common.encryption import decrypt_value
             
-            task.refresh_from_db()
-            customer = task.customer
-            if customer:
-                customer.refresh_from_db()
-                primary_phone = customer.phone_numbers.first()
-                if primary_phone:
-                    phone_number = decrypt_value(primary_phone.phone_number)
-                    result = send_ready_for_pickup_sms(task, phone_number, user)
-                    sms_result = {'success': result.get('success', False), 'phone': result.get('phone')}
+            system_settings = SystemSettings.get_settings()
+            if system_settings.auto_sms_on_ready_for_pickup:
+                task.refresh_from_db()
+                customer = task.customer
+                if customer:
+                    customer.refresh_from_db()
+                    primary_phone = customer.phone_numbers.first()
+                    if primary_phone:
+                        phone_number = decrypt_value(primary_phone.phone_number)
+                        result = send_ready_for_pickup_sms(task, phone_number, user)
+                        sms_result = {'success': result.get('success', False), 'phone': result.get('phone')}
         except Exception as e:
             logger.error(f"Error sending ready for pickup SMS: {e}")
 
@@ -113,20 +116,23 @@ class TaskNotificationHandler:
         """
         sms_result = {'success': False, 'phone': None}
         
-        # 1. Send SMS
+        # 1. Send SMS (if enabled)
         try:
+            from settings.models import SystemSettings
             from messaging.services import send_picked_up_sms
             from common.encryption import decrypt_value
             
-            task.refresh_from_db()
-            customer = task.customer
-            if customer:
-                customer.refresh_from_db()
-                primary_phone = customer.phone_numbers.first()
-                if primary_phone:
-                    phone_number = decrypt_value(primary_phone.phone_number)
-                    result = send_picked_up_sms(task, phone_number, user)
-                    sms_result = {'success': result.get('success', False), 'phone': result.get('phone')}
+            system_settings = SystemSettings.get_settings()
+            if system_settings.auto_sms_on_picked_up:
+                task.refresh_from_db()
+                customer = task.customer
+                if customer:
+                    customer.refresh_from_db()
+                    primary_phone = customer.phone_numbers.first()
+                    if primary_phone:
+                        phone_number = decrypt_value(primary_phone.phone_number)
+                        result = send_picked_up_sms(task, phone_number, user)
+                        sms_result = {'success': result.get('success', False), 'phone': result.get('phone')}
         except Exception as e:
             logger.error(f"Error sending picked up SMS: {e}")
 

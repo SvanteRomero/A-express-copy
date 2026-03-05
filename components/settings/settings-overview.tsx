@@ -18,6 +18,7 @@ import {
   Clock,
   Lock,
   Activity,
+  MessageSquare,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/feedback/dialog";
@@ -62,6 +63,14 @@ const settingsCategories: SettingCard[] = [
     description: "Configure email alerts, SMS notifications, and system alerts",
     icon: Bell,
     href: "/dashboard/settings/notifications",
+    managerAccess: true,
+  },
+  {
+    id: "messaging",
+    title: "Messaging Settings",
+    description: "Configure SMS triggers, template values, and messaging behavior",
+    icon: MessageSquare,
+    href: "/dashboard/settings/messaging",
     managerAccess: true,
   },
   {

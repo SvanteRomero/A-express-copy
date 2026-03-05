@@ -22,7 +22,7 @@ DEFAULT_MESSAGE_TEMPLATES = [
         'content': (
             "Habari {customer}, kifaa chako {device} (Job No.: {taskId}) {status}. "
             "Tatizo: {DESCRIPTION}. Gharama: TSH {amount}. "
-            "Tafadhali chukua ndani ya siku 7.{contact_info} – {company_name}."
+            "Tafadhali chukua ndani ya siku {pickup_deadline_days}.{contact_info} – {company_name}."
         ),
         'is_default': True
     },
@@ -42,14 +42,14 @@ DEFAULT_MESSAGE_TEMPLATES = [
 TEMPLATE_READY_SOLVED = (
     "Habari {customer}, kifaa chako {device} iliyosajiliwa kwenye mfumo wetu (Job No.: {taskId}). "
     "Kompyuta yako imefanyiwa kazi, IMEPONA na ipo tayari kuchukuliwa, na gharama yake ni TSH {amount}. "
-    "Unatakiwa kuichukua ndani ya siku 7 kuanzia leo; baada ya hapo, utatozwa gharama za uhifadhi TSH 3,000/siku. "
+    "Unatakiwa kuichukua ndani ya siku {pickup_deadline_days} kuanzia leo; baada ya hapo, utatozwa gharama za uhifadhi TSH {storage_fee}/siku. "
     "Asante kwa kushirikiana,{contact_info} – {company_name}."
 )
 
 TEMPLATE_READY_NOT_SOLVED = (
     "Habari {customer}, kifaa chako {device} imeyosajiliwa kwenye mfumo wetu (Job No.: {taskId}). "
     "Kompyuta yako imefanyiwa kazi, HAIJAPONA na ipo tayari kuchukuliwa. "
-    "Unatakiwa kuichukua ndani ya siku 7 kuanzia leo; baada ya hapo, utatozwa gharama za uhifadhi TSH 3,000/siku. "
+    "Unatakiwa kuichukua ndani ya siku {pickup_deadline_days} kuanzia leo; baada ya hapo, utatozwa gharama za uhifadhi TSH {storage_fee}/siku. "
     "Asante kwa kushirikiana,{contact_info} – {company_name}."
 )
 
@@ -69,8 +69,8 @@ TEMPLATE_PICKED_UP_DEBT = (
 TEMPLATE_PICKUP_REMINDER = (
     "Habari {customer}, tunakukumbusha kuwa kifaa chako {device} "
     "(Job No.: {taskId}) kipo tayari kuchukuliwa. "
-    "Umebakiwa na saa {hours_remaining} kabla ya muda wa siku 7 kumalizika; "
-    "baada ya hapo, gharama ya uhifadhi TSH 3,000/siku itatozwa."
+    "Umebakiwa na saa {hours_remaining} kabla ya muda wa siku {pickup_deadline_days} kumalizika; "
+    "baada ya hapo, gharama ya uhifadhi TSH {storage_fee}/siku itatozwa."
     "{contact_info} – {company_name}."
 )
 

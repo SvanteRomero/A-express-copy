@@ -361,6 +361,10 @@ def bulk_send_sms(request):
         
         final_message = final_message.replace('{company_name}', company_name)
         final_message = final_message.replace('{contact_info}', contact_info_str)
+        
+        # Configurable template values from settings
+        final_message = final_message.replace('{storage_fee}', f'{system_settings.storage_fee_per_day:,}')
+        final_message = final_message.replace('{pickup_deadline_days}', str(system_settings.pickup_deadline_days))
 
         # Use specific phone number if provided, otherwise default fallback (shouldn't happen with new UI)
         if not phone_number:
