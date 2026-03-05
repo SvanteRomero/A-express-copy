@@ -22,9 +22,12 @@ class Command(BaseCommand):
         public_url = os.environ.get('DATABASE_PUBLIC_URL')
         if public_url:
             from django.conf import settings
-            settings.DATABASES['default'] = dj_database_url.parse(public_url)
             from django import db
             db.connections.close_all()
+            settings.DATABASES['default'] = dj_database_url.parse(public_url)
+            # Clear the cached connection wrapper so Django re-reads settings
+            if 'default' in db.connections._connections:
+                del db.connections._connections['default']
 
     def add_arguments(self, parser):
         parser.add_argument(
