@@ -26,6 +26,7 @@ import { showSchedulerNotificationToast } from '@/components/notifications/toast
 import { dispatchWebSocketToast } from '@/components/notifications/toast/websocket-toasts';
 import { showTransactionRequestToast, dismissTransactionRequestToast } from '@/components/notifications/toast/request-toast';
 import { showDebtRequestToast, dismissDebtRequestToast } from '@/components/notifications/toast/debt-request-toast';
+import { isToastEnabled } from '@/components/provider/notification-preferences';
 
 interface WebSocketContextType {
     isConnected: boolean;
@@ -62,19 +63,20 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
         setLastMessage(message);
 
-        // Handle scheduler notifications - show toast
+        // Handle scheduler notifications - show toast (if category enabled)
         if (message.type === 'scheduler_notification') {
             const notification = message as SchedulerNotificationMessage;
-            // Convert to the format expected by showSchedulerNotificationToast
-            showSchedulerNotificationToast({
-                id: Date.now(), // Generate a temporary ID
-                job_type: notification.job_type,
-                tasks_found: notification.tasks_found,
-                messages_sent: notification.messages_sent,
-                messages_failed: notification.messages_failed,
-                failure_details: notification.failure_details,
-                created_at: notification.created_at,
-            });
+            if (isToastEnabled(notification.job_type)) {
+                showSchedulerNotificationToast({
+                    id: Date.now(),
+                    job_type: notification.job_type,
+                    tasks_found: notification.tasks_found,
+                    messages_sent: notification.messages_sent,
+                    messages_failed: notification.messages_failed,
+                    failure_details: notification.failure_details,
+                    created_at: notification.created_at,
+                });
+            }
         }
 
         // Handle toast notifications - dispatch to appropriate toast
@@ -149,10 +151,13 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
                 return;
             }
 
-            showTransactionRequestToast(data, () => {
-                currentQueryClient.invalidateQueries({ queryKey: ['transactionRequests'] });
-                currentQueryClient.invalidateQueries({ queryKey: ['expenditureRequests'] });
-            });
+            // Check notification preferences
+            if (isToastEnabled('transaction_request')) {
+                showTransactionRequestToast(data, () => {
+                    currentQueryClient.invalidateQueries({ queryKey: ['transactionRequests'] });
+                    currentQueryClient.invalidateQueries({ queryKey: ['expenditureRequests'] });
+                });
+            }
         }
 
         // Handle debt request notifications - show interactive toast to managers
@@ -164,10 +169,13 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
                 return;
             }
 
-            showDebtRequestToast(data, () => {
-                currentQueryClient.invalidateQueries({ queryKey: ['tasks'] });
-                currentQueryClient.invalidateQueries({ queryKey: ['task', data.task_id] });
-            });
+            // Check notification preferences
+            if (isToastEnabled('debt_request')) {
+                showDebtRequestToast(data, () => {
+                    currentQueryClient.invalidateQueries({ queryKey: ['tasks'] });
+                    currentQueryClient.invalidateQueries({ queryKey: ['task', data.task_id] });
+                });
+            }
         }
 
         // Handle debt request resolved - dismiss toast for all managers

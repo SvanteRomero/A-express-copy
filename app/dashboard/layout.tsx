@@ -4,6 +4,7 @@ import type React from "react"
 import { SidebarProvider, SidebarInset } from "@/components/ui/layout/sidebar"
 import { AppSidebar } from "@/components/dashboard/layouts/app-sidebar"
 import { DashboardHeader } from "@/components/dashboard/layouts/dashboard-header"
+import { NotificationPreferencesProvider } from "@/components/provider/notification-preferences"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
@@ -35,12 +36,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
 
     return (
-        <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset>
-                <DashboardHeader />
-                <main className="flex-1 overflow-auto">{children}</main>
-            </SidebarInset>
-        </SidebarProvider>
+        <NotificationPreferencesProvider>
+            <SidebarProvider>
+                <AppSidebar />
+                <SidebarInset>
+                    <DashboardHeader />
+                    <main className="flex-1 overflow-auto">{children}</main>
+                </SidebarInset>
+            </SidebarProvider>
+        </NotificationPreferencesProvider>
     )
 }
+

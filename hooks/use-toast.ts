@@ -135,18 +135,28 @@ function dispatch(action: Action) {
   })
 }
 
-type Toast = Omit<ToasterToast, "id">
+type Toast = Omit<ToasterToast, "id"> & { toastType?: string }
 
-function toast({ playSound = false, ...props }: Toast) {
+function playNotificationSound() {
+  try {
+    const audio = new Audio("/notification.wav")
+    audio.play().catch((error) => console.error("Failed to play notification sound:", error))
+  } catch (error) {
+    console.error("Audio initialization failed:", error)
+  }
+}
+
+function toast({ playSound = false, toastType, ...props }: Toast) {
   const id = genId()
 
-  // Only play sound if explicitly requested (for financial toasts)
+  // Play sound if: explicitly requested OR if preferences say this toast type should play sound
   if (playSound) {
-    try {
-      const audio = new Audio("/notification.wav")
-      audio.play().catch((error) => console.error("Failed to play notification sound:", error))
-    } catch (error) {
-      console.error("Audio initialization failed:", error)
+    playNotificationSound()
+  } else if (toastType) {
+    // Lazy import to avoid circular dependency
+    const { shouldPlaySoundForToastType } = require('@/components/provider/notification-preferences')
+    if (shouldPlaySoundForToastType(toastType)) {
+      playNotificationSound()
     }
   }
 

@@ -60,7 +60,7 @@ const settingsCategories: SettingCard[] = [
   {
     id: "notifications",
     title: "Notification Settings",
-    description: "Configure email alerts, SMS notifications, and system alerts",
+    description: "Manage toast notification visibility and sound preferences per category",
     icon: Bell,
     href: "/dashboard/settings/notifications",
     managerAccess: true,

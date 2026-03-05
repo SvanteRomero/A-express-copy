@@ -1,14 +1,17 @@
 /**
  * WebSocket toast dispatcher - maps server-sent toast messages to toast functions.
  * This module bridges WebSocket notifications with the centralized toast system.
+ * Respects user notification preferences from NotificationPreferencesProvider.
  */
 
 import { toast } from '@/hooks/use-toast';
 import type { ToastNotificationMessage } from '@/lib/websocket';
+import { isToastEnabled } from '@/components/provider/notification-preferences';
 
 /**
  * Dispatch a toast notification based on WebSocket message type.
  * Called by the WebSocketProvider when a toast_notification message is received.
+ * Checks user notification preferences before showing the toast.
  */
 export function dispatchWebSocketToast(message: ToastNotificationMessage) {
     const { toast_type, data, id } = message;
@@ -31,12 +34,18 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
         (window as any).__processedToastIds.delete(iterator.next().value);
     }
 
+    // Check if user has disabled this notification category
+    if (!isToastEnabled(toast_type)) {
+        return;
+    }
+
     switch (toast_type) {
         case 'task_created':
             toast({
                 title: '📋 New Task Created',
                 description: `Task ${data.task_title} for ${data.customer_name}`,
                 className: 'bg-blue-600 text-white border-blue-600',
+                toastType: toast_type,
             });
             break;
 
@@ -51,6 +60,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '✅ Task Approved',
                 description,
                 className: 'bg-green-600 text-white border-green-600',
+                toastType: toast_type,
             });
             break;
         }
@@ -66,6 +76,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
             toast({
                 title: '📦 Task Picked Up',
                 description,
+                toastType: toast_type,
             });
             break;
         }
@@ -75,6 +86,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '💰 Payment Added',
                 description: `TSH ${data.amount} added to ${data.task_title}`,
                 className: 'bg-green-600 text-white border-green-600',
+                toastType: toast_type,
             });
             break;
 
@@ -85,6 +97,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
             toast({
                 title: '🔄 Task Updated',
                 description: `${data.task_title} was modified${fieldsInfo}`,
+                toastType: toast_type,
             });
             break;
 
@@ -93,6 +106,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '🛠️ Task Completed',
                 description: `${data.task_title} completed by ${data.technician_name}`,
                 className: 'bg-purple-600 text-white border-purple-600',
+                toastType: toast_type,
             });
             break;
 
@@ -101,6 +115,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '🔧 New Workshop Task',
                 description: `${data.task_title} sent to workshop by ${data.sender_name}`,
                 className: 'bg-indigo-600 text-white border-indigo-600',
+                toastType: toast_type,
             });
             break;
 
@@ -109,6 +124,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '✅ Workshop Task Solved',
                 description: `${data.task_title} solved by workshop`,
                 className: 'bg-green-600 text-white border-green-600',
+                toastType: toast_type,
             });
             break;
 
@@ -117,6 +133,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '⚠️ Workshop Task Not Solved',
                 description: `${data.task_title} returned by workshop`,
                 className: 'bg-orange-600 text-white border-orange-600',
+                toastType: toast_type,
             });
             break;
 
@@ -125,6 +142,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '📌 New Task Assignment',
                 description: `${data.task_title} assigned to you by ${data.assigner_name}`,
                 className: 'bg-blue-600 text-white border-blue-600',
+                toastType: toast_type,
             });
             break;
 
@@ -133,6 +151,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '💳 Payment Method Created',
                 description: `${data.payment_method_name} created by ${data.user_name}`,
                 className: 'bg-green-600 text-white border-green-600',
+                toastType: toast_type,
             });
             break;
 
@@ -140,6 +159,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
             toast({
                 title: '💳 Payment Method Updated',
                 description: `${data.payment_method_name} updated by ${data.user_name}`,
+                toastType: toast_type,
             });
             break;
 
@@ -148,6 +168,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '🗑️ Payment Method Deleted',
                 description: `${data.payment_method_name} deleted by ${data.user_name}`,
                 className: 'bg-red-600 text-white border-red-600',
+                toastType: toast_type,
             });
             break;
 
@@ -156,6 +177,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '✅ Debt Request Approved',
                 description: `${data.task_title} marked as debt by ${data.approver_name}`,
                 className: 'bg-green-600 text-white border-green-600',
+                toastType: toast_type,
             });
             break;
 
@@ -164,6 +186,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '❌ Debt Request Rejected',
                 description: `${data.task_title} was not marked as debt`,
                 className: 'bg-red-600 text-white border-red-600',
+                toastType: toast_type,
             });
             break;
 
@@ -172,6 +195,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '⚠️ Task Terminated',
                 description: `${data.task_title} ready for pickup (terminated by ${data.user_name})`,
                 className: 'bg-orange-600 text-white border-orange-600',
+                toastType: toast_type,
             });
             break;
 
@@ -180,6 +204,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '🔍 Verification Required',
                 description: `${data.task_title} marked "${data.workshop_status}" by workshop - please verify`,
                 className: 'bg-orange-600 text-white border-orange-600',
+                toastType: toast_type,
             });
             break;
 
@@ -188,6 +213,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '↩️ Workshop Do-Over Required',
                 description: `${data.task_title} disputed by ${data.disputer_name} - was "${data.previous_status}"`,
                 className: 'bg-red-600 text-white border-red-600',
+                toastType: toast_type,
             });
             break;
 
@@ -196,6 +222,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '✅ Verification Confirmed',
                 description: `${data.task_title} "${data.workshop_status}" confirmed by ${data.confirmer_name}`,
                 className: 'bg-green-600 text-white border-green-600',
+                toastType: toast_type,
             });
             break;
 
@@ -204,6 +231,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '✅ Transaction Request Approved',
                 description: `Your request was approved by ${data.approver_name}`,
                 className: 'bg-green-600 text-white border-green-600',
+                toastType: toast_type,
             });
             break;
 
@@ -212,6 +240,7 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
                 title: '❌ Transaction Request Rejected',
                 description: `Your request was rejected by ${data.approver_name}`,
                 className: 'bg-red-600 text-white border-red-600',
+                toastType: toast_type,
             });
             break;
 
@@ -220,4 +249,5 @@ export function dispatchWebSocketToast(message: ToastNotificationMessage) {
             console.warn('Unknown WebSocket toast type:', toast_type);
     }
 }
+
 
