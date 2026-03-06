@@ -1,6 +1,6 @@
 /**
- * Scheduler toast notifications for automated reminder jobs
- * Shows toast notifications when pickup/debt reminder jobs complete
+ * Scheduler toast notifications for automated reminder jobs.
+ * Uses semantic variants instead of hardcoded className strings.
  */
 
 import { toast } from '@/hooks/use-toast';
@@ -17,7 +17,7 @@ export function showSchedulerSuccessToast(notification: SchedulerNotification) {
     toast({
         title: `✅ ${jobName} Complete`,
         description: `Found ${notification.tasks_found} tasks. Sent ${notification.messages_sent} reminders.`,
-        className: 'bg-green-600 text-white border-green-600',
+        variant: 'success',
     });
 }
 
@@ -72,5 +72,4 @@ export function showSchedulerNotificationToast(notification: SchedulerNotificati
     } else if (notification.messages_sent > 0) {
         showSchedulerSuccessToast(notification);
     }
-    // Skip if nothing happened (tasks_found > 0 but nothing sent or failed - shouldn't happen)
 }

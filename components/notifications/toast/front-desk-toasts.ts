@@ -1,32 +1,23 @@
 /**
- * Front Desk page toast notifications
+ * Front Desk page toast notifications.
+ * Delegates SMS result handling to the shared showSmsResultToast helper.
  */
 
 import { toast } from '@/hooks/use-toast';
 import type { SmsResult } from './types';
+import { showSmsResultToast } from './common-toasts';
 
 /**
  * Show toast after task approval
  */
 export function showTaskApprovedToast(result: SmsResult) {
-    if (result.sms_sent) {
-        toast({
-            title: 'Task Approved',
-            description: `Customer notified via SMS to ${result.sms_phone}`,
-        });
-    } else if (result.sms_phone === null) {
-        toast({
-            title: 'Task Approved',
-            description: 'Customer notification skipped - no phone number on file',
-            variant: 'default',
-        });
-    } else {
-        toast({
-            title: 'Task Approved',
-            description: 'Task approved but SMS notification failed',
-            variant: 'destructive',
-        });
-    }
+    showSmsResultToast(
+        result,
+        'Task Approved',
+        (phone) => `Customer notified via SMS to ${phone}`,
+        'Customer notification skipped - no phone number on file',
+        'Task approved but SMS notification failed'
+    );
 }
 
 /**
@@ -46,24 +37,13 @@ export function showTaskApprovalErrorToast() {
 export function showTaskPickedUpToast(result: SmsResult, isDebt: boolean) {
     const messageType = isDebt ? 'Debt reminder' : 'Thank you message';
 
-    if (result.sms_sent) {
-        toast({
-            title: 'Picked Up',
-            description: `${messageType} sent via SMS to ${result.sms_phone}`,
-        });
-    } else if (result.sms_phone === null) {
-        toast({
-            title: 'Picked Up',
-            description: 'Customer notification skipped - no phone number on file',
-            variant: 'default',
-        });
-    } else {
-        toast({
-            title: 'Picked Up',
-            description: 'Task picked up but SMS notification failed',
-            variant: 'destructive',
-        });
-    }
+    showSmsResultToast(
+        result,
+        'Picked Up',
+        (phone) => `${messageType} sent via SMS to ${phone}`,
+        'Customer notification skipped - no phone number on file',
+        'Task picked up but SMS notification failed'
+    );
 }
 
 /**

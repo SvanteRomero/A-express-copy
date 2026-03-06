@@ -3,6 +3,54 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+def _send_sms_for_task(task, sms_function, user, settings_flag_name):
+    """
+    Internal helper to send an SMS for a task.
+    Reduces duplication across notify_task_created, notify_ready_for_pickup,
+    and notify_picked_up.
+
+    Args:
+        task: The task instance
+        sms_function: The SMS sending function to call (e.g., send_task_registration_sms)
+        user: The user performing the action
+        settings_flag_name: The SystemSettings flag to check (e.g., 'auto_sms_on_task_creation')
+
+    Returns:
+        dict with 'success' and 'phone' keys
+    """
+    sms_result = {'success': False, 'phone': None}
+
+    try:
+        from settings.models import SystemSettings
+        from common.encryption import decrypt_value
+
+        system_settings = SystemSettings.get_settings()
+        if not getattr(system_settings, settings_flag_name, False):
+            return sms_result
+
+        task.refresh_from_db()
+        customer = task.customer
+        if not customer:
+            return sms_result
+
+        customer.refresh_from_db()
+        primary_phone = customer.phone_numbers.first()
+        if not primary_phone:
+            return sms_result
+
+        phone_number = decrypt_value(primary_phone.phone_number)
+        result = sms_function(task, phone_number, user)
+        sms_result = {
+            'success': result.get('success', False),
+            'phone': result.get('phone'),
+        }
+    except Exception as e:
+        logger.error(f"Error sending SMS ({settings_flag_name}): {e}")
+
+    return sms_result
+
+
 class TaskNotificationHandler:
     """
     Service for handling task-related notifications (SMS and WebSocket toasts).
@@ -15,21 +63,16 @@ class TaskNotificationHandler:
         Returns SMS details.
         """
         sms_result = {'success': False, 'phone': None}
-        
+
         # 1. Send SMS (if enabled)
         try:
-            from settings.models import SystemSettings
             from messaging.services import send_task_registration_sms
-            from common.encryption import decrypt_value
-            
-            system_settings = SystemSettings.get_settings()
-            if system_settings.auto_sms_on_task_creation and customer:
-                customer.refresh_from_db()
-                primary_phone = customer.phone_numbers.first()
-                if primary_phone:
-                    phone_number = decrypt_value(primary_phone.phone_number)
-                    result = send_task_registration_sms(task, phone_number, task.created_by)
-                    sms_result = {'success': result.get('success', False), 'phone': result.get('phone')}
+
+            if customer:
+                sms_result = _send_sms_for_task(
+                    task, send_task_registration_sms,
+                    task.created_by, 'auto_sms_on_task_creation'
+                )
         except Exception as e:
             logger.error(f"Error sending task registration SMS: {e}")
 
@@ -73,29 +116,13 @@ class TaskNotificationHandler:
         Send SMS and broadcast toast when task is ready for pickup.
         Returns SMS details.
         """
-        sms_result = {'success': False, 'phone': None}
-        
-        # 1. Send SMS (if enabled)
-        try:
-            from settings.models import SystemSettings
-            from messaging.services import send_ready_for_pickup_sms
-            from common.encryption import decrypt_value
-            
-            system_settings = SystemSettings.get_settings()
-            if system_settings.auto_sms_on_ready_for_pickup:
-                task.refresh_from_db()
-                customer = task.customer
-                if customer:
-                    customer.refresh_from_db()
-                    primary_phone = customer.phone_numbers.first()
-                    if primary_phone:
-                        phone_number = decrypt_value(primary_phone.phone_number)
-                        result = send_ready_for_pickup_sms(task, phone_number, user)
-                        sms_result = {'success': result.get('success', False), 'phone': result.get('phone')}
-        except Exception as e:
-            logger.error(f"Error sending ready for pickup SMS: {e}")
+        from messaging.services import send_ready_for_pickup_sms
 
-        # 2. Broadcast Toast
+        sms_result = _send_sms_for_task(
+            task, send_ready_for_pickup_sms,
+            user, 'auto_sms_on_ready_for_pickup'
+        )
+
         broadcast_toast_notification(
             roles=['manager', 'front_desk'],
             toast_type='task_approved',
@@ -114,29 +141,13 @@ class TaskNotificationHandler:
         Send SMS and broadcast toast when task is picked up.
         Returns SMS details.
         """
-        sms_result = {'success': False, 'phone': None}
-        
-        # 1. Send SMS (if enabled)
-        try:
-            from settings.models import SystemSettings
-            from messaging.services import send_picked_up_sms
-            from common.encryption import decrypt_value
-            
-            system_settings = SystemSettings.get_settings()
-            if system_settings.auto_sms_on_picked_up:
-                task.refresh_from_db()
-                customer = task.customer
-                if customer:
-                    customer.refresh_from_db()
-                    primary_phone = customer.phone_numbers.first()
-                    if primary_phone:
-                        phone_number = decrypt_value(primary_phone.phone_number)
-                        result = send_picked_up_sms(task, phone_number, user)
-                        sms_result = {'success': result.get('success', False), 'phone': result.get('phone')}
-        except Exception as e:
-            logger.error(f"Error sending picked up SMS: {e}")
+        from messaging.services import send_picked_up_sms
 
-        # 2. Broadcast Toast
+        sms_result = _send_sms_for_task(
+            task, send_picked_up_sms,
+            user, 'auto_sms_on_picked_up'
+        )
+
         broadcast_toast_notification(
             roles=['manager', 'front_desk'],
             toast_type='task_picked_up',
@@ -172,7 +183,7 @@ class TaskNotificationHandler:
         """
         sender_name = sender.get_full_name() if hasattr(sender, 'get_full_name') else str(sender)
         broadcast_toast_notification(
-            roles=['technician'],  # Workshop technicians are in the technician role group
+            roles=['technician'],
             toast_type='task_sent_to_workshop',
             data={
                 'task_title': task.title,
@@ -188,7 +199,7 @@ class TaskNotificationHandler:
         tech_name = user.get_full_name() if hasattr(user, 'get_full_name') else str(user)
         toast_type = 'workshop_task_solved' if workshop_status == 'Solved' else 'workshop_task_not_solved'
         broadcast_toast_notification(
-            roles=['technician'],  # Notify the original technician
+            roles=['technician'],
             toast_type=toast_type,
             data={
                 'task_title': task.title,
@@ -203,7 +214,6 @@ class TaskNotificationHandler:
         """
         tech_name = user.get_full_name() if hasattr(user, 'get_full_name') else str(user)
         
-        # Send to original technician specifically
         if task.original_technician_snapshot:
             send_toast_to_user(
                 user=task.original_technician_snapshot,
@@ -222,7 +232,7 @@ class TaskNotificationHandler:
         """
         tech_name = user.get_full_name() if hasattr(user, 'get_full_name') else str(user)
         broadcast_toast_notification(
-            roles=['technician'],  # Workshop technicians
+            roles=['technician'],
             toast_type='workshop_outcome_disputed',
             data={
                 'task_title': task.title,
@@ -251,11 +261,6 @@ class TaskNotificationHandler:
     def notify_task_updated(task, data, user=None):
         """
         Broadcast generic task update toast and notify new assignee.
-        
-        Args:
-            task: Updated task instance
-            data: Update data dict
-            user: User performing the update (optional, needed for assignment notification)
         """
         # Only broadcast if not already covered by status-specific toasts
         if data.get('status') in ['Ready for Pickup', 'Picked Up', 'Completed']:
@@ -303,7 +308,6 @@ class TaskNotificationHandler:
     def broadcast_task_update(task, updated_fields: list = None):
         """
         Broadcast task update for live cache invalidation across all clients.
-        This enables real-time updates without page refresh.
         """
         from notifications.utils import broadcast_task_status_update
         broadcast_task_status_update(

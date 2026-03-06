@@ -1,5 +1,6 @@
 /**
- * Technician page toast notifications
+ * Technician page toast notifications.
+ * Uses semantic variants instead of hardcoded className strings.
  */
 
 import { toast } from '@/hooks/use-toast';
@@ -11,7 +12,7 @@ export function showSentToWorkshopToast() {
     toast({
         title: '🔧 Sent to Workshop',
         description: 'Task sent to workshop successfully.',
-        className: 'bg-indigo-600 text-white border-indigo-600',
+        variant: 'indigo',
     });
 }
 

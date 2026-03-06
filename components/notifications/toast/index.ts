@@ -17,14 +17,16 @@
 export { toast, useToast } from '@/hooks/use-toast';
 
 // Re-export types
-export type { ToastConfig, ToastVariant, SmsResult } from './types';
+export type { ToastVariant, ToastType, SmsResult } from './types';
 
-// Re-export common toasts
+// Re-export common toasts (includes CRUD factory)
 export {
     showSuccessToast,
     showErrorToast,
     showGreenSuccessToast,
     showSmsResultToast,
+    showCrudToast,
+    showCrudErrorToast,
 } from './common-toasts';
 
 // Re-export front desk toasts
@@ -139,3 +141,8 @@ export {
 // Re-export WebSocket toast dispatcher
 export { dispatchWebSocketToast } from './websocket-toasts';
 
+// Re-export toast registry (for extending with new types)
+export { registerToastHandler, dispatchRegisteredToast } from './toast-registry';
+
+// Re-export actionable toast
+export { showActionableToast, dismissActionableToast } from './actionable-toast';

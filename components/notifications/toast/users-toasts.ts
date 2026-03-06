@@ -1,89 +1,38 @@
 /**
- * User management toast notifications
+ * User management toast notifications.
+ * Uses the CRUD factory from common-toasts to eliminate boilerplate.
  */
 
-import { toast } from '@/hooks/use-toast';
+import { showCrudToast, showCrudErrorToast } from './common-toasts';
 
-/**
- * Show success toast when user is created
- */
 export function showUserCreatedToast(username: string) {
-    toast({
-        title: 'User Created',
-        description: `User "${username}" has been created successfully.`,
-    });
+    showCrudToast('User', 'created', username);
 }
 
-/**
- * Show error toast when user creation fails
- */
 export function showUserCreateErrorToast(errorMessage: string) {
-    toast({
-        title: 'Error Creating User',
-        description: errorMessage,
-        variant: 'destructive',
-    });
+    showCrudErrorToast('user', 'create', errorMessage);
 }
 
-/**
- * Show success toast when user is updated
- */
 export function showUserUpdatedToast(username: string) {
-    toast({
-        title: 'User Updated',
-        description: `User "${username}" has been updated successfully.`,
-    });
+    showCrudToast('User', 'updated', username);
 }
 
-/**
- * Show error toast when user update fails
- */
 export function showUserUpdateErrorToast(errorMessage: string) {
-    toast({
-        title: 'Error Updating User',
-        description: errorMessage,
-        variant: 'destructive',
-    });
+    showCrudErrorToast('user', 'update', errorMessage);
 }
 
-/**
- * Show success toast when user is deleted
- */
 export function showUserDeletedToast() {
-    toast({
-        title: 'User Deleted',
-        description: 'User has been deleted successfully.',
-    });
+    showCrudToast('User', 'deleted');
 }
 
-/**
- * Show error toast when user deletion fails
- */
 export function showUserDeleteErrorToast(errorMessage: string) {
-    toast({
-        title: 'Error Deleting User',
-        description: errorMessage,
-        variant: 'destructive',
-    });
+    showCrudErrorToast('user', 'delete', errorMessage);
 }
 
-/**
- * Show success toast when password is changed
- */
 export function showPasswordChangedToast(username: string) {
-    toast({
-        title: 'Password Changed',
-        description: `Password for user "${username}" has been updated.`,
-    });
+    showCrudToast('Password', 'updated', username);
 }
 
-/**
- * Show error toast when password change fails
- */
 export function showPasswordChangeErrorToast(errorMessage: string) {
-    toast({
-        title: 'Error Changing Password',
-        description: errorMessage,
-        variant: 'destructive',
-    });
+    showCrudErrorToast('password', 'update', errorMessage);
 }

@@ -2,14 +2,13 @@
  * Toast notification type definitions
  */
 
-export type ToastVariant = 'default' | 'destructive';
+export type ToastVariant = 'default' | 'destructive' | 'success' | 'info' | 'warning' | 'purple' | 'indigo';
 
-export interface ToastConfig {
-    title: string;
-    description: string;
-    variant?: ToastVariant;
-    className?: string;
-}
+/**
+ * Extensible toast type — plain string so new types can be added without
+ * modifying this definition (OCP).
+ */
+export type ToastType = string;
 
 export interface SmsResult {
     sms_sent?: boolean;

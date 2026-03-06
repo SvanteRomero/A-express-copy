@@ -55,7 +55,7 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
-const addToRemoveQueue = (toastId: string) => {
+const addToRemoveQueue = (toastId: string, delay: number = TOAST_REMOVE_DELAY) => {
   if (toastTimeouts.has(toastId)) {
     return
   }
@@ -66,11 +66,15 @@ const addToRemoveQueue = (toastId: string) => {
       type: "REMOVE_TOAST",
       toastId: toastId,
     })
-  }, TOAST_REMOVE_DELAY)
+  }, delay)
 
   toastTimeouts.set(toastId, timeout)
 }
 
+/**
+ * Pure reducer — no side effects. Side effects (dismiss timers) are handled
+ * by the dismissToast() action wrapper below.
+ */
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
@@ -87,16 +91,6 @@ export const reducer = (state: State, action: Action): State => {
 
     case "DISMISS_TOAST": {
       const { toastId } = action
-
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
-      if (toastId) {
-        addToRemoveQueue(toastId)
-      } else {
-        state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id)
-        })
-      }
 
       return {
         ...state,
@@ -135,6 +129,35 @@ function dispatch(action: Action) {
   })
 }
 
+/**
+ * Dismiss a toast by ID (or all toasts if no ID).
+ * Side effects (scheduling removal) are handled here, outside the reducer.
+ */
+function dismissToast(toastId?: string, delay: number = TOAST_REMOVE_DELAY) {
+  if (toastId) {
+    addToRemoveQueue(toastId, delay)
+  } else {
+    memoryState.toasts.forEach((t) => {
+      addToRemoveQueue(t.id, delay)
+    })
+  }
+
+  dispatch({ type: "DISMISS_TOAST", toastId })
+}
+
+// ── Sound checker callback (replaces require() for circular dep avoidance) ──
+
+type SoundChecker = (toastType: string) => boolean
+let _soundChecker: SoundChecker | null = null
+
+/**
+ * Register a function that checks notification preferences for sound.
+ * Called by NotificationPreferencesProvider on mount.
+ */
+export function registerSoundChecker(fn: SoundChecker) {
+  _soundChecker = fn
+}
+
 type Toast = Omit<ToasterToast, "id"> & { toastType?: string }
 
 function playNotificationSound() {
@@ -152,10 +175,8 @@ function toast({ playSound = false, toastType, ...props }: Toast) {
   // Play sound if: explicitly requested OR if preferences say this toast type should play sound
   if (playSound) {
     playNotificationSound()
-  } else if (toastType) {
-    // Lazy import to avoid circular dependency
-    const { shouldPlaySoundForToastType } = require('@/components/provider/notification-preferences')
-    if (shouldPlaySoundForToastType(toastType)) {
+  } else if (toastType && _soundChecker) {
+    if (_soundChecker(toastType)) {
       playNotificationSound()
     }
   }
@@ -165,7 +186,7 @@ function toast({ playSound = false, toastType, ...props }: Toast) {
       type: "UPDATE_TOAST",
       toast: { ...props, id },
     })
-  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
+  const dismiss = () => dismissToast(id)
 
   dispatch({
     type: "ADD_TOAST",
@@ -179,7 +200,7 @@ function toast({ playSound = false, toastType, ...props }: Toast) {
     },
   })
 
-  // Only auto-dismiss if duration is not Infinity
+  // Auto-dismiss after duration (single timer — no dual-timer race)
   if (props.duration !== Infinity) {
     const dismissDelay = props.duration !== undefined ? props.duration : TOAST_REMOVE_DELAY
     setTimeout(() => {
@@ -205,12 +226,12 @@ function useToast() {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+  }, []) // Mount-only — setState is a stable reference
 
   return {
     ...state,
     toast,
-    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+    dismiss: (toastId?: string) => dismissToast(toastId),
   }
 }
 

@@ -1,8 +1,11 @@
 /**
- * Financial page toast notifications
+ * Financial page toast notifications.
+ * Uses CRUD factory for payment method toasts.
+ * Transaction-specific toasts kept as-is due to unique parameterization.
  */
 
 import { toast } from '@/hooks/use-toast';
+import { showCrudToast, showCrudErrorToast } from './common-toasts';
 
 /**
  * Show error toast for invalid payment amount
@@ -15,193 +18,92 @@ export function showInvalidPaymentAmountToast() {
     });
 }
 
-/**
- * Show success toast when expenditure request is approved
- */
+// =====================================================
+// Expenditure Request Toasts (Legacy — kept for backward compat)
+// =====================================================
+
 export function showExpenditureApprovedToast() {
-    toast({
-        title: 'Success',
-        description: 'Expenditure request approved.',
-    });
+    showCrudToast('Expenditure request', 'saved');
 }
 
-/**
- * Show error toast when expenditure approval fails
- */
 export function showExpenditureApprovalErrorToast(errorMessage?: string) {
-    toast({
-        title: 'Error',
-        description: errorMessage || 'Failed to approve request.',
-        variant: 'destructive',
-    });
+    showCrudErrorToast('expenditure request', 'save', errorMessage || 'Failed to approve request.');
 }
 
-/**
- * Show success toast when expenditure request is rejected
- */
 export function showExpenditureRejectedToast() {
-    toast({
-        title: 'Success',
-        description: 'Expenditure request rejected.',
-    });
+    toast({ title: 'Success', description: 'Expenditure request rejected.' });
 }
 
-/**
- * Show error toast when expenditure rejection fails
- */
 export function showExpenditureRejectionErrorToast(errorMessage?: string) {
-    toast({
-        title: 'Error',
-        description: errorMessage || 'Failed to reject request.',
-        variant: 'destructive',
-    });
+    showCrudErrorToast('expenditure request', 'save', errorMessage || 'Failed to reject request.');
 }
 
-/**
- * Show success toast when expenditure request is created
- */
 export function showExpenditureRequestCreatedToast(isRefund: boolean, autoApproved: boolean) {
     const type = isRefund ? 'Refund' : 'Expenditure';
     const action = autoApproved ? 'created and approved' : 'created';
-    toast({
-        title: 'Success',
-        description: `${type} request ${action} successfully.`,
-    });
+    toast({ title: 'Success', description: `${type} request ${action} successfully.` });
 }
 
-/**
- * Show error toast when expenditure request creation fails
- */
 export function showExpenditureRequestErrorToast(isRefund: boolean, errorMessage?: string) {
     const type = isRefund ? 'refund' : 'expenditure';
-    toast({
-        title: 'Error',
-        description: errorMessage || `Failed to create ${type} request.`,
-        variant: 'destructive',
-    });
-}
-/**
- * Show success toast when expenditure request is cancelled
- */
-export function showExpenditureCancelledToast() {
-    toast({
-        title: 'Success',
-        description: 'Expenditure request cancelled.',
-    });
+    showCrudErrorToast(`${type} request`, 'create', errorMessage);
 }
 
-/**
- * Show error toast when expenditure cancellation fails
- */
+export function showExpenditureCancelledToast() {
+    toast({ title: 'Success', description: 'Expenditure request cancelled.' });
+}
+
 export function showExpenditureCancellationErrorToast(errorMessage?: string) {
-    toast({
-        title: 'Error',
-        description: errorMessage || 'Failed to cancel request.',
-        variant: 'destructive',
-    });
+    showCrudErrorToast('expenditure request', 'save', errorMessage || 'Failed to cancel request.');
 }
 
 // =====================================================
 // Transaction Request Toasts (Unified for Revenue/Expenditure)
 // =====================================================
 
-/**
- * Show success toast when transaction request is created
- */
 export function showTransactionRequestCreatedToast(
     transactionType: 'Expenditure' | 'Revenue',
     autoApproved: boolean
 ) {
     const action = autoApproved ? 'created and approved' : 'submitted for approval';
-    toast({
-        title: 'Success',
-        description: `${transactionType} request ${action} successfully.`,
-    });
+    toast({ title: 'Success', description: `${transactionType} request ${action} successfully.` });
 }
 
-/**
- * Show error toast when transaction request creation fails
- */
 export function showTransactionRequestErrorToast(
     transactionType: 'Expenditure' | 'Revenue',
     errorMessage?: string
 ) {
-    toast({
-        title: 'Error',
-        description: errorMessage || `Failed to create ${transactionType.toLowerCase()} request.`,
-        variant: 'destructive',
-    });
+    showCrudErrorToast(`${transactionType.toLowerCase()} request`, 'create', errorMessage);
 }
 
-/**
- * Show success toast when transaction request is approved
- */
 export function showTransactionApprovedToast(transactionType?: 'Expenditure' | 'Revenue') {
-    toast({
-        title: 'Success',
-        description: `${transactionType || 'Transaction'} request approved.`,
-    });
+    toast({ title: 'Success', description: `${transactionType || 'Transaction'} request approved.` });
 }
 
-/**
- * Show success toast when transaction request is rejected
- */
 export function showTransactionRejectedToast(transactionType?: 'Expenditure' | 'Revenue') {
-    toast({
-        title: 'Success',
-        description: `${transactionType || 'Transaction'} request rejected.`,
-    });
+    toast({ title: 'Success', description: `${transactionType || 'Transaction'} request rejected.` });
 }
 
-/**
- * Show success toast when transaction request is cancelled
- */
 export function showTransactionCancelledToast(transactionType?: 'Expenditure' | 'Revenue') {
-    toast({
-        title: 'Success',
-        description: `${transactionType || 'Transaction'} request cancelled.`,
-    });
+    toast({ title: 'Success', description: `${transactionType || 'Transaction'} request cancelled.` });
 }
 
+// =====================================================
+// Payment Method Toasts (CRUD factory)
+// =====================================================
 
-
-/**
- * Show success toast when payment method is created
- */
 export function showPaymentMethodCreatedToast() {
-    toast({
-        title: 'Success',
-        description: 'Payment method created successfully.',
-    });
+    showCrudToast('Payment method', 'created');
 }
 
-/**
- * Show success toast when payment method is updated
- */
 export function showPaymentMethodUpdatedToast() {
-    toast({
-        title: 'Success',
-        description: 'Payment method updated successfully.',
-    });
+    showCrudToast('Payment method', 'updated');
 }
 
-/**
- * Show success toast when payment method is deleted
- */
 export function showPaymentMethodDeletedToast() {
-    toast({
-        title: 'Success',
-        description: 'Payment method deleted successfully.',
-    });
+    showCrudToast('Payment method', 'deleted');
 }
 
-/**
- * Show error toast for payment method operations
- */
 export function showPaymentMethodErrorToast(action: string, errorMessage?: string) {
-    toast({
-        title: 'Error',
-        description: errorMessage || `Failed to ${action} payment method.`,
-        variant: 'destructive',
-    });
+    showCrudErrorToast('payment method', action as any, errorMessage);
 }

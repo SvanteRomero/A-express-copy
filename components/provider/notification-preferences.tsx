@@ -7,6 +7,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { registerSoundChecker } from '@/hooks/use-toast';
 
 // ── Category definitions ──
 
@@ -149,11 +150,14 @@ function savePreferences(prefs: NotificationPreferences) {
 export function NotificationPreferencesProvider({ children }: { children: React.ReactNode }) {
     const [preferences, setPreferences] = useState<NotificationPreferences>(DEFAULT_PREFERENCES);
 
-    // Load from localStorage on mount
+    // Load from localStorage on mount and register sound checker
     useEffect(() => {
         const loaded = loadPreferences();
         setPreferences(loaded);
         _currentPreferences = loaded;
+
+        // Register sound checker callback with use-toast (replaces require()-based approach)
+        registerSoundChecker(shouldPlaySoundForToastType);
     }, []);
 
     const updateCategoryPreference = useCallback((
