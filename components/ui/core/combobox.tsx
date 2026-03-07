@@ -22,7 +22,7 @@ export function SimpleCombobox({
   placeholder,
   className,
   disabled
-}: ComboboxProps) {
+}: Readonly<ComboboxProps>) {
   const [showOptions, setShowOptions] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 

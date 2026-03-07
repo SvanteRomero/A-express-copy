@@ -302,8 +302,8 @@ export function DatabaseManagementPage() {
                   <AlertDescription className="text-green-800">
                     <strong>Database Integrity: Excellent</strong>
                     <div className="mt-2 space-y-1">
-                      {integrityResults.details.map((detail, index) => (
-                        <div key={index} className="flex items-center gap-2 text-sm">
+                      {integrityResults.details.map((detail) => (
+                        <div key={detail} className="flex items-center gap-2 text-sm">
                           <CheckCircle className="h-3 w-3 text-green-600" />
                           <span>{detail}</span>
                         </div>
@@ -317,8 +317,8 @@ export function DatabaseManagementPage() {
                   <AlertDescription className="text-yellow-800">
                     <strong>Issues Detected:</strong> {integrityResults.issuesFound} inconsistencies found.
                     <div className="mt-2 space-y-1">
-                      {integrityResults.details.map((detail, index) => (
-                        <div key={index} className="flex items-center gap-2 text-sm">
+                      {integrityResults.details.map((detail) => (
+                        <div key={detail} className="flex items-center gap-2 text-sm">
                           <AlertTriangle className="h-3 w-3 text-yellow-600" />
                           <span>{detail}</span>
                         </div>

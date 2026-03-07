@@ -35,15 +35,15 @@ export function TableSkeleton({ rows = 5, columns = 5, className }: Readonly<Tab
         <div className={cn("space-y-3", className)}>
             {/* Header */}
             <div className="flex gap-4 p-4 border-b">
-                {Array.from({ length: columns }).map((_, i) => (
-                    <Skeleton key={`header-${i}`} className="h-4 flex-1" />
+                {Array.from({ length: columns }, (_, i) => `header-${i}`).map((colKey) => (
+                    <Skeleton key={colKey} className="h-4 flex-1" />
                 ))}
             </div>
             {/* Rows */}
-            {Array.from({ length: rows }).map((_, rowIndex) => (
-                <div key={`row-${rowIndex}`} className="flex gap-4 px-4 py-3">
-                    {Array.from({ length: columns }).map((_, colIndex) => (
-                        <Skeleton key={`cell-${rowIndex}-${colIndex}`} className="h-4 flex-1" />
+            {Array.from({ length: rows }, (_, i) => `row-${i}`).map((rowKey) => (
+                <div key={rowKey} className="flex gap-4 px-4 py-3">
+                    {Array.from({ length: columns }, (_, j) => `${rowKey}-cell-${j}`).map((cellKey) => (
+                        <Skeleton key={cellKey} className="h-4 flex-1" />
                     ))}
                 </div>
             ))}
@@ -62,8 +62,8 @@ interface ListSkeletonProps {
 export function ListSkeleton({ items = 3, className }: Readonly<ListSkeletonProps>) {
     return (
         <div className={cn("space-y-4", className)}>
-            {Array.from({ length: items }).map((_, i) => (
-                <div key={i} className="rounded-lg border p-4 space-y-3">
+            {Array.from({ length: items }, (_, i) => `list-${i}`).map((itemKey) => (
+                <div key={itemKey} className="rounded-lg border p-4 space-y-3">
                     <div className="flex justify-between items-start">
                         <div className="space-y-2 flex-1">
                             <Skeleton className="h-4 w-3/4" />
@@ -90,8 +90,8 @@ interface CardGridSkeletonProps {
 export function CardGridSkeleton({ cards = 3, columns = 3, className }: Readonly<CardGridSkeletonProps>) {
     return (
         <div className={cn(`grid gap-4 md:grid-cols-${columns}`, className)}>
-            {Array.from({ length: cards }).map((_, i) => (
-                <div key={i} className="rounded-lg border p-6 space-y-3">
+            {Array.from({ length: cards }, (_, i) => `card-${i}`).map((cardKey) => (
+                <div key={cardKey} className="rounded-lg border p-6 space-y-3">
                     <div className="flex justify-between items-center">
                         <Skeleton className="h-4 w-24" />
                         <Skeleton className="h-4 w-4" />
@@ -154,8 +154,8 @@ export function TaskListSkeleton() {
                 <Skeleton className="h-4 w-64" />
             </div>
             <div className="p-6 space-y-6">
-                {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="rounded-lg border p-6 space-y-4">
+                {Array.from({ length: 3 }, (_, i) => `task-${i}`).map((taskKey) => (
+                    <div key={taskKey} className="rounded-lg border p-6 space-y-4">
                         <div className="flex justify-between">
                             <div className="space-y-2">
                                 <Skeleton className="h-5 w-40" />

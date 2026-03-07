@@ -29,7 +29,7 @@ interface TaskFiltersProps {
   showTechnicianFilter?: boolean
 }
 
-export function TaskFilters({ searchQuery, setSearchQuery, taskStatusFilter, setTaskStatusFilter, technicianFilter, setTechnicianFilter, urgencyFilter, setUrgencyFilter, deviceStatusFilter, setDeviceStatusFilter, locationFilter, setLocationFilter, uniqueStatuses, uniqueTechnicians, uniqueUrgencies, uniqueDeviceStatuses, uniqueLocations, clearAllFilters, showDeviceStatusFilter = true, showLocationFilter = false, showTechnicianFilter = true }: TaskFiltersProps) {
+export function TaskFilters({ searchQuery, setSearchQuery, taskStatusFilter, setTaskStatusFilter, technicianFilter, setTechnicianFilter, urgencyFilter, setUrgencyFilter, deviceStatusFilter, setDeviceStatusFilter, locationFilter, setLocationFilter, uniqueStatuses, uniqueTechnicians, uniqueUrgencies, uniqueDeviceStatuses, uniqueLocations, clearAllFilters, showDeviceStatusFilter = true, showLocationFilter = false, showTechnicianFilter = true }: Readonly<TaskFiltersProps>) {
   return (
     <div className="space-y-4">
       {/* Search Bar */}

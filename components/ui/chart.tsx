@@ -12,7 +12,6 @@ import {
 } from "recharts"
 export { Bar, BarChart, Cell, Pie, PieChart, RadialBar, RadialBarChart, XAxis, YAxis } from "recharts"
 import {
-  Color,
   LegendConfig,
   resolveConfig,
   ShadcnChartConfig,
@@ -40,12 +39,13 @@ const ChartContainer = React.forwardRef<
   }
 >(({ config, children, ...props }, ref) => {
   const resolvedConfig = useMemo(() => resolveConfig(config), [config])
+  const contextValue = useMemo(() => ({ config: resolvedConfig }), [resolvedConfig])
 
   return (
-    <ChartContext.Provider value={{ config: resolvedConfig }}>
+    <ChartContext.Provider value={contextValue}>
       <div ref={ref} {...props}>
         <ResponsiveContainer width="100%" height="100%">
-          {children}
+          {children as React.ReactElement}
         </ResponsiveContainer>
       </div>
     </ChartContext.Provider>
@@ -59,13 +59,15 @@ const ChartLegend = Legend
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> &
-    React.ComponentProps<typeof Tooltip> & {
-      hideLabel?: boolean
-      hideIndicator?: boolean
-      indicator?: "line" | "dot" | "dashed"
-      nameKey?: string
-      labelKey?: string
-    }
+  React.ComponentProps<typeof Tooltip> & {
+    hideLabel?: boolean
+    hideIndicator?: boolean
+    indicator?: "line" | "dot" | "dashed"
+    nameKey?: string
+    labelKey?: string
+    payload?: any[]
+    label?: any
+  }
 >(
   (
     {
@@ -95,13 +97,13 @@ const ChartTooltipContent = React.forwardRef<
           <div className="font-medium">{label || "value"}</div>
         )}
         <div className="grid gap-1.5">
-          {payload.map((item, i) => {
+          {payload.map((item: any) => {
             const key = `${item.name || nameKey}`
             const { label, icon: Icon } = config[key] as LegendConfig
 
             return (
               <div
-                key={i}
+                key={key}
                 className="flex items-center gap-2 [&>svg]:h-4 [&>svg]:w-4"
               >
                 {Icon && <Icon />}

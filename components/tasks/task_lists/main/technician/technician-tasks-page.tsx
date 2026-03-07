@@ -221,12 +221,12 @@ function TaskListCard({
   description,
   tasks,
   children
-}: {
+}: Readonly<{
   title: string
   description: string
   tasks: any[]
   children?: React.ReactNode
-}) {
+}>) {
   return (
     <Card>
       <CardHeader>

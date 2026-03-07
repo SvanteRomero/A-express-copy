@@ -33,7 +33,7 @@ interface ReturnTaskDialogProps {
   onClose: () => void;
 }
 
-export function ReturnTaskDialog({ task, isOpen, onClose }: ReturnTaskDialogProps) {
+export function ReturnTaskDialog({ task, isOpen, onClose }: Readonly<ReturnTaskDialogProps>) {
   const [newIssueDescription, setNewIssueDescription] = useState('');
   const [newEstimatedCost, setNewEstimatedCost] = useState<number | ''>('');
   const [urgency, setUrgency] = useState('');

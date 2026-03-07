@@ -22,7 +22,7 @@ export function PasswordCard({
     success,
     changePassword,
     clearMessages
-}: PasswordCardProps) {
+}: Readonly<PasswordCardProps>) {
     const [isChangingPassword, setIsChangingPassword] = useState(false)
     const [passwordData, setPasswordData] = useState({
         current_password: "",

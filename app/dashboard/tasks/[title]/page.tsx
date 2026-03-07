@@ -10,7 +10,7 @@ interface TaskDetailsProps {
   }>
 }
 
-export default function TaskDetails({ params: paramsPromise }: TaskDetailsProps) {
+export default function TaskDetails({ params: paramsPromise }: Readonly<TaskDetailsProps>) {
   const params = React.use(paramsPromise)
   const { user } = useAuth()
 

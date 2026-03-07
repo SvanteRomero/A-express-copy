@@ -51,7 +51,7 @@ export function TaskActions({
     showActions,
     approvingTaskId,
     pickingUpTaskId
-}: TaskActionsProps) {
+}: Readonly<TaskActionsProps>) {
     const [rejectionNotes, setRejectionNotes] = useState("")
     const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
     const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false)

@@ -37,7 +37,7 @@ interface WebSocketContextType {
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
 
-export function WebSocketProvider({ children }: { children: React.ReactNode }) {
+export function WebSocketProvider({ children }: Readonly<{ children: React.ReactNode }>) {
     const { user, isAuthenticated } = useAuth();
     const queryClient = useQueryClient();
     const [isConnected, setIsConnected] = useState(false);

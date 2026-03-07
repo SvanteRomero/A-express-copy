@@ -30,7 +30,7 @@ interface TaskHeaderProps {
   taskId: string
 }
 
-export default function TaskHeader({ taskId }: TaskHeaderProps) {
+export default function TaskHeader({ taskId }: Readonly<TaskHeaderProps>) {
   const { user } = useAuth()
   const router = useRouter()
   const { data: taskData, isLoading, isError } = useTask(taskId)

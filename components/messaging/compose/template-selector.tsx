@@ -25,7 +25,7 @@ export function TemplateSelector({
     onToggleCustom,
     customMessage,
     onCustomMessageChange,
-}: TemplateSelectorProps) {
+}: Readonly<TemplateSelectorProps>) {
     const currentTemplate = templates.find(t =>
         t.key === selectedTemplate ||
         t.id?.toString() === selectedTemplate

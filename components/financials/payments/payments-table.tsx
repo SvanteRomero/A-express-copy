@@ -39,7 +39,7 @@ export function PaymentsTable({
     hasPreviousPage,
     onPageChange,
     formatCurrency,
-}: PaymentsTableProps) {
+}: Readonly<PaymentsTableProps>) {
     if (isMobile) {
         return (
             <div className="space-y-4">

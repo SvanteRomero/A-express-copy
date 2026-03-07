@@ -29,7 +29,7 @@ function getCostTypePrefix(costType: string) {
   return '';
 }
 
-export function CostBreakdown({ task }: CostBreakdownProps) {
+export function CostBreakdown({ task }: Readonly<CostBreakdownProps>) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isAdding, setIsAdding] = useState(false);

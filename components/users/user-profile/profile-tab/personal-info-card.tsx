@@ -12,7 +12,7 @@ interface PersonalInfoCardProps {
     updateProfile: (data: any) => Promise<boolean>
 }
 
-export function PersonalInfoCard({ user, updateProfile }: PersonalInfoCardProps) {
+export function PersonalInfoCard({ user, updateProfile }: Readonly<PersonalInfoCardProps>) {
     const [isEditing, setIsEditing] = useState(false)
     const [formData, setFormData] = useState({
         first_name: user?.first_name || "",

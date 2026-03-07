@@ -20,6 +20,21 @@ const ChartTooltip = (props: any) => {
     return <recharts.Tooltip {...props} />
 }
 
+const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload?.length) {
+        const data = payload[0].payload
+        return (
+            <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
+                <p className="font-medium">{data.status}</p>
+                <p className="text-sm text-gray-600">
+                    {data.count} tasks ({data.percentage}%)
+                </p>
+            </div>
+        )
+    }
+    return null
+}
+
 
 export const TaskStatusPreview = ({ report }: { report: any }) => {
     // Use the actual data structure from your API response
@@ -140,29 +155,14 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
                                         paddingAngle={5}
                                         dataKey="count"
                                     >
-                                        {statusDistribution.map((entry: any, index: number) => (
+                                        {statusDistribution.map((entry: any) => (
                                             <recharts.Cell
-                                                key={`cell-${index}`}
+                                                key={`cell-${entry.status}`}
                                                 fill={getStatusColor(entry.status)}
                                             />
                                         ))}
                                     </recharts.Pie>
-                                    <ChartTooltip
-                                        content={({ active, payload }: any) => {
-                                            if (active && payload?.length) {
-                                                const data = payload[0].payload
-                                                return (
-                                                    <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
-                                                        <p className="font-medium">{data.status}</p>
-                                                        <p className="text-sm text-gray-600">
-                                                            {data.count} tasks ({data.percentage}%)
-                                                        </p>
-                                                    </div>
-                                                )
-                                            }
-                                            return null
-                                        }}
-                                    />
+                                    <ChartTooltip content={<CustomTooltip />} />
                                     <recharts.Legend />
                                 </recharts.PieChart>
                             </recharts.ResponsiveContainer>

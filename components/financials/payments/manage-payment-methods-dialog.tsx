@@ -16,7 +16,7 @@ interface ManagePaymentMethodsDialogProps {
 
 export default function ManagePaymentMethodsDialog({
   onClose,
-}: ManagePaymentMethodsDialogProps) {
+}: Readonly<ManagePaymentMethodsDialogProps>) {
   const queryClient = useQueryClient();
   const { data: paymentMethods } = usePaymentMethods();
   const [newPaymentMethodName, setNewPaymentMethodName] = useState("");

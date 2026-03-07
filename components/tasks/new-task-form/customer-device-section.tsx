@@ -17,7 +17,7 @@ interface CustomerDeviceSectionProps {
  * Customer & Device section of the new task form
  * Handles customer selection, phone numbers, customer type, brand, and model
  */
-export function CustomerDeviceSection({ form }: CustomerDeviceSectionProps) {
+export function CustomerDeviceSection({ form }: Readonly<CustomerDeviceSectionProps>) {
     const {
         formData,
         errors,
@@ -60,25 +60,25 @@ export function CustomerDeviceSection({ form }: CustomerDeviceSectionProps) {
                 />
             </FormField>
 
-            {formData.customer_phone_numbers.map((phone, index) => (
+            {Array.from(formData.customer_phone_numbers, (phone, i) => ({ phone, idx: i })).map(({ phone, idx }) => (
                 <FormField
-                    key={index}
-                    id={`customer_phone_${index}`}
-                    label={`Phone Number ${index + 1}`}
+                    key={`phone-field-${idx}`}
+                    id={`customer_phone_${idx}`}
+                    label={`Phone Number ${idx + 1}`}
                     required
-                    error={errors[`customer_phone_${index}`]}
+                    error={errors[`customer_phone_${idx}`]}
                 >
                     <div className="flex items-center gap-2">
                         <Input
-                            id={`customer_phone_${index}`}
+                            id={`customer_phone_${idx}`}
                             type='text'
                             value={phone.phone_number}
-                            onChange={(e) => handlePhoneNumberChange(index, e.target.value)}
-                            className={errors[`customer_phone_${index}`] ? 'border-red-500' : ''}
+                            onChange={(e) => handlePhoneNumberChange(idx, e.target.value)}
+                            className={errors[`customer_phone_${idx}`] ? 'border-red-500' : ''}
                             placeholder="e.g. 0712 345 678"
                         />
                         {formData.customer_phone_numbers.length > 1 && (
-                            <Button type="button" variant="outline" onClick={() => removePhoneNumber(index)}>-</Button>
+                            <Button type="button" variant="outline" onClick={() => removePhoneNumber(idx)}>-</Button>
                         )}
                     </div>
                 </FormField>

@@ -32,7 +32,7 @@ interface UserTableProps {
     isLoading: boolean
 }
 
-export function UserTable({ users, onEdit, onDelete, onToggleStatus, isLoading }: UserTableProps) {
+export function UserTable({ users, onEdit, onDelete, onToggleStatus, isLoading }: Readonly<UserTableProps>) {
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString()
     }

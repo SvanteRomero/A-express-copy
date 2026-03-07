@@ -21,7 +21,7 @@ export function ReportSection({
     reports,
     onGeneratePDF,
     onViewReport,
-}: ReportSectionProps) {
+}: Readonly<ReportSectionProps>) {
     const [selectedReport, setSelectedReport] = useState<string | null>(null)
     const [dateRangeType, setDateRangeType] = useState<'preset' | 'custom'>('preset')
     const [presetRange, setPresetRange] = useState<string>('week')

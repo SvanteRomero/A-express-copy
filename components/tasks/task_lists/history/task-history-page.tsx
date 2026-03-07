@@ -24,7 +24,7 @@ export function TaskHistoryPage({
   showDateFilter = false,
   isFrontDeskView = false,
   isManagerView = false,
-}: GenericTaskHistoryPageProps) {
+}: Readonly<GenericTaskHistoryPageProps>) {
   const router = useRouter();
   const [showAll] = useState(false);
 

@@ -31,7 +31,7 @@ interface TaskActivityLogProps {
   taskId: string
 }
 
-export function TaskActivityLog({ taskId }: TaskActivityLogProps) {
+export function TaskActivityLog({ taskId }: Readonly<TaskActivityLogProps>) {
   const [activities, setActivities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})

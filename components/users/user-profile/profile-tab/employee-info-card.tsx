@@ -7,7 +7,7 @@ interface EmployeeInfoCardProps {
     user: any
 }
 
-export function EmployeeInfoCard({ user }: EmployeeInfoCardProps) {
+export function EmployeeInfoCard({ user }: Readonly<EmployeeInfoCardProps>) {
     const formatEmployeeId = (id: number): string => {
         if (!id) return "EMP-000"
         return `EMP-${id.toString().padStart(3, '0')}`

@@ -14,7 +14,7 @@ interface TaskNotesProps {
   taskId: string
 }
 
-export function TaskNotes({ taskId }: TaskNotesProps) {
+export function TaskNotes({ taskId }: Readonly<TaskNotesProps>) {
   const [notes, setNotes] = useState<any[]>([])
   const [newNote, setNewNote] = useState('')
   const [loading, setLoading] = useState(true)

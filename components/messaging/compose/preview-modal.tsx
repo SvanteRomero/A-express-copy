@@ -71,7 +71,7 @@ export function PreviewModal({
     onConfirm,
     loading,
     totalCount,
-}: PreviewModalProps) {
+}: Readonly<PreviewModalProps>) {
     const [expandedCustomers, setExpandedCustomers] = useState<Set<number>>(new Set());
 
     const templateToUse = templates.find(t =>
@@ -138,8 +138,8 @@ export function PreviewModal({
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {customer.phoneNumbers.map((phone, idx) => (
-                                                        <SelectItem key={idx} value={phone}>{phone}</SelectItem>
+                                                    {customer.phoneNumbers.map((phone) => (
+                                                        <SelectItem key={phone} value={phone}>{phone}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>

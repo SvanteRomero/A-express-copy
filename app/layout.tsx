@@ -14,9 +14,9 @@ const inter = Inter({ subsets: ["latin"] })
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   // Create QueryClient once and persist it across rerenders
   // This prevents recreation on every navigation which causes request cancellation
   const [queryClient] = useState(() => new QueryClient({

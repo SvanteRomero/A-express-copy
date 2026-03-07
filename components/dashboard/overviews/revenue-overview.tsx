@@ -13,7 +13,7 @@ interface RevenueOverviewProps {
   variant?: 'today' | 'month' | 'all';
 }
 
-export function RevenueOverview({ variant = 'all' }: RevenueOverviewProps) {
+export function RevenueOverview({ variant = 'all' }: Readonly<RevenueOverviewProps>) {
   const { data, error } = useSWR('/revenue-overview/', fetcher)
 
   if (error) return <div>Failed to load revenue data</div>

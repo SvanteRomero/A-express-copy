@@ -13,7 +13,7 @@ interface TechnicianTaskProps {
  * This route always shows the TechnicianTaskDetails component regardless of user role.
  * Used by managers accessing their assigned tasks from the "My Tasks" tab.
  */
-export default function TechnicianTask({ params: paramsPromise }: TechnicianTaskProps) {
+export default function TechnicianTask({ params: paramsPromise }: Readonly<TechnicianTaskProps>) {
     const params = React.use(paramsPromise)
 
     return <TechnicianTaskDetails taskId={params.id} />

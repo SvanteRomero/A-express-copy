@@ -24,7 +24,7 @@ export function RevenueStatsCards({
     isLoading,
     isError,
     formatCurrency,
-}: RevenueStatsCardsProps) {
+}: Readonly<RevenueStatsCardsProps>) {
     if (isError) {
         return (
             <div className='grid gap-4 md:grid-cols-3 lg:grid-cols-3'>

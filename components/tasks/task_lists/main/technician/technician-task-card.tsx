@@ -9,7 +9,7 @@ interface TechnicianTaskCardProps {
     task: Task
 }
 
-export function TechnicianTaskCard({ task }: TechnicianTaskCardProps) {
+export function TechnicianTaskCard({ task }: Readonly<TechnicianTaskCardProps>) {
     return (
         <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
             <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -24,7 +24,7 @@ export function DuplicatePhoneDialog({
     phone,
     customerName,
     onClose,
-}: DuplicatePhoneDialogProps) {
+}: Readonly<DuplicatePhoneDialogProps>) {
     return (
         <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <AlertDialogContent>

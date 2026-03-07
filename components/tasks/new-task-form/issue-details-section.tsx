@@ -24,7 +24,7 @@ interface IssueDetailsSectionProps {
  * Issue Details section of the new task form
  * Handles description, device type, urgency, location, assignment, and referral
  */
-export function IssueDetailsSection({ form }: IssueDetailsSectionProps) {
+export function IssueDetailsSection({ form }: Readonly<IssueDetailsSectionProps>) {
     const {
         formData,
         errors,

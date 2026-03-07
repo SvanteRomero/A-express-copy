@@ -13,7 +13,7 @@ interface ProfilePictureCardProps {
     uploadProfilePicture: (file: File) => Promise<boolean> // Assuming return type
 }
 
-export function ProfilePictureCard({ user, isLoading, uploadProfilePicture }: ProfilePictureCardProps) {
+export function ProfilePictureCard({ user, isLoading, uploadProfilePicture }: Readonly<ProfilePictureCardProps>) {
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const fullName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim()

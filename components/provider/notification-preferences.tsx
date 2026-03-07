@@ -147,7 +147,7 @@ function savePreferences(prefs: NotificationPreferences) {
     }
 }
 
-export function NotificationPreferencesProvider({ children }: { children: React.ReactNode }) {
+export function NotificationPreferencesProvider({ children }: Readonly<{ children: React.ReactNode }>) {
     const [preferences, setPreferences] = useState<NotificationPreferences>(DEFAULT_PREFERENCES);
 
     // Load from localStorage on mount and register sound checker

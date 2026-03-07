@@ -26,7 +26,7 @@ interface AddExpenditureDialogProps {
   taskTitle?: string;
 }
 
-export function AddExpenditureDialog({ isOpen, onClose, mode = 'expenditure', taskId, taskTitle }: AddExpenditureDialogProps) {
+export function AddExpenditureDialog({ isOpen, onClose, mode = 'expenditure', taskId, taskTitle }: Readonly<AddExpenditureDialogProps>) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { register, handleSubmit, control, watch, formState: { errors }, setValue, reset } = useForm();

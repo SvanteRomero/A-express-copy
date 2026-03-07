@@ -25,7 +25,7 @@ interface AddUserDialogProps {
     isLoading: boolean
 }
 
-export function AddUserDialog({ isOpen, onOpenChange, newUser, setNewUser, onAddUser, isLoading }: AddUserDialogProps) {
+export function AddUserDialog({ isOpen, onOpenChange, newUser, setNewUser, onAddUser, isLoading }: Readonly<AddUserDialogProps>) {
     const [showPassword, setShowPassword] = useState(false)
 
     return (

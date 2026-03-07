@@ -14,7 +14,7 @@ export function PhoneSelectDialog({
     customer,
     onClose,
     onSelectPhone,
-}: PhoneSelectDialogProps) {
+}: Readonly<PhoneSelectDialogProps>) {
     if (!customer) return null;
 
     return (
@@ -27,9 +27,9 @@ export function PhoneSelectDialog({
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-2 py-4">
-                    {customer.phoneNumbers.map((phone, idx) => (
+                    {customer.phoneNumbers.map((phone) => (
                         <div
-                            key={idx}
+                            key={phone}
                             className={`flex items-center justify-between p-3 rounded border cursor-pointer hover:bg-muted ${customer.selectedPhone === phone ? 'border-primary bg-primary/5' : ''}`}
                             onClick={() => {
                                 onSelectPhone(customer.taskId, phone);

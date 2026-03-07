@@ -400,8 +400,8 @@ export function RequestsList() {
       <div className='space-y-3'>
         {isLoading ? (
           <div className="space-y-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={`skeleton-${i}`} className="rounded-lg border bg-card p-4 animate-pulse">
+            {Array.from({ length: 5 }, (_, i) => `skeleton-${i}`).map((skKey) => (
+              <div key={skKey} className="rounded-lg border bg-card p-4 animate-pulse">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-full bg-muted" />
                   <div className="flex-1 space-y-2">

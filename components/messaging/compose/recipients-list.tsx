@@ -57,7 +57,7 @@ export function RecipientsList({
     getCustomerPhone,
     onUpdateCustomerPhone,
     isBroadcastMode = false,
-}: RecipientsListProps) {
+}: Readonly<RecipientsListProps>) {
     const [expandedCustomers, setExpandedCustomers] = useState<Set<number>>(new Set());
 
     const toggleExpanded = (customerId: number) => {
@@ -138,8 +138,8 @@ export function RecipientsList({
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        {customer.phoneNumbers.map((phone, idx) => (
-                                                            <SelectItem key={idx} value={phone}>{phone}</SelectItem>
+                                                        {customer.phoneNumbers.map((phone) => (
+                                                            <SelectItem key={phone} value={phone}>{phone}</SelectItem>
                                                         ))}
                                                     </SelectContent>
                                                 </Select>

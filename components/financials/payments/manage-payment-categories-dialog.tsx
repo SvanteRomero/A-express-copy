@@ -17,7 +17,7 @@ interface ManagePaymentCategoriesDialogProps {
 
 export default function ManagePaymentCategoriesDialog({
   onClose,
-}: ManagePaymentCategoriesDialogProps) {
+}: Readonly<ManagePaymentCategoriesDialogProps>) {
   const queryClient = useQueryClient();
   const { data: paymentCategories } = usePaymentCategories();
   const [newPaymentCategoryName, setNewPaymentCategoryName] = useState("");

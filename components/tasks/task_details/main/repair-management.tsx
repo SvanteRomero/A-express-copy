@@ -18,7 +18,7 @@ interface RepairManagementProps {
   taskId: string
 }
 
-export default function RepairManagement({ taskId }: RepairManagementProps) {
+export default function RepairManagement({ taskId }: Readonly<RepairManagementProps>) {
   const { user } = useAuth()
   const { data: taskData, isLoading, isError } = useTask(taskId)
   const { data: technicians } = useAssignableUsers()

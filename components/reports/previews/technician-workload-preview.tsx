@@ -27,6 +27,38 @@ const ChartTooltip = (props: any) => {
     return <Tooltip {...props} />
 }
 
+const CustomTooltip1 = ({ active, payload }: any) => {
+    if (active && payload?.length) {
+        const data = payload[0].payload
+        return (
+            <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
+                <p className="font-medium">{data.name}</p>
+                <p className="text-sm text-gray-600">Total Tasks: {data.tasks}</p>
+                <p className="text-sm text-blue-600">In Progress: {data.in_progress}</p>
+                <p className="text-sm text-orange-600">Awaiting Parts: {data.awaiting_parts}</p>
+                <p className="text-sm text-gray-500">Pending: {data.pending}</p>
+            </div>
+        )
+    }
+    return null
+}
+
+const CustomTooltip2 = ({ active, payload }: any) => {
+    if (active && payload?.length) {
+        return (
+            <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
+                <p className="font-medium">{payload[0].payload.name}</p>
+                {payload.map((entry: any) => (
+                    <p key={entry.dataKey} className="text-sm" style={{ color: entry.color }}>
+                        {entry.name}: {entry.value}
+                    </p>
+                ))}
+            </div>
+        )
+    }
+    return null
+}
+
 interface TechnicianWorkloadReport {
     workload_data: {
         name: string
@@ -105,23 +137,7 @@ export const TechnicianWorkloadPreview = ({ report }: { report: any }) => {
                                             height={80}
                                         />
                                         <YAxis />
-                                        <ChartTooltip
-                                            content={({ active, payload }: any) => {
-                                                if (active && payload?.length) {
-                                                    const data = payload[0].payload
-                                                    return (
-                                                        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
-                                                            <p className="font-medium">{data.name}</p>
-                                                            <p className="text-sm text-gray-600">Total Tasks: {data.tasks}</p>
-                                                            <p className="text-sm text-blue-600">In Progress: {data.in_progress}</p>
-                                                            <p className="text-sm text-orange-600">Awaiting Parts: {data.awaiting_parts}</p>
-                                                            <p className="text-sm text-gray-500">Pending: {data.pending}</p>
-                                                        </div>
-                                                    )
-                                                }
-                                                return null
-                                            }}
-                                        />
+                                        <ChartTooltip content={<CustomTooltip1 />} />
                                         <Bar
                                             dataKey="tasks"
                                             fill="#dc2626"
@@ -224,23 +240,7 @@ export const TechnicianWorkloadPreview = ({ report }: { report: any }) => {
                                             height={80}
                                         />
                                         <YAxis />
-                                        <ChartTooltip
-                                            content={({ active, payload }: any) => {
-                                                if (active && payload?.length) {
-                                                    return (
-                                                        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
-                                                            <p className="font-medium">{payload[0].payload.name}</p>
-                                                            {payload.map((entry: any, index: number) => (
-                                                                <p key={index} className="text-sm" style={{ color: entry.color }}>
-                                                                    {entry.name}: {entry.value}
-                                                                </p>
-                                                            ))}
-                                                        </div>
-                                                    )
-                                                }
-                                                return null
-                                            }}
-                                        />
+                                        <ChartTooltip content={<CustomTooltip2 />} />
                                         <Legend />
                                         <Bar dataKey="in_progress" stackId="a" fill="#3b82f6" name="In Progress" />
                                         <Bar dataKey="awaiting_parts" stackId="a" fill="#f59e0b" name="Awaiting Parts" />

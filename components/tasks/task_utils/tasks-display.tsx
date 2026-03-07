@@ -86,7 +86,7 @@ export function TasksDisplay({
   onSearchQueryChange: onExternalSearchQueryChange,
   serverSideFilters,
   filterOptions
-}: TasksDisplayProps) {
+}: Readonly<TasksDisplayProps>) {
   const isMobile = useIsMobile()
   const [statusOptions, setStatusOptions] = useState<string[]>([])
 

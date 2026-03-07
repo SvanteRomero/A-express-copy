@@ -25,7 +25,7 @@ interface EditUserDialogProps {
     isLoading: boolean
 }
 
-export function EditUserDialog({ isOpen, onOpenChange, editingUser, setEditingUser, onUpdateUser, isLoading }: EditUserDialogProps) {
+export function EditUserDialog({ isOpen, onOpenChange, editingUser, setEditingUser, onUpdateUser, isLoading }: Readonly<EditUserDialogProps>) {
     const [showPassword, setShowPassword] = useState(false)
 
     return (

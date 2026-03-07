@@ -16,8 +16,8 @@ const ChartTooltipContent = ({ active, payload, label }: any) => {
     return (
         <div className="bg-white border p-2 rounded shadow-sm text-sm">
             {label && <div className="font-semibold mb-1">{label}</div>}
-            {payload.map((p: any, i: number) => (
-                <div key={i} className="flex items-center justify-between">
+            {payload.map((p: any) => (
+                <div key={p.dataKey} className="flex items-center justify-between">
                     <span className="text-gray-700">{p.name ?? p.dataKey}</span>
                     <span className="font-medium text-gray-900">{p.value} hours</span>
                 </div>
@@ -209,8 +209,8 @@ export const TaskExecutionPreview = ({
                                         </TableCell>
                                     </TableRow>
                                 )
-                                return taskDetails.map((task, index) => (
-                                    <TableRow key={index}>
+                                return taskDetails.map((task) => (
+                                    <TableRow key={task.task_title}>
                                         <TableCell className="font-medium">{task.task_title}</TableCell>
                                         <TableCell>{task.customer_name}</TableCell>
                                         <TableCell>

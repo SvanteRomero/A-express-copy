@@ -54,7 +54,7 @@ interface TechnicianTaskDetailsProps {
   taskId: string
 }
 
-export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
+export function TechnicianTaskDetails({ taskId }: Readonly<TechnicianTaskDetailsProps>) {
   const router = useRouter()
   const { user } = useAuth()
   const queryClient = useQueryClient();
@@ -457,12 +457,12 @@ function WorkshopStatusButtons({
   updating,
   toBeChecked,
   onToBeCheckedChange
-}: {
+}: Readonly<{
   onStatusChange: (status: string, toBeChecked: boolean) => void,
   updating: boolean,
   toBeChecked: boolean,
   onToBeCheckedChange: (checked: boolean) => void
-}) {
+}>) {
   return (
     <div className="flex flex-col gap-3 w-full sm:w-auto">
       {/* Checkbox for To Be Checked */}
@@ -528,11 +528,11 @@ function VerificationButtons({
   workshopStatus,
   onVerify,
   updating
-}: {
+}: Readonly<{
   workshopStatus: string | null,
   onVerify: (agrees: boolean) => void,
   updating: boolean
-}) {
+}>) {
   const [isDisputeDialogOpen, setIsDisputeDialogOpen] = useState(false)
 
   const handleClick = (clickedStatus: string) => {

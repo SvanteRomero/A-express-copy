@@ -19,7 +19,7 @@ export function FormField({
     required = false,
     error,
     children,
-}: FormFieldProps) {
+}: Readonly<FormFieldProps>) {
     return (
         <div className='space-y-1.5'>
             <Label htmlFor={id} className='font-medium'>

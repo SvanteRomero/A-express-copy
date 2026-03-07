@@ -35,7 +35,7 @@ export default function AddPaymentDialog({
   onSubmit,
   taskTitle,
   outstandingBalance,
-}: AddPaymentDialogProps) {
+}: Readonly<AddPaymentDialogProps>) {
   const [amount, setAmount] = useState(0);
   const [paymentMethodId, setPaymentMethodId] = useState<string | undefined>(undefined);
   const { data: paymentMethods } = usePaymentMethods();

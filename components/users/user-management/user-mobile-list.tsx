@@ -32,7 +32,7 @@ interface UserMobileListProps {
     isLoading: boolean
 }
 
-export function UserMobileList({ users, onEdit, onDelete, onToggleStatus, isLoading }: UserMobileListProps) {
+export function UserMobileList({ users, onEdit, onDelete, onToggleStatus, isLoading }: Readonly<UserMobileListProps>) {
     return (
         <div className="space-y-4">
             {users.map((user) => (

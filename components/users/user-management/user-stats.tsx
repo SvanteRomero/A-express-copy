@@ -7,7 +7,7 @@ interface UserStatsProps {
     users: any[]
 }
 
-export function UserStats({ users }: UserStatsProps) {
+export function UserStats({ users }: Readonly<UserStatsProps>) {
     const activeUsers = users.filter((user) => user.is_active).length
     const totalUsers = users.length
     const technicians = users.filter((user) => user.role === "Technician").length

@@ -26,7 +26,7 @@ const TABS = [
 
 type TabId = typeof TABS[number]["id"];
 
-export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
+export function TaskDetailsPage({ taskId }: Readonly<TaskDetailsPageProps>) {
   const { data: taskData, isLoading, isError, error } = useTask(taskId);
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const touchStartX = useRef<number>(0);

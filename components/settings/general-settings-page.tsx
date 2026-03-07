@@ -183,9 +183,9 @@ export function GeneralSettingsPage() {
                         {companyPhoneNumbers.length === 0 ? (
                             <p className="text-sm text-gray-500 italic">No phone numbers added yet</p>
                         ) : (
-                            companyPhoneNumbers.map((phone, index) => (
+                            companyPhoneNumbers.map((phone) => (
                                 <div
-                                    key={index}
+                                    key={phone}
                                     className="flex items-center justify-between p-3 bg-gray-50 rounded-lg max-w-md"
                                 >
                                     <div className="flex items-center gap-3">

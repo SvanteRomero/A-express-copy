@@ -19,7 +19,7 @@ interface PhoneNumber {
   phone_number: string
 }
 
-export default function CustomerInformation({ taskId }: CustomerInformationProps) {
+export default function CustomerInformation({ taskId }: Readonly<CustomerInformationProps>) {
   const { user } = useAuth()
   const { toast } = useToast()
   const { data: taskData, isLoading, isError } = useTask(taskId)
@@ -174,19 +174,19 @@ export default function CustomerInformation({ taskId }: CustomerInformationProps
             <Label className="text-sm font-medium text-gray-600">Phone Numbers</Label>
             {isEditing ? (
               <>
-                {editedPhoneNumbers.map((phone, index) => (
-                  <div key={index} className="flex items-center gap-2 mt-1">
+                {Array.from(editedPhoneNumbers, (phone, i) => ({ phone, idx: i })).map(({ phone, idx }) => (
+                  <div key={`edit-phone-${idx}`} className="flex items-center gap-2 mt-1">
                     <Phone className="h-4 w-4 text-gray-400" />
                     <Input
                       value={phone.phone_number || ""}
-                      onChange={(e) => handlePhoneChange(index, e.target.value)}
+                      onChange={(e) => handlePhoneChange(idx, e.target.value)}
                       placeholder="Enter phone number"
                     />
                     <Button
                       variant="outline"
                       size="sm"
                       className="text-red-600 border-red-200 hover:bg-red-50"
-                      onClick={() => handleRemovePhone(index)}
+                      onClick={() => handleRemovePhone(idx)}
                     >
                       Remove
                     </Button>
@@ -203,8 +203,8 @@ export default function CustomerInformation({ taskId }: CustomerInformationProps
             ) : (
               <>
                 {taskData.customer_details?.phone_numbers?.length > 0 ? (
-                  taskData.customer_details.phone_numbers.map((phone: PhoneNumber, index: number) => (
-                    <div key={index} className="flex items-center gap-2 mt-1">
+                  taskData.customer_details.phone_numbers.map((phone: PhoneNumber) => (
+                    <div key={phone.phone_number} className="flex items-center gap-2 mt-1">
                       <Phone className="h-4 w-4 text-gray-400" />
                       <span className="text-gray-900">{phone.phone_number}</span>
                     </div>

@@ -51,7 +51,7 @@ export function SendCustomerUpdateModal({
     customerName,
     phoneNumbers,
     taskTitle,
-}: SendCustomerUpdateModalProps) {
+}: Readonly<SendCustomerUpdateModalProps>) {
     const [selectedPhone, setSelectedPhone] = useState<string>(phoneNumbers[0]?.phone_number || "")
     const [selectedTemplate, setSelectedTemplate] = useState<string>("custom")
     const [message, setMessage] = useState<string>("")
