@@ -38,7 +38,7 @@ export function TaskTableRow({
     isCompletedTab,
     isMyTasksTab,
     ...actionProps
-}: TaskTableRowProps) {
+}: Readonly<TaskTableRowProps>) {
     const isCurrentTasks = isManagerView && !isCompletedTab
     const managerLocationContent = isCompletedTab
         ? <WorkshopStatusBadge status={task.workshop_status || "N/A"} />

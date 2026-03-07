@@ -484,8 +484,6 @@ export class NotificationWebSocket {
 let wsClient: NotificationWebSocket | null = null;
 
 export function getWebSocketClient(config?: WebSocketClientConfig): NotificationWebSocket {
-    if (!wsClient) {
-        wsClient = new NotificationWebSocket(config);
-    }
+    wsClient ??= new NotificationWebSocket(config);
     return wsClient;
 }

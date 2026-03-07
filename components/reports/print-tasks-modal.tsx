@@ -9,7 +9,7 @@ interface PrintTasksModalProps {
     onPrint: (startDate: string, endDate: string) => Promise<void>
 }
 
-export function PrintTasksModal({ onClose, onPrint }: PrintTasksModalProps) {
+export function PrintTasksModal({ onClose, onPrint }: Readonly<PrintTasksModalProps>) {
     const [startDate, setStartDate] = useState("")
     const [endDate, setEndDate] = useState("")
     const [isLoading, setIsLoading] = useState(false)

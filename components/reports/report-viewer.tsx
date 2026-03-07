@@ -20,7 +20,7 @@ export function ReportViewer({
     onSearch,
     currentPage = 1,
     pageSize = 10
-}: ReportViewerProps) {
+}: Readonly<ReportViewerProps>) {
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearchTerm = useDebounce(searchTerm, 500)
 

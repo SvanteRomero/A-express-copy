@@ -166,7 +166,7 @@ export function GeneralSettingsPage() {
                             value={newPhoneNumber}
                             onChange={(e) => setNewPhoneNumber(e.target.value)}
                             placeholder="e.g., 0712 345 678"
-                            onKeyPress={(e) => e.key === 'Enter' && handleAddPhoneNumber()}
+                            onKeyUp={(e) => e.key === 'Enter' && handleAddPhoneNumber()}
                         />
                         <Button
                             type="button"

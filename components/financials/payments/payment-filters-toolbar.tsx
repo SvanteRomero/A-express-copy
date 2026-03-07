@@ -39,7 +39,7 @@ export function PaymentFiltersToolbar({
     paymentMethods,
     paymentCategories,
     isMobile,
-}: PaymentFiltersToolbarProps) {
+}: Readonly<PaymentFiltersToolbarProps>) {
     const hasActiveFilters = searchTerm || methodFilter !== 'all' || categoryFilter !== 'all';
 
     return (

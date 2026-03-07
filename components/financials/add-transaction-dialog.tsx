@@ -36,7 +36,7 @@ export function AddTransactionDialog({
     mode = 'normal',
     taskId,
     taskTitle
-}: AddTransactionDialogProps) {
+}: Readonly<AddTransactionDialogProps>) {
     const { user } = useAuth();
     const queryClient = useQueryClient();
     const { register, handleSubmit, control, watch, formState: { errors }, setValue, reset } = useForm();

@@ -152,31 +152,31 @@ export function TasksDisplay({
   const effectiveSearchQuery = internalSearchQuery;
   const setEffectiveSearchQuery = setInternalSearchQuery;
 
-  const effectiveTechnicianFilter = serverSideFilters?.technicianId === undefined ? localTechnicianFilter : serverSideFilters.technicianId;
+  const effectiveTechnicianFilter = serverSideFilters?.technicianId ?? localTechnicianFilter;
   const setEffectiveTechnicianFilter = (val: string | number) => {
     if (serverSideFilters?.setTechnicianId) serverSideFilters.setTechnicianId(val);
     else setLocalTechnicianFilter(String(val));
   };
 
-  const effectiveUrgencyFilter = serverSideFilters?.urgency === undefined ? localUrgencyFilter : serverSideFilters.urgency;
+  const effectiveUrgencyFilter = serverSideFilters?.urgency ?? localUrgencyFilter;
   const setEffectiveUrgencyFilter = (val: string) => {
     if (serverSideFilters?.setUrgency) serverSideFilters.setUrgency(val);
     else setLocalUrgencyFilter(val);
   };
 
-  const effectiveDeviceStatusFilter = serverSideFilters?.deviceStatus === undefined ? localDeviceStatusFilter : serverSideFilters.deviceStatus;
+  const effectiveDeviceStatusFilter = serverSideFilters?.deviceStatus ?? localDeviceStatusFilter;
   const setEffectiveDeviceStatusFilter = (val: string) => {
     if (serverSideFilters?.setDeviceStatus) serverSideFilters.setDeviceStatus(val);
     else setLocalDeviceStatusFilter(val);
   };
 
-  const effectiveLocationFilter = serverSideFilters?.location === undefined ? localLocationFilter : serverSideFilters.location;
+  const effectiveLocationFilter = serverSideFilters?.location ?? localLocationFilter;
   const setEffectiveLocationFilter = (val: string) => {
     if (serverSideFilters?.setLocation) serverSideFilters.setLocation(val);
     else setLocalLocationFilter(val);
   };
 
-  const effectiveTaskStatusFilter = serverSideFilters?.taskStatus === undefined ? localTaskStatusFilter : serverSideFilters.taskStatus;
+  const effectiveTaskStatusFilter = serverSideFilters?.taskStatus ?? localTaskStatusFilter;
   const setEffectiveTaskStatusFilter = (val: string) => {
     if (serverSideFilters?.setTaskStatus) serverSideFilters.setTaskStatus(val);
     else setLocalTaskStatusFilter(val);

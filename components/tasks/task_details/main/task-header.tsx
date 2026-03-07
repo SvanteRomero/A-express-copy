@@ -198,13 +198,6 @@ export default function TaskHeader({ taskId }: TaskHeaderProps) {
         customerName={taskData.customer_details?.name || taskData.customer_name || "Customer"}
         phoneNumbers={taskData.customer_details?.phone_numbers || []}
         taskTitle={taskData.title}
-        taskStatus={taskData.status}
-        brand={taskData.brand_details?.name}
-        model={taskData.laptop_model_details?.name}
-        description={taskData.description}
-        totalCost={taskData.total_cost}
-        deviceNotes={taskData.device_notes}
-        workshopStatus={taskData.workshop_status || undefined}
       />
     </>
   )

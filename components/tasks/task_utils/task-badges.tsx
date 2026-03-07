@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/core/badge"
 
-export function StatusBadge({ status, isTerminated }: { status: string; isTerminated?: boolean }) {
+export function StatusBadge({ status, isTerminated }: Readonly<{ status: string; isTerminated?: boolean }>) {
     // Override display: show "Terminated" if task is picked up but was terminated
     if (status === "Picked Up" && isTerminated) {
         return <Badge className="bg-orange-100 text-amber-800 hover:bg-orange-100 border border-orange-700">Terminated</Badge>
@@ -24,7 +24,7 @@ export function StatusBadge({ status, isTerminated }: { status: string; isTermin
     }
 }
 
-export function UrgencyBadge({ urgency }: { urgency: string }) {
+export function UrgencyBadge({ urgency }: Readonly<{ urgency: string }>) {
     switch (urgency) {
         case "Yupo":
             return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Yupo</Badge>
@@ -41,7 +41,7 @@ export function UrgencyBadge({ urgency }: { urgency: string }) {
     }
 }
 
-export function PaymentStatusBadge({ status }: { status: string }) {
+export function PaymentStatusBadge({ status }: Readonly<{ status: string }>) {
     switch (status) {
         case "Fully Paid":
             return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Fully Paid</Badge>
@@ -54,7 +54,7 @@ export function PaymentStatusBadge({ status }: { status: string }) {
     }
 }
 
-export function WorkshopStatusBadge({ status }: { status: string }) {
+export function WorkshopStatusBadge({ status }: Readonly<{ status: string }>) {
     switch (status) {
         case "In Workshop":
             return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">{status}</Badge>

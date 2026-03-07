@@ -6,19 +6,11 @@ import {
   useMemo,
 } from "react"
 import {
-  Bar,
-  BarChart,
-  Cell,
   Legend,
-  Pie,
-  PieChart,
-  RadialBar,
-  RadialBarChart,
   ResponsiveContainer,
   Tooltip,
-  XAxis,
-  YAxis,
 } from "recharts"
+export { Bar, BarChart, Cell, Pie, PieChart, RadialBar, RadialBarChart, XAxis, YAxis } from "recharts"
 import {
   Color,
   LegendConfig,
@@ -132,13 +124,4 @@ export {
   ChartTooltip,
   ChartLegend,
   ChartTooltipContent,
-  Bar,
-  BarChart,
-  Cell,
-  Pie,
-  PieChart,
-  RadialBar,
-  RadialBarChart,
-  XAxis,
-  YAxis,
 }

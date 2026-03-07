@@ -24,7 +24,7 @@ export function NotifyCustomerDialog({
     onOpenChange,
     task,
     onNotifyCustomer
-}: NotifyCustomerDialogProps) {
+}: Readonly<NotifyCustomerDialogProps>) {
     const [notifyMessage, setNotifyMessage] = useState("")
     const [notifyPhone, setNotifyPhone] = useState("")
     const [isLoadingPreview, setIsLoadingPreview] = useState(false)

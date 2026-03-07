@@ -21,7 +21,7 @@ export function ReportViewerModal({
     onPageChange,
     onSearch,
     reports
-}: ReportViewerModalProps) {
+}: Readonly<ReportViewerModalProps>) {
     const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
         if (event.target === event.currentTarget) {
             onClose()

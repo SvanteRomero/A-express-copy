@@ -12,7 +12,7 @@ interface SpinnerProps {
 /**
  * Inline spinner for buttons and small loading indicators
  */
-export function Spinner({ className, size = "md" }: SpinnerProps) {
+export function Spinner({ className, size = "md" }: Readonly<SpinnerProps>) {
     const sizeClasses = {
         sm: "h-4 w-4",
         md: "h-5 w-5",
@@ -30,7 +30,7 @@ interface TableSkeletonProps {
 /**
  * Skeleton for table content
  */
-export function TableSkeleton({ rows = 5, columns = 5, className }: TableSkeletonProps) {
+export function TableSkeleton({ rows = 5, columns = 5, className }: Readonly<TableSkeletonProps>) {
     return (
         <div className={cn("space-y-3", className)}>
             {/* Header */}
@@ -59,7 +59,7 @@ interface ListSkeletonProps {
 /**
  * Skeleton for mobile card lists
  */
-export function ListSkeleton({ items = 3, className }: ListSkeletonProps) {
+export function ListSkeleton({ items = 3, className }: Readonly<ListSkeletonProps>) {
     return (
         <div className={cn("space-y-4", className)}>
             {Array.from({ length: items }).map((_, i) => (
@@ -87,7 +87,7 @@ interface CardGridSkeletonProps {
 /**
  * Skeleton for dashboard stat card grids
  */
-export function CardGridSkeleton({ cards = 3, columns = 3, className }: CardGridSkeletonProps) {
+export function CardGridSkeleton({ cards = 3, columns = 3, className }: Readonly<CardGridSkeletonProps>) {
     return (
         <div className={cn(`grid gap-4 md:grid-cols-${columns}`, className)}>
             {Array.from({ length: cards }).map((_, i) => (
@@ -112,7 +112,7 @@ interface PageSkeletonProps {
 /**
  * Full page loading wrapper with centered spinner
  */
-export function PageSkeleton({ children, className }: PageSkeletonProps) {
+export function PageSkeleton({ children, className }: Readonly<PageSkeletonProps>) {
     return (
         <div className={cn("flex-1 space-y-6 p-6", className)}>
             {children || (

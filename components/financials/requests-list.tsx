@@ -23,10 +23,201 @@ import {
   showExpenditureCancelledToast,
   showExpenditureCancellationErrorToast,
 } from '@/components/notifications/toast';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format } from 'date-fns';
 import { Check, X, TrendingUp, TrendingDown, Search, FileText } from 'lucide-react';
+
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case 'Pending':
+      return <Badge className='bg-yellow-100 text-yellow-800'>Pending</Badge>
+    case 'Approved':
+      return <Badge className='bg-green-100 text-green-800'>Approved</Badge>
+    case 'Rejected':
+      return <Badge className='bg-red-100 text-red-800'>Rejected</Badge>
+    default:
+      return <Badge>{status}</Badge>
+  }
+}
+
+const getTypeBadge = (type: string) => {
+  if (type === 'Revenue') {
+    return (
+      <Badge className='bg-green-100 text-green-700 border-green-200'>
+        <TrendingUp className="h-3 w-3 mr-1" />
+        Revenue
+      </Badge>
+    );
+  }
+  return (
+    <Badge className='bg-amber-100 text-amber-700 border-amber-200'>
+      <TrendingDown className="h-3 w-3 mr-1" />
+      Expenditure
+    </Badge>
+  );
+}
+
+interface RequestCardProps {
+  request: UnifiedApprovalRequest;
+  isManager: boolean;
+  isAccountant: boolean;
+  onApprove: (request: UnifiedApprovalRequest) => void;
+  onReject: (request: UnifiedApprovalRequest) => void;
+  onCancel: (id: number) => void;
+  isApprovePending: boolean;
+  isRejectPending: boolean;
+  isCancelPending: boolean;
+}
+
+function RequestCard({
+  request,
+  isManager,
+  isAccountant,
+  onApprove,
+  onReject,
+  onCancel,
+  isApprovePending,
+  isRejectPending,
+  isCancelPending
+}: RequestCardProps) {
+  const isDebt = isDebtRequest(request);
+  const isTransaction = isTransactionRequest(request);
+
+  // Dynamic styling based on request type
+  const iconBg = isDebt
+    ? 'bg-purple-100 text-purple-600'
+    : isTransaction && request.transaction_type === 'Revenue'
+      ? 'bg-green-100 text-green-600'
+      : 'bg-amber-100 text-amber-600';
+
+  const icon = isDebt
+    ? <FileText className="h-5 w-5" />
+    : isTransaction && request.transaction_type === 'Revenue'
+      ? <TrendingUp className="h-5 w-5" />
+      : <TrendingDown className="h-5 w-5" />;
+
+  const title = isDebt
+    ? `Debt Request: ${request.task_title}`
+    : isTransaction
+      ? request.description
+      : 'Unknown Request';
+
+  const amount = isTransaction ? request.amount : null;
+  const subtitle = isDebt
+    ? request.task_details?.customer_name || 'No customer'
+    : isTransaction
+      ? request.category?.name || 'No category'
+      : '';
+
+  const typeBadge = isDebt
+    ? <Badge className="bg-purple-100 text-purple-700 border-purple-200"><FileText className="h-3 w-3 mr-1" />Debt</Badge>
+    : isTransaction
+      ? getTypeBadge(request.transaction_type)
+      : null;
+
+  return (
+    <div
+      className={`
+        rounded-lg border bg-card p-4 transition-all hover:shadow-md
+        ${request.status === 'Pending' ? 'border-l-4 border-l-yellow-400' : ''}
+        ${request.status === 'Approved' ? 'border-l-4 border-l-green-400 opacity-75' : ''}
+        ${request.status === 'Rejected' ? 'border-l-4 border-l-red-400 opacity-75' : ''}
+      `}
+    >
+      <div className="flex items-start gap-4">
+        {/* Icon */}
+        <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${iconBg}`}>
+          {icon}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">{title}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+            </div>
+
+            {/* Amount (for transactions) */}
+            {amount && (
+              <div className={`text-sm font-semibold ${isTransaction && request.transaction_type === 'Revenue' ? 'text-green-600' : 'text-amber-600'}`}>
+                TSh {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number.parseFloat(amount as string))}
+              </div>
+            )}
+
+            {/* Outstanding balance for debt */}
+            {isDebt && request.task_details?.outstanding_balance && (
+              <div className="text-sm font-semibold text-purple-600">
+                TSh {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number.parseFloat(request.task_details.outstanding_balance))}
+              </div>
+            )}
+          </div>
+
+          {/* Meta row */}
+          <div className="flex items-center gap-2 mt-2 flex-wrap text-xs">
+            {typeBadge}
+            {getStatusBadge(request.status)}
+            <span className="text-muted-foreground">
+              by {request.requester_name}
+            </span>
+            <span className="text-muted-foreground">•</span>
+            <span className="text-muted-foreground">
+              {request.created_at ? format(new Date(request.created_at), 'MMM d, yyyy h:mm a') : 'N/A'}
+            </span>
+            {request.approver_name && (
+              <>
+                <span className="text-muted-foreground">•</span>
+                <span className="text-muted-foreground">
+                  {request.status === 'Approved' ? '✓' : '✗'} by {request.approver_name}
+                </span>
+              </>
+            )}
+          </div>
+
+          {/* Actions */}
+          {request.status === 'Pending' && (isManager || isAccountant) && (
+            <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+              {isManager && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-green-600 border-green-600 hover:bg-green-50"
+                    onClick={() => onApprove(request)}
+                    disabled={isApprovePending}
+                  >
+                    <Check className="h-4 w-4 mr-1" /> Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-red-600 border-red-600 hover:bg-red-50"
+                    onClick={() => onReject(request)}
+                    disabled={isRejectPending}
+                  >
+                    <X className="h-4 w-4 mr-1" /> Reject
+                  </Button>
+                </>
+              )}
+              {isAccountant && !isManager && isTransaction && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-red-600 border-red-600 hover:bg-red-50"
+                  onClick={() => onCancel(request.id)}
+                  disabled={isCancelPending}
+                >
+                  <X className="h-4 w-4 mr-1" /> Cancel
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function RequestsList() {
   const queryClient = useQueryClient();
@@ -135,36 +326,6 @@ export function RequestsList() {
     cancelMutation.mutate(id);
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Pending':
-        return <Badge className='bg-yellow-100 text-yellow-800'>Pending</Badge>
-      case 'Approved':
-        return <Badge className='bg-green-100 text-green-800'>Approved</Badge>
-      case 'Rejected':
-        return <Badge className='bg-red-100 text-red-800'>Rejected</Badge>
-      default:
-        return <Badge>{status}</Badge>
-    }
-  }
-
-  const getTypeBadge = (type: string) => {
-    if (type === 'Revenue') {
-      return (
-        <Badge className='bg-green-100 text-green-700 border-green-200'>
-          <TrendingUp className="h-3 w-3 mr-1" />
-          Revenue
-        </Badge>
-      );
-    }
-    return (
-      <Badge className='bg-amber-100 text-amber-700 border-amber-200'>
-        <TrendingDown className="h-3 w-3 mr-1" />
-        Expenditure
-      </Badge>
-    );
-  }
-
   const hasActiveFilters = searchTerm || statusFilter !== 'all' || typeFilter !== 'all' || requestTypeFilter !== 'all';
 
   const clearFilters = () => {
@@ -239,8 +400,8 @@ export function RequestsList() {
       <div className='space-y-3'>
         {isLoading ? (
           <div className="space-y-3">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="rounded-lg border bg-card p-4 animate-pulse">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={`skeleton-${i}`} className="rounded-lg border bg-card p-4 animate-pulse">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-full bg-muted" />
                   <div className="flex-1 space-y-2">
@@ -257,161 +418,20 @@ export function RequestsList() {
               No approval requests found
             </div>
           );
-          return requests!.results.map((request: UnifiedApprovalRequest) => {
-            const isDebt = isDebtRequest(request);
-            const isTransaction = isTransactionRequest(request);
-
-            // Dynamic styling based on request type
-            let iconBg: string;
-            if (isDebt) {
-              iconBg = 'bg-purple-100 text-purple-600';
-            } else if (isTransaction && request.transaction_type === 'Revenue') {
-              iconBg = 'bg-green-100 text-green-600';
-            } else {
-              iconBg = 'bg-amber-100 text-amber-600';
-            }
-
-            let icon: JSX.Element;
-            if (isDebt) {
-              icon = <FileText className="h-5 w-5" />;
-            } else if (isTransaction && request.transaction_type === 'Revenue') {
-              icon = <TrendingUp className="h-5 w-5" />;
-            } else {
-              icon = <TrendingDown className="h-5 w-5" />;
-            }
-
-            // Get description and amount based on type
-            let title: string;
-            if (isDebt) {
-              title = `Debt Request: ${request.task_title}`;
-            } else if (isTransaction) {
-              title = request.description;
-            } else {
-              title = 'Unknown Request';
-            }
-
-            const amount = isTransaction ? request.amount : null;
-            let subtitle: string;
-            if (isDebt) {
-              subtitle = request.task_details?.customer_name || 'No customer';
-            } else if (isTransaction) {
-              subtitle = request.category?.name || 'No category';
-            } else {
-              subtitle = '';
-            }
-
-            let typeBadge: JSX.Element | null;
-            if (isDebt) {
-              typeBadge = <Badge className="bg-purple-100 text-purple-700 border-purple-200"><FileText className="h-3 w-3 mr-1" />Debt</Badge>;
-            } else if (isTransaction) {
-              typeBadge = getTypeBadge(request.transaction_type);
-            } else {
-              typeBadge = null;
-            }
-
-            return (
-              <div
-                key={`${request.request_type}-${request.id}`}
-                className={`
-                  rounded-lg border bg-card p-4 transition-all hover:shadow-md
-                  ${request.status === 'Pending' ? 'border-l-4 border-l-yellow-400' : ''}
-                  ${request.status === 'Approved' ? 'border-l-4 border-l-green-400 opacity-75' : ''}
-                  ${request.status === 'Rejected' ? 'border-l-4 border-l-red-400 opacity-75' : ''}
-                `}
-              >
-                <div className="flex items-start gap-4">
-                  {/* Icon */}
-                  <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${iconBg}`}>
-                    {icon}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 flex-wrap">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
-                      </div>
-
-                      {/* Amount (for transactions) */}
-                      {amount && (
-                        <div className={`text-sm font-semibold ${isTransaction && request.transaction_type === 'Revenue' ? 'text-green-600' : 'text-amber-600'}`}>
-                          TSh {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number.parseFloat(amount))}
-                        </div>
-                      )}
-
-                      {/* Outstanding balance for debt */}
-                      {isDebt && request.task_details?.outstanding_balance && (
-                        <div className="text-sm font-semibold text-purple-600">
-                          TSh {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number.parseFloat(request.task_details.outstanding_balance))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Meta row */}
-                    <div className="flex items-center gap-2 mt-2 flex-wrap text-xs">
-                      {typeBadge}
-                      {getStatusBadge(request.status)}
-                      <span className="text-muted-foreground">
-                        by {request.requester_name}
-                      </span>
-                      <span className="text-muted-foreground">•</span>
-                      <span className="text-muted-foreground">
-                        {request.created_at ? format(new Date(request.created_at), 'MMM d, yyyy h:mm a') : 'N/A'}
-                      </span>
-                      {request.approver_name && (
-                        <>
-                          <span className="text-muted-foreground">•</span>
-                          <span className="text-muted-foreground">
-                            {request.status === 'Approved' ? '✓' : '✗'} by {request.approver_name}
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    {request.status === 'Pending' && (isManager || isAccountant) && (
-                      <div className="flex items-center gap-2 mt-3 pt-3 border-t">
-                        {isManager && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-green-600 border-green-600 hover:bg-green-50"
-                              onClick={() => handleApprove(request)}
-                              disabled={approveMutation.isPending || approveDebtMutation.isPending}
-                            >
-                              <Check className="h-4 w-4 mr-1" /> Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600 border-red-600 hover:bg-red-50"
-                              onClick={() => handleReject(request)}
-                              disabled={rejectMutation.isPending || rejectDebtMutation.isPending}
-                            >
-                              <X className="h-4 w-4 mr-1" /> Reject
-                            </Button>
-                          </>
-                        )}
-                        {isAccountant && !isManager && isTransaction && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600 border-red-600 hover:bg-red-50"
-                            onClick={() => handleCancel(request.id)}
-                            disabled={cancelMutation.isPending}
-                          >
-                            <X className="h-4 w-4 mr-1" /> Cancel
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          });
+          return requests!.results.map((request: UnifiedApprovalRequest) => (
+            <RequestCard
+              key={`${request.request_type}-${request.id}`}
+              request={request}
+              isManager={isManager}
+              isAccountant={isAccountant}
+              onApprove={handleApprove}
+              onReject={handleReject}
+              onCancel={handleCancel}
+              isApprovePending={approveMutation.isPending || approveDebtMutation.isPending}
+              isRejectPending={rejectMutation.isPending || rejectDebtMutation.isPending}
+              isCancelPending={cancelMutation.isPending}
+            />
+          ));
         })()}
         <div className="flex justify-end space-x-2 p-4">
           <Button

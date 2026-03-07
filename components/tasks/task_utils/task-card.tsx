@@ -36,7 +36,7 @@ export function TaskCard({
     isAccountantView,
     isMyTasksTab,
     ...actionProps
-}: TaskCardProps) {
+}: Readonly<TaskCardProps>) {
     return (
         <Card className="overflow-hidden" onClick={() => onRowClick(task)}>
             <CardHeader className="p-4 flex flex-row items-start justify-between space-y-0 pb-2">

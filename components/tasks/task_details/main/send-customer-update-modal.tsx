@@ -35,13 +35,6 @@ interface SendCustomerUpdateModalProps {
     customerName: string
     phoneNumbers: PhoneNumber[]
     taskTitle: string
-    taskStatus: string
-    brand?: string
-    model?: string
-    description?: string
-    totalCost?: string
-    deviceNotes?: string
-    workshopStatus?: string
 }
 
 // Message templates - now map to backend template keys
