@@ -101,20 +101,22 @@ export function MessageHistory() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {loading ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                        Loading history...
-                                    </TableCell>
-                                </TableRow>
-                            ) : logs.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                        No message history found.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                logs.map((log) => (
+                            {(() => {
+                                if (loading) return (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                            Loading history...
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                                if (logs.length === 0) return (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                            No message history found.
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                                return logs.map((log) => (
                                     <TableRow key={log.id}>
                                         <TableCell className="whitespace-nowrap">
                                             {new Date(log.sent_at).toLocaleString()}
@@ -137,8 +139,8 @@ export function MessageHistory() {
                                             {log.sent_by_name || "System"}
                                         </TableCell>
                                     </TableRow>
-                                ))
-                            )}
+                                ));
+                            })()}
                         </TableBody>
                     </Table>
                 </div>

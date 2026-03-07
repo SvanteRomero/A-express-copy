@@ -164,7 +164,7 @@ export function SettingsOverview() {
   })
 
   const handleNavigate = (href: string) => {
-    window.location.href = href
+    globalThis.location.href = href
   }
 
   let accessLevelText: string

@@ -84,7 +84,7 @@ export default function AccountantTasksPage() {
           <p className="text-gray-600 mt-2">Tasks with outstanding payments.</p>
         </div>
         <div className="text-sm text-gray-500">
-          {count} total task{count !== 1 ? 's' : ''}
+          {count} total task{count === 1 ? '' : 's'}
         </div>
       </div>
 

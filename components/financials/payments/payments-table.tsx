@@ -53,8 +53,8 @@ export function PaymentsTable({
                                     <div className="font-semibold">{payment.description}</div>
                                     <div className="text-xs text-muted-foreground">{payment.date}</div>
                                 </div>
-                                <div className={cn("font-bold", parseFloat(payment.amount) > 0 ? 'text-green-600' : 'text-red-600')}>
-                                    {formatCurrency(parseFloat(payment.amount))}
+                                <div className={cn("font-bold", Number.parseFloat(payment.amount) > 0 ? 'text-green-600' : 'text-red-600')}>
+                                    {formatCurrency(Number.parseFloat(payment.amount))}
                                 </div>
                             </div>
                         </CardHeader>
@@ -111,9 +111,9 @@ export function PaymentsTable({
                         <TableRow key={payment.id}>
                             <TableCell>{payment.description}</TableCell>
                             <TableCell
-                                className={parseFloat(payment.amount) > 0 ? 'text-green-600' : 'text-red-600'}
+                                className={Number.parseFloat(payment.amount) > 0 ? 'text-green-600' : 'text-red-600'}
                             >
-                                {formatCurrency(parseFloat(payment.amount))}
+                                {formatCurrency(Number.parseFloat(payment.amount))}
                             </TableCell>
                             <TableCell>{payment.method_name}</TableCell>
                             <TableCell>{payment.category_name}</TableCell>

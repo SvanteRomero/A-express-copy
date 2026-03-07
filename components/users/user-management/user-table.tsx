@@ -1,6 +1,13 @@
 "use client"
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table"
+
+function getRoleBadgeClass(role: string) {
+    if (role === "Manager") return "bg-blue-100 text-blue-800";
+    if (role === "Technician") return "bg-green-100 text-green-800";
+    if (role === "Accountant") return "bg-yellow-100 text-yellow-800";
+    return "bg-purple-100 text-purple-800";
+}
 import { Button } from "@/components/ui/core/button"
 import { Badge } from "@/components/ui/core/badge"
 import { Switch } from "@/components/ui/core/switch"
@@ -58,7 +65,7 @@ export function UserTable({ users, onEdit, onDelete, onToggleStatus, isLoading }
                         <TableCell>{user.username}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
-                            <Badge variant="outline" className={user.role === "Manager" ? "bg-blue-100 text-blue-800" : (user.role === "Technician" ? "bg-green-100 text-green-800" : (user.role === "Accountant" ? "bg-yellow-100 text-yellow-800" : "bg-purple-100 text-purple-800"))}>
+                            <Badge variant="outline" className={getRoleBadgeClass(user.role)}>
                                 {user.role}
                             </Badge>
                         </TableCell>

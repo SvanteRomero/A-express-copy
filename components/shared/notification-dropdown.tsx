@@ -102,7 +102,7 @@ export function NotificationDropdown() {
               {notifications.map((notification) => (
                 <DropdownMenuItem
                   key={notification.id}
-                  className={`p-0 cursor-pointer ${!notification.read ? "bg-blue-50" : ""}`}
+                  className={`p-0 cursor-pointer ${notification.read ? "" : "bg-blue-50"}`}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className={`w-full p-3 border-l-4 ${getPriorityColor(notification.priority)}`}>

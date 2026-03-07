@@ -147,7 +147,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             const data = message as TransactionRequestMessage;
 
             // Validate: Don't show toast to the person who made the request
-            if (currentUser && currentUser.id === data.requester_id) {
+            if (currentUser?.id === data.requester_id) {
                 return;
             }
 
@@ -165,7 +165,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             const data = message as DebtRequestMessage;
 
             // Validate: Don't show toast to the person who made the request
-            if (currentUser && currentUser.id === data.requester_id) {
+            if (currentUser?.id === data.requester_id) {
                 return;
             }
 

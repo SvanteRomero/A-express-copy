@@ -202,7 +202,7 @@ function toast({ playSound = false, toastType, ...props }: Toast) {
 
   // Auto-dismiss after duration (single timer — no dual-timer race)
   if (props.duration !== Infinity) {
-    const dismissDelay = props.duration !== undefined ? props.duration : TOAST_REMOVE_DELAY
+    const dismissDelay = props.duration === undefined ? TOAST_REMOVE_DELAY : props.duration
     setTimeout(() => {
       dismiss()
     }, dismissDelay)

@@ -17,6 +17,18 @@ interface CostBreakdownProps {
   task: Task;
 }
 
+function getCostTypeClass(costType: string) {
+  if (costType === 'Subtractive') return 'text-red-600';
+  if (costType === 'Additive') return 'text-green-600';
+  return '';
+}
+
+function getCostTypePrefix(costType: string) {
+  if (costType === 'Subtractive') return '- ';
+  if (costType === 'Additive') return '+ ';
+  return '';
+}
+
 export function CostBreakdown({ task }: CostBreakdownProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -91,15 +103,15 @@ export function CostBreakdown({ task }: CostBreakdownProps) {
             <TableBody>
               <TableRow>
                 <TableCell className="font-medium whitespace-nowrap">Estimated Cost</TableCell>
-                <TableCell className="text-right whitespace-nowrap">TSh {parseFloat(task.estimated_cost || '0').toFixed(2)}</TableCell>
+                <TableCell className="text-right whitespace-nowrap">TSh {Number.parseFloat(task.estimated_cost || '0').toFixed(2)}</TableCell>
                 {isManager && <TableCell></TableCell>}
               </TableRow>
               {costBreakdowns?.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="whitespace-nowrap">{item.description}</TableCell>
                   <TableCell
-                    className={`text-right whitespace-nowrap ${item.cost_type === 'Subtractive' ? 'text-red-600' : (item.cost_type === 'Additive' ? 'text-green-600' : '')}`}>
-                    {item.cost_type === 'Subtractive' ? '- ' : (item.cost_type === 'Additive' ? '+ ' : '')}TSh {parseFloat(item.amount).toFixed(2)}
+                    className={`text-right whitespace-nowrap ${getCostTypeClass(item.cost_type)}`}>
+                    {getCostTypePrefix(item.cost_type)}TSh {Number.parseFloat(item.amount).toFixed(2)}
                   </TableCell>
                   {isManager && (
                     <TableCell className="text-right">
@@ -203,7 +215,7 @@ export function CostBreakdown({ task }: CostBreakdownProps) {
       </CardContent>
       <CardFooter className="flex justify-between items-center">
         <Label className="text-base font-semibold text-gray-900">Total Cost</Label>
-        <span className="text-xl font-bold text-red-600">TSh {parseFloat(task.total_cost || '0').toFixed(2)}</span>
+        <span className="text-xl font-bold text-red-600">TSh {Number.parseFloat(task.total_cost || '0').toFixed(2)}</span>
       </CardFooter>
     </Card>
   );

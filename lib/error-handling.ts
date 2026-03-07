@@ -41,7 +41,7 @@ export function handleApiError(error: ApiError, fallbackMessage: string = 'An un
                         : data[firstErrorKey]
 
                     // Format: "Phone Number: This field is required"
-                    const formattedKey = firstErrorKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                    const formattedKey = firstErrorKey.replaceAll('_', ' ').replaceAll(/\b\w/g, l => l.toUpperCase())
                     description = `${formattedKey}: ${errorMsg}`
                 }
             }

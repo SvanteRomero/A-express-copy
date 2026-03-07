@@ -57,11 +57,7 @@ export function PasswordCard({
                 <CardDescription>Manage your password and security settings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                {!isChangingPassword ? (
-                    <Button className="w-full" onClick={() => setIsChangingPassword(true)}>
-                        Change Password
-                    </Button>
-                ) : (
+                {isChangingPassword ? (
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="current_password">Current Password</Label>
@@ -118,6 +114,10 @@ export function PasswordCard({
                             </Button>
                         </div>
                     </div>
+                ) : (
+                    <Button className="w-full" onClick={() => setIsChangingPassword(true)}>
+                        Change Password
+                    </Button>
                 )}
 
                 {error && (

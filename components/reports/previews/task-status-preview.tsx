@@ -149,7 +149,7 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
                                     </recharts.Pie>
                                     <ChartTooltip
                                         content={({ active, payload }: any) => {
-                                            if (active && payload && payload.length) {
+                                            if (active && payload?.length) {
                                                 const data = payload[0].payload
                                                 return (
                                                     <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">

@@ -59,7 +59,7 @@ export function ActivityTimelineCard() {
                         <CardDescription>Your recent actions and system events</CardDescription>
                     </div>
                     <div className="text-sm text-gray-500">
-                        {activityItems.length} event{activityItems.length !== 1 ? 's' : ''}
+                        {activityItems.length} event{activityItems.length === 1 ? '' : 's'}
                     </div>
                 </div>
             </CardHeader>

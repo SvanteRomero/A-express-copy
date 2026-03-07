@@ -128,7 +128,7 @@ export const generatePDF = async (
 
         // If we have the report data already from viewing, use it
         // UNLESS it's outstanding-payments, which needs a special PDF export fetch
-        if (selectedReport && selectedReport.id === reportId && reportId !== 'outstanding-payments') {
+        if (selectedReport?.id === reportId && reportId !== 'outstanding-payments') {
             reportData = selectedReport.data.report;
             reportType = selectedReport.data.type;
         } else {
@@ -185,7 +185,7 @@ export const generatePDF = async (
         // Add header
         const yPosition = addHeader(
             pdf,
-            report?.title || reportId.replace(/-/g, " "),
+            report?.title || reportId.replaceAll('-', " "),
             report?.category || "General",
             dateRangeDescription
         );
@@ -197,7 +197,7 @@ export const generatePDF = async (
         addFooter(pdf);
 
         // Save the PDF
-        const fileName = `${(report?.title || reportId).replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
+        const fileName = `${(report?.title || reportId).replaceAll(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
         pdf.save(fileName);
 
     } catch (error) {

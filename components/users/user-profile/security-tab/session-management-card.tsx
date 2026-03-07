@@ -58,14 +58,16 @@ export function SessionManagementCard() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        {!s.is_revoked ? (
+                                        {s.is_revoked ? (
+                                            <Badge className="bg-gray-100 text-gray-700">Revoked</Badge>
+                                        ) : (
                                             <Button variant="outline" size="sm" onClick={async () => {
                                                 // Show confirmation dialog
                                                 const confirmMessage = s.is_current
                                                     ? "This will end your current session and log you out. Are you sure?"
                                                     : "Are you sure you want to revoke this session?";
 
-                                                if (!window.confirm(confirmMessage)) {
+                                                if (!globalThis.confirm(confirmMessage)) {
                                                     return;
                                                 }
 
@@ -76,7 +78,7 @@ export function SessionManagementCard() {
                                                     // If revoking current session, redirect to login
                                                     if (resp.data?.logout_required) {
                                                         localStorage.removeItem('auth_user');
-                                                        window.location.href = '/';
+                                                        globalThis.location.href = '/';
                                                     }
                                                 } catch (err) {
                                                     console.error('Failed to revoke session', err);
@@ -84,8 +86,6 @@ export function SessionManagementCard() {
                                             }}>
                                                 {s.is_current ? 'End Session' : 'Revoke'}
                                             </Button>
-                                        ) : (
-                                            <Badge className="bg-gray-100 text-gray-700">Revoked</Badge>
                                         )}
                                     </div>
                                 </div>
@@ -94,7 +94,7 @@ export function SessionManagementCard() {
                 </div>
                 <Button variant="outline" className="w-full bg-transparent text-red-600 hover:bg-red-50 hover:text-red-700" onClick={async () => {
                     // Show confirmation dialog
-                    if (!window.confirm("This will sign you out of ALL devices, including this one. You will need to log in again. Are you sure?")) {
+                    if (!globalThis.confirm("This will sign you out of ALL devices, including this one. You will need to log in again. Are you sure?")) {
                         return;
                     }
 
@@ -102,7 +102,7 @@ export function SessionManagementCard() {
                         await revokeAllSessions();
                         // Clear local storage and redirect to login
                         localStorage.removeItem('auth_user');
-                        window.location.href = '/';
+                        globalThis.location.href = '/';
                     } catch (err) {
                         console.error('Failed to revoke all sessions', err);
                     }

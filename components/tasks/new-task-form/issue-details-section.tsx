@@ -10,6 +10,12 @@ import { FormField } from '@/components/ui/form/form-field'
 import { URGENCY_OPTIONS, DEVICE_TYPE_OPTIONS } from '@/lib/constants/task-options'
 import type { UseNewTaskFormReturn } from '@/hooks/use-new-task-form'
 
+function getTaskCountClass(count: number) {
+    if (count <= 2) return 'bg-green-100 text-green-700';
+    if (count <= 5) return 'bg-yellow-100 text-yellow-700';
+    return 'bg-red-100 text-red-700';
+}
+
 interface IssueDetailsSectionProps {
     form: UseNewTaskFormReturn
 }
@@ -184,12 +190,7 @@ export function IssueDetailsSection({ form }: IssueDetailsSectionProps) {
                                                 px-2 py-0.5 
                                                 text-xs font-medium 
                                                 rounded-full
-                                                ${technician.active_task_count <= 2
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : technician.active_task_count <= 5
-                                                        ? 'bg-yellow-100 text-yellow-700'
-                                                        : 'bg-red-100 text-red-700'
-                                                }
+                                                ${getTaskCountClass(technician.active_task_count)}
                                             `}>
                                                 {technician.active_task_count} tasks
                                             </span>

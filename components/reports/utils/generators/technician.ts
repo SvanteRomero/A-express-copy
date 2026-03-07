@@ -258,7 +258,7 @@ export const generateTechnicianWorkloadPDF = (
         ["Total Tasks", totalTasks.toString()],
         ["Technicians", technicians.length.toString()],
         ["Avg Tasks / Technician", avgPerTech.toString()],
-        ["Date Range", dateRange.replace(/_/g, " ")],
+        ["Date Range", dateRange.replaceAll('_', " ")],
     ];
 
     yPosition = addSummaryTable(pdf, summaryData, yPosition, PDF_COLORS.technician.primary);

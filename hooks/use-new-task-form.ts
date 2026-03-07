@@ -155,13 +155,13 @@ export function useNewTaskForm() {
         if (!formData.customer_name.trim()) newErrors.customer_name = 'Name is required'
 
         formData.customer_phone_numbers.forEach((phone, index) => {
-            if (!phone.phone_number.trim()) {
-                newErrors[`customer_phone_${index}`] = 'Phone is required'
-            } else {
+            if (phone.phone_number.trim()) {
                 const phoneRegex = /^0\s?\d{3}\s?\d{3}\s?\d{3}$/
                 if (!phoneRegex.test(phone.phone_number)) {
                     newErrors[`customer_phone_${index}`] = 'Invalid phone number format. Example: 0XXX XXX XXX'
                 }
+            } else {
+                newErrors[`customer_phone_${index}`] = 'Phone is required'
             }
         })
 

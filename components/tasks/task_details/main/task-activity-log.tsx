@@ -146,7 +146,7 @@ export function TaskActivityLog({ taskId }: TaskActivityLogProps) {
                         </div>
                       </div>
                       <Badge variant="outline" className="capitalize">
-                        {activity.type.replace(/_/g, " ")}
+                        {activity.type.replaceAll('_', " ")}
                       </Badge>
                     </div>
                     <p className="mt-2 text-sm text-gray-800">{activity.message}</p>

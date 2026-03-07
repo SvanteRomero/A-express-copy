@@ -62,12 +62,7 @@ export function PersonalInfoCard({ user, updateProfile }: PersonalInfoCardProps)
                         <User className="h-5 w-5" />
                         Personal Information
                     </CardTitle>
-                    {!isEditing ? (
-                        <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                        </Button>
-                    ) : (
+                    {isEditing ? (
                         <div className="flex gap-2">
                             <Button size="sm" onClick={handleSave}>
                                 <Save className="h-4 w-4 mr-2" />
@@ -78,6 +73,11 @@ export function PersonalInfoCard({ user, updateProfile }: PersonalInfoCardProps)
                                 Cancel
                             </Button>
                         </div>
+                    ) : (
+                        <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                        </Button>
                     )}
                 </div>
             </CardHeader>

@@ -15,7 +15,7 @@ export function RecentActivity() {
   const activities = data?.recentActivities || []
 
   return (
-    <Card className={`border-gray-200 transition-all duration-300 ${!isConnected ? "opacity-60" : ""}`}>
+    <Card className={`border-gray-200 transition-all duration-300 ${isConnected ? "" : "opacity-60"}`}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                 // Then verify with server using cookie auth
                 const authResult = await checkAuth()
-                if (authResult && authResult.user) {
+                if (authResult?.user) {
                     setUser(authResult.user)
                     localStorage.setItem("auth_user", JSON.stringify(authResult.user))
                 } else if (storedUser) {
@@ -79,10 +79,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             logout();
         };
 
-        window.addEventListener('auth:logout', handleLogoutEvent);
+        globalThis.addEventListener('auth:logout', handleLogoutEvent);
 
         return () => {
-            window.removeEventListener('auth:logout', handleLogoutEvent);
+            globalThis.removeEventListener('auth:logout', handleLogoutEvent);
         };
     }, []);
 
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const response = await apiLogin(username, password);
 
-            if (response.data && response.data.user) {
+            if (response.data?.user) {
                 const { user: userData } = response.data as { user: User };
                 setUser(userData);
                 localStorage.setItem("auth_user", JSON.stringify(userData));
@@ -126,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             // Reload user profile after refresh
             const authResult = await checkAuth()
-            if (authResult && authResult.user) {
+            if (authResult?.user) {
                 setUser(authResult.user)
                 localStorage.setItem('auth_user', JSON.stringify(authResult.user))
                 return true

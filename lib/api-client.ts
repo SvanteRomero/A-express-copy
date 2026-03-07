@@ -69,8 +69,8 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed, logout user
         // Refresh failed, logout user via event
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('auth:logout'));
+        if (typeof globalThis.window !== 'undefined') {
+          globalThis.dispatchEvent(new CustomEvent('auth:logout'));
         }
         return Promise.reject(refreshError);
       }

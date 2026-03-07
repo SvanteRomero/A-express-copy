@@ -93,11 +93,11 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
     if (!task) return;
 
     // Check if task has no workshop_status - if so, show outcome dialog
-    if (!task.workshop_status) {
-      setIsCompletionOutcomeDialogOpen(true)
-    } else {
+    if (task.workshop_status) {
       // Task already has outcome from workshop, just mark as completed
       await handleStatusChange("Completed")
+    } else {
+      setIsCompletionOutcomeDialogOpen(true)
     }
   }
 

@@ -52,7 +52,7 @@ export function ReportViewerModal({
                         </div>
                         <div>
                             <h3 className="text-xl font-semibold text-gray-900">
-                                {selectedReport.data.report?.title || report?.title || selectedReport.id.replace(/-/g, ' ')}
+                                {selectedReport.data.report?.title || report?.title || selectedReport.id.replaceAll('-', ' ')}
                             </h3>
                             <p className="text-gray-600 text-sm">
                                 {report?.description || 'Live report data from your backend'}

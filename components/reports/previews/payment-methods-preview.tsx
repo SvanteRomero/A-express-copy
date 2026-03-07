@@ -63,7 +63,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
             const end = new Date(endDate).toLocaleDateString()
             return `${start} - ${end}`
         }
-        return String(dateRange || '').replace(/_/g, ' ')
+        return String(dateRange || '').replaceAll('_', ' ')
     }
 
     // Prepare data for bar chart - show top 5 methods by absolute value
@@ -164,7 +164,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                             dataKey="method_name"
                                             width={80}
                                             tick={{ fontSize: 12 }}
-                                            tickFormatter={(value) => String(value || '').replace(/-/g, ' ')}
+                                            tickFormatter={(value) => String(value || '').replaceAll('-', ' ')}
                                         />
                                         <Tooltip
                                             formatter={(value: any, name: any, props: any) => {
@@ -175,7 +175,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                                 }
                                                 return [value, name]
                                             }}
-                                            labelFormatter={(label) => `Method: ${String(label || '').replace(/-/g, ' ')}`}
+                                            labelFormatter={(label) => `Method: ${String(label || '').replaceAll('-', ' ')}`}
                                         />
                                         <Legend />
                                         <Bar
@@ -217,7 +217,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                                 <div className="flex justify-between items-start">
                                                     <div>
                                                         <p className="font-medium capitalize text-gray-900">
-                                                            {String(method.method_name || '').replace(/-/g, ' ')}
+                                                            {String(method.method_name || '').replaceAll('-', ' ')}
                                                         </p>
                                                         <p className="text-sm text-gray-500 mt-1">
                                                             {method.payment_count} payments • Avg: TSh {method.average_payment?.toLocaleString()}
@@ -267,7 +267,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                                 <div className="flex justify-between items-start">
                                                     <div>
                                                         <p className="font-medium capitalize text-gray-900">
-                                                            {String(method.method_name || '').replace(/-/g, ' ')}
+                                                            {String(method.method_name || '').replaceAll('-', ' ')}
                                                         </p>
                                                         <p className="text-sm text-gray-500 mt-1">
                                                             {method.payment_count} payments • Avg: TSh {method.average_payment?.toLocaleString()}
@@ -323,7 +323,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                     {revenueMethods.map((method: any) => (
                                         <TableRow key={`revenue-${method.method_name}`} className="hover:bg-green-50">
                                             <TableCell className="font-medium capitalize">
-                                                {String(method.method_name || '').replace(/-/g, ' ')}
+                                                {String(method.method_name || '').replaceAll('-', ' ')}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge className="bg-green-100 text-green-800 border-green-200">
@@ -347,7 +347,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                     {expenditureMethods.map((method: any) => (
                                         <TableRow key={`expenditure-${method.method_name}`} className="hover:bg-red-50">
                                             <TableCell className="font-medium capitalize">
-                                                {String(method.method_name || '').replace(/-/g, ' ')}
+                                                {String(method.method_name || '').replaceAll('-', ' ')}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge className="bg-red-100 text-red-800 border-red-200">
@@ -407,7 +407,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                     {revenueMethods.length > 0 ? (
                                         <>
                                             <span className="font-bold capitalize">
-                                                {String(revenueMethods[0]?.method_name || '').replace(/-/g, ' ')}
+                                                {String(revenueMethods[0]?.method_name || '').replaceAll('-', ' ')}
                                             </span> contributes {revenueMethods[0]?.percentage}% of total revenue
                                         </>
                                     ) : (
@@ -421,7 +421,7 @@ export const PaymentMethodsPreview = ({ report }: { report: any }) => {
                                     {expenditureMethods.length > 0 ? (
                                         <>
                                             <span className="font-bold capitalize">
-                                                {String(expenditureMethods[0]?.method_name || '').replace(/-/g, ' ')}
+                                                {String(expenditureMethods[0]?.method_name || '').replaceAll('-', ' ')}
                                             </span> accounts for {expenditureMethods[0]?.percentage}% of expenses
                                         </>
                                     ) : (

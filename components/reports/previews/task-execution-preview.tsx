@@ -12,7 +12,7 @@ const ChartContainer = ({ children, className }: any) => {
 }
 
 const ChartTooltipContent = ({ active, payload, label }: any) => {
-    if (!active || !payload || !payload.length) return null
+    if (!active || !payload?.length) return null
     return (
         <div className="bg-white border p-2 rounded shadow-sm text-sm">
             {label && <div className="font-semibold mb-1">{label}</div>}
@@ -97,7 +97,7 @@ export const TaskExecutionPreview = ({
                     <CardContent className="p-4">
                         <p className="text-sm text-gray-600">Fastest Task</p>
                         <p className="text-2xl font-bold text-green-600">
-                            {summary.fastest_task_hours !== undefined ? `${summary.fastest_task_hours} hrs` : 'N/A'}
+                            {summary.fastest_task_hours === undefined ? 'N/A' : `${summary.fastest_task_hours} hrs`}
                         </p>
                     </CardContent>
                 </Card>

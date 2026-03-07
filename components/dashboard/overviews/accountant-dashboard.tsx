@@ -59,9 +59,9 @@ export default function AccountantDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.todays_revenue !== undefined
-                ? new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS' }).format(stats.todays_revenue)
-                : 'TSh 0.00'
+              {stats?.todays_revenue === undefined
+                ? 'TSh 0.00'
+                : new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS' }).format(stats.todays_revenue)
               }
             </div>
             <p className="text-xs text-muted-foreground">Total payments received today</p>
@@ -74,9 +74,9 @@ export default function AccountantDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.outstanding_payments_total !== undefined
-                ? new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS' }).format(stats.outstanding_payments_total)
-                : 'TSh 0.00'
+              {stats?.outstanding_payments_total === undefined
+                ? 'TSh 0.00'
+                : new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS' }).format(stats.outstanding_payments_total)
               }
             </div>
             <p className="text-xs text-muted-foreground">Total pending from all tasks</p>

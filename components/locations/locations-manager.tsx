@@ -58,7 +58,7 @@ export function LocationsManager() {
   };
 
   const handleUpdateLocation = async () => {
-    if (!editingLocation || !editingLocation.name.trim()) return;
+    if (!editingLocation?.name.trim()) return;
     try {
       const response = await apiClient.put(`/locations/${editingLocation.id}/`, { name: editingLocation.name, is_workshop: editingLocation.is_workshop });
       if (response.data) {
@@ -139,7 +139,7 @@ export function LocationsManager() {
                 </div>
               </div>
             ) : (
-              <span className={`flex-grow ${!location.is_active ? 'text-gray-400 italic' : ''}`}>
+              <span className={`flex-grow ${location.is_active ? '' : 'text-gray-400 italic'}`}>
                 {location.name} {location.is_workshop && "(Workshop)"} {!location.is_active && "(Inactive)"}
               </span>
             )}

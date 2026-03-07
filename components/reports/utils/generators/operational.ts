@@ -121,12 +121,12 @@ export const generateTaskExecutionPDF = (
     const taskDetails = data.task_details || [];
 
     const summaryData: [string, string][] = [
-        ["Overall Avg Exec", summary.overall_average_hours !== undefined ? `${summary.overall_average_hours} hours` : "N/A"],
-        ["Overall Avg Workshop", summary.overall_average_workshop_hours !== undefined ? `${summary.overall_average_workshop_hours} hours` : "N/A"],
+        ["Overall Avg Exec", summary.overall_average_hours === undefined ? "N/A" : `${summary.overall_average_hours} hours`],
+        ["Overall Avg Workshop", summary.overall_average_workshop_hours === undefined ? "N/A" : `${summary.overall_average_workshop_hours} hours`],
         ["Tasks Analyzed", summary.total_tasks_analyzed ? `${summary.total_tasks_analyzed} tasks` : "0"],
         ["Tasks sent to Workshop", summary.total_tasks_workshop ? `${summary.total_tasks_workshop} tasks` : "0"],
         ["Best Period", summary.best_period || "N/A"],
-        ["Fastest Task", summary.fastest_task_hours !== undefined ? `${summary.fastest_task_hours} hours` : "N/A"],
+        ["Fastest Task", summary.fastest_task_hours === undefined ? "N/A" : `${summary.fastest_task_hours} hours`],
     ];
 
     yPosition = addSummaryTable(pdf, summaryData, yPosition, PDF_COLORS.info);
@@ -193,8 +193,8 @@ export const generateTaskExecutionPDF = (
 
         const turnaroundData = data.periods.map((period: any) => [
             period.period,
-            period.average_execution_hours !== undefined ? `${period.average_execution_hours}h` : "N/A",
-            period.average_workshop_hours !== undefined ? `${period.average_workshop_hours}h` : "0h",
+            period.average_execution_hours === undefined ? "N/A" : `${period.average_execution_hours}h`,
+            period.average_workshop_hours === undefined ? "0h" : `${period.average_workshop_hours}h`,
             period.workshop_count?.toString() || "0",
             period.tasks_completed?.toString() || "0",
         ]);

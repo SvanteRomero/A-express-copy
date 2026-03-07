@@ -62,7 +62,7 @@ export default function AccountantHistoryPage() {
           <p className="text-gray-600 mt-2">A list of all fully paid tasks.</p>
         </div>
         <div className="text-sm text-gray-500">
-          {count} total task{count !== 1 ? 's' : ''}
+          {count} total task{count === 1 ? '' : 's'}
         </div>
       </div>
 

@@ -12,6 +12,24 @@ const ChartContainer = ({ children, className }: any) => {
     return <div className={className}>{children}</div>
 }
 
+function getSolveRateTextColor(rate: number) {
+    if (rate >= 80) return 'text-green-600';
+    if (rate >= 50) return 'text-yellow-600';
+    return 'text-red-600';
+}
+
+function getSolveRateBgColor(rate: number) {
+    if (rate >= 80) return 'bg-green-600';
+    if (rate >= 50) return 'bg-yellow-600';
+    return 'bg-red-600';
+}
+
+function getWorkshopRateColor(rate: number) {
+    if (rate >= 50) return 'text-red-600';
+    if (rate >= 25) return 'text-orange-600';
+    return 'text-green-600';
+}
+
 const ChartTooltip = (props: any) => {
     return <Tooltip {...props} />
 }
@@ -70,7 +88,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                     <CardHeader>
                         <CardTitle>Technician Performance Overview</CardTitle>
                         <CardDescription>
-                            Comprehensive performance metrics for {technicianPerformance.length} technician{technicianPerformance.length !== 1 ? 's' : ''}
+                            Comprehensive performance metrics for {technicianPerformance.length} technician{technicianPerformance.length === 1 ? '' : 's'}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -167,10 +185,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                                 <div className="bg-white rounded-lg border-2 border-gray-200 p-3 hover:shadow-md transition-shadow">
                                                                     <div className="text-xs text-gray-600 mb-1.5">Solve Rate</div>
                                                                     <div className="flex items-baseline gap-1.5">
-                                                                        <div className={`text-xl font-bold ${(tech.solve_rate ?? 0) >= 80 ? 'text-green-600' :
-                                                                            (tech.solve_rate ?? 0) >= 50 ? 'text-yellow-600' :
-                                                                                'text-red-600'
-                                                                            }`}>
+                                                                        <div className={`text-xl font-bold ${getSolveRateTextColor(tech.solve_rate ?? 0)}`}>
                                                                             {(tech.solve_rate ?? 0).toFixed(1)}%
                                                                         </div>
                                                                         <div className="text-[10px] text-gray-500">
@@ -179,7 +194,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                                     </div>
                                                                     <div className="mt-1.5 w-full bg-gray-200 rounded-full h-1.5">
                                                                         <div
-                                                                            className={`h-1.5 rounded-full transition-all ${(tech.solve_rate ?? 0) >= 80 ? 'bg-green-600' : ((tech.solve_rate ?? 0) >= 50 ? 'bg-yellow-600' : 'bg-red-600')}`}
+                                                                            className={`h-1.5 rounded-full transition-all ${getSolveRateBgColor(tech.solve_rate ?? 0)}`}
                                                                             style={{ width: `${Math.min(tech.solve_rate ?? 0, 100)}%` }}
                                                                         ></div>
                                                                     </div>
@@ -210,7 +225,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                                 {/* Workshop Rate */}
                                                                 <div className="bg-white rounded-lg border-2 border-orange-200 p-3 hover:shadow-md transition-shadow">
                                                                     <div className="text-xs text-gray-600 mb-1.5">Workshop Rate</div>
-                                                                    <div className={`text-xl font-bold ${(tech.workshop_rate ?? 0) >= 50 ? 'text-red-600' : ((tech.workshop_rate ?? 0) >= 25 ? 'text-orange-600' : 'text-green-600')}`}>
+                                                                    <div className={`text-xl font-bold ${getWorkshopRateColor(tech.workshop_rate ?? 0)}`}>
                                                                         {(tech.workshop_rate ?? 0).toFixed(1)}%
                                                                     </div>
                                                                     <div className="text-[10px] text-gray-500 mt-0.5">
@@ -354,7 +369,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                         <YAxis dataKey="technician_name" type="category" width={100} />
                                         <ChartTooltip
                                             content={({ active, payload }: any) => {
-                                                if (active && payload && payload.length) {
+                                                if (active && payload?.length) {
                                                     const data = payload[0].payload
                                                     return (
                                                         <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">

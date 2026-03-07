@@ -40,9 +40,9 @@ export function TaskTableRow({
     ...actionProps
 }: TaskTableRowProps) {
     const isCurrentTasks = isManagerView && !isCompletedTab
-    const managerLocationContent = !isCompletedTab
-        ? task.current_location_details?.name
-        : <WorkshopStatusBadge status={task.workshop_status || "N/A"} />
+    const managerLocationContent = isCompletedTab
+        ? <WorkshopStatusBadge status={task.workshop_status || "N/A"} />
+        : task.current_location_details?.name
 
     let contextCell;
     if (isMyTasksTab) {

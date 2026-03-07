@@ -75,8 +75,8 @@ export function PreviewModal({
     const [expandedCustomers, setExpandedCustomers] = useState<Set<number>>(new Set());
 
     const templateToUse = templates.find(t =>
-        (t.key && t.key === selectedTemplate) ||
-        (t.id && t.id.toString() === selectedTemplate)
+        t.key === selectedTemplate ||
+        t.id?.toString() === selectedTemplate
     );
 
     const toggleExpanded = (customerId: number) => {
@@ -94,7 +94,7 @@ export function PreviewModal({
     // Get preview for a task
     const getMessagePreview = (task: TaskForMessaging, customerName: string) => {
         if (useCustomMessage) {
-            return customMessage.replace(/{customer}/g, customerName);
+            return customMessage.replaceAll('{customer}', customerName);
         }
         if (!templateToUse) return "";
         const customerFormat = taskToCustomerFormat(task, customerName);
@@ -124,7 +124,7 @@ export function PreviewModal({
                                     <div>
                                         <h4 className="font-semibold">{customer.name}</h4>
                                         <p className="text-sm text-muted-foreground">
-                                            {customer.tasks.length} message{customer.tasks.length !== 1 ? 's' : ''} will be sent
+                                            {customer.tasks.length} message{customer.tasks.length === 1 ? '' : 's'} will be sent
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2">

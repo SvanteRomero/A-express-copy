@@ -46,9 +46,9 @@ export function RequestsList() {
       page,
       page_size: pageSize,
       search: searchTerm || undefined,
-      status: statusFilter !== 'all' ? statusFilter : undefined,
-      transaction_type: typeFilter !== 'all' ? typeFilter : undefined,
-      request_type: requestTypeFilter !== 'all' ? requestTypeFilter as 'transaction' | 'debt' : undefined,
+      status: statusFilter === 'all' ? undefined : statusFilter,
+      transaction_type: typeFilter === 'all' ? undefined : typeFilter,
+      request_type: requestTypeFilter === 'all' ? undefined : requestTypeFilter as 'transaction' | 'debt',
     }),
   });
 
@@ -251,8 +251,13 @@ export function RequestsList() {
               </div>
             ))}
           </div>
-        ) : requests?.results && requests.results.length > 0 ? (
-          requests.results.map((request: UnifiedApprovalRequest) => {
+        ) : (() => {
+          if ((requests?.results?.length ?? 0) === 0) return (
+            <div className="text-center py-10 text-muted-foreground">
+              No approval requests found
+            </div>
+          );
+          return requests!.results.map((request: UnifiedApprovalRequest) => {
             const isDebt = isDebtRequest(request);
             const isTransaction = isTransactionRequest(request);
 
@@ -331,14 +336,14 @@ export function RequestsList() {
                       {/* Amount (for transactions) */}
                       {amount && (
                         <div className={`text-sm font-semibold ${isTransaction && request.transaction_type === 'Revenue' ? 'text-green-600' : 'text-amber-600'}`}>
-                          TSh {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parseFloat(amount))}
+                          TSh {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number.parseFloat(amount))}
                         </div>
                       )}
 
                       {/* Outstanding balance for debt */}
                       {isDebt && request.task_details?.outstanding_balance && (
                         <div className="text-sm font-semibold text-purple-600">
-                          TSh {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parseFloat(request.task_details.outstanding_balance))}
+                          TSh {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number.parseFloat(request.task_details.outstanding_balance))}
                         </div>
                       )}
                     </div>
@@ -406,12 +411,8 @@ export function RequestsList() {
                 </div>
               </div>
             );
-          })
-        ) : (
-          <div className="text-center py-10 text-muted-foreground">
-            No approval requests found
-          </div>
-        )}
+          });
+        })()}
         <div className="flex justify-end space-x-2 p-4">
           <Button
             onClick={() => setPage(prev => Math.max(1, prev - 1))}

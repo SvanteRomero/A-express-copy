@@ -115,7 +115,7 @@ export interface WebSocketClientConfig {
  * Converts http://localhost:8000/api to ws://localhost:8000
  */
 function getWebSocketBaseUrl(): string {
-    if (typeof window === 'undefined') {
+    if (typeof globalThis.window === 'undefined') {
         return 'ws://localhost:8000';
     }
 
@@ -132,15 +132,15 @@ function getWebSocketBaseUrl(): string {
         }
     }
 
-    const host = window.location.hostname;
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = globalThis.location.hostname;
+    const protocol = globalThis.location.protocol === 'https:' ? 'wss:' : 'ws:';
 
     // Railway deployment: frontend and backend are separate services
     // The backend URL should be set via NEXT_PUBLIC_API_URL
     // If not set, we can't auto-detect it (different Railway services have different URLs)
     if (host.includes('railway.app') || host.includes('vercel.app')) {
         // Check if there's a backend URL stored in window (set by config)
-        const backendUrl = (window as unknown as { __BACKEND_URL__?: string }).__BACKEND_URL__;
+        const backendUrl = (globalThis as unknown as { __BACKEND_URL__?: string }).__BACKEND_URL__;
         if (backendUrl) {
             try {
                 const url = new URL(backendUrl);

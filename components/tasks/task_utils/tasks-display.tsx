@@ -152,31 +152,31 @@ export function TasksDisplay({
   const effectiveSearchQuery = internalSearchQuery;
   const setEffectiveSearchQuery = setInternalSearchQuery;
 
-  const effectiveTechnicianFilter = serverSideFilters?.technicianId !== undefined ? serverSideFilters.technicianId : localTechnicianFilter;
+  const effectiveTechnicianFilter = serverSideFilters?.technicianId === undefined ? localTechnicianFilter : serverSideFilters.technicianId;
   const setEffectiveTechnicianFilter = (val: string | number) => {
     if (serverSideFilters?.setTechnicianId) serverSideFilters.setTechnicianId(val);
     else setLocalTechnicianFilter(String(val));
   };
 
-  const effectiveUrgencyFilter = serverSideFilters?.urgency !== undefined ? serverSideFilters.urgency : localUrgencyFilter;
+  const effectiveUrgencyFilter = serverSideFilters?.urgency === undefined ? localUrgencyFilter : serverSideFilters.urgency;
   const setEffectiveUrgencyFilter = (val: string) => {
     if (serverSideFilters?.setUrgency) serverSideFilters.setUrgency(val);
     else setLocalUrgencyFilter(val);
   };
 
-  const effectiveDeviceStatusFilter = serverSideFilters?.deviceStatus !== undefined ? serverSideFilters.deviceStatus : localDeviceStatusFilter;
+  const effectiveDeviceStatusFilter = serverSideFilters?.deviceStatus === undefined ? localDeviceStatusFilter : serverSideFilters.deviceStatus;
   const setEffectiveDeviceStatusFilter = (val: string) => {
     if (serverSideFilters?.setDeviceStatus) serverSideFilters.setDeviceStatus(val);
     else setLocalDeviceStatusFilter(val);
   };
 
-  const effectiveLocationFilter = serverSideFilters?.location !== undefined ? serverSideFilters.location : localLocationFilter;
+  const effectiveLocationFilter = serverSideFilters?.location === undefined ? localLocationFilter : serverSideFilters.location;
   const setEffectiveLocationFilter = (val: string) => {
     if (serverSideFilters?.setLocation) serverSideFilters.setLocation(val);
     else setLocalLocationFilter(val);
   };
 
-  const effectiveTaskStatusFilter = serverSideFilters?.taskStatus !== undefined ? serverSideFilters.taskStatus : localTaskStatusFilter;
+  const effectiveTaskStatusFilter = serverSideFilters?.taskStatus === undefined ? localTaskStatusFilter : serverSideFilters.taskStatus;
   const setEffectiveTaskStatusFilter = (val: string) => {
     if (serverSideFilters?.setTaskStatus) serverSideFilters.setTaskStatus(val);
     else setLocalTaskStatusFilter(val);
@@ -192,7 +192,7 @@ export function TasksDisplay({
     if (!sortField || !sortDirection) return 0
 
     const getField = (obj: any, path: string) => {
-      return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+      return path.split('.').reduce((acc, part) => acc?.[part], obj);
     }
     const aValue = getField(a, sortField)
     const bValue = getField(b, sortField)

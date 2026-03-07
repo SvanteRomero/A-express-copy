@@ -52,7 +52,7 @@ export default function AddPaymentDialog({
       return;
     }
     if (paymentMethodId) {
-      onSubmit(amount, parseInt(paymentMethodId, 10));
+      onSubmit(amount, Number.parseInt(paymentMethodId, 10));
     }
   };
 

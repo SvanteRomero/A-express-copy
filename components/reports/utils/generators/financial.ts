@@ -146,7 +146,7 @@ export const generatePaymentMethodsPDF = (
         ["Total Expenditure", formatCurrency(summary.total_expenditure)],
         ["Net Revenue", formatCurrency(summary.net_revenue)],
         ["Total Payments", summary.total_payments?.toString() || "0"],
-        ["Date Range", summary.date_range ? summary.date_range.replace(/_/g, " ") : "Last 30 Days"],
+        ["Date Range", summary.date_range ? summary.date_range.replaceAll('_', " ") : "Last 30 Days"],
     ];
 
     yPosition = addSummaryTable(pdf, summaryData, yPosition, PDF_COLORS.operational.primary);
@@ -159,7 +159,7 @@ export const generatePaymentMethodsPDF = (
         yPosition += 10;
 
         const revenueData = data.revenue_methods.map((method: any) => [
-            method.method_name?.replace(/-/g, " ") || "Unknown",
+            method.method_name?.replaceAll('-', " ") || "Unknown",
             formatCurrency(method.total_amount),
             method.payment_count?.toString() || "0",
             formatCurrency(method.average_payment),
@@ -186,7 +186,7 @@ export const generatePaymentMethodsPDF = (
         yPosition += 10;
 
         const expenditureData = data.expenditure_methods.map((method: any) => [
-            method.method_name?.replace(/-/g, " ") || "Unknown",
+            method.method_name?.replaceAll('-', " ") || "Unknown",
             formatCurrency(method.total_amount),
             method.payment_count?.toString() || "0",
             formatCurrency(method.average_payment),

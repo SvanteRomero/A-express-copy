@@ -27,8 +27,8 @@ export function TemplateSelector({
     onCustomMessageChange,
 }: TemplateSelectorProps) {
     const currentTemplate = templates.find(t =>
-        (t.key && t.key === selectedTemplate) ||
-        (t.id && t.id.toString() === selectedTemplate)
+        t.key === selectedTemplate ||
+        t.id?.toString() === selectedTemplate
     );
 
     return (

@@ -17,9 +17,9 @@ function getBaseApiUrl() {
   }
 
   // 2. If running in the browser (client-side), detect the deployment URL
-  if (typeof window !== "undefined") {
-    const host = window.location.hostname;
-    const protocol = window.location.protocol;
+  if (typeof globalThis.window !== "undefined") {
+    const host = globalThis.location.hostname;
+    const protocol = globalThis.location.protocol;
 
     // Detect GitHub Codespaces (app.github.dev) or Gitpod
     if (

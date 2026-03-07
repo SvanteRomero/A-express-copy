@@ -260,7 +260,7 @@ export function MessagingSettingsPage() {
                                     min={1}
                                     max={168}
                                     value={pickupReminderHours}
-                                    onChange={(e) => setPickupReminderHours(parseInt(e.target.value) || 24)}
+                                    onChange={(e) => setPickupReminderHours(Number.parseInt(e.target.value) || 24)}
                                     className="w-20 text-center"
                                 />
                                 <span className="text-sm text-gray-700">hours</span>
@@ -302,7 +302,7 @@ export function MessagingSettingsPage() {
                                         min={1}
                                         max={720}
                                         value={debtReminderHours}
-                                        onChange={(e) => setDebtReminderHours(parseInt(e.target.value) || 72)}
+                                        onChange={(e) => setDebtReminderHours(Number.parseInt(e.target.value) || 72)}
                                         className="w-20 text-center"
                                     />
                                     <span className="text-sm text-gray-700">hours</span>
@@ -317,7 +317,7 @@ export function MessagingSettingsPage() {
                                         min={1}
                                         max={365}
                                         value={debtReminderMaxDays}
-                                        onChange={(e) => setDebtReminderMaxDays(parseInt(e.target.value) || 30)}
+                                        onChange={(e) => setDebtReminderMaxDays(Number.parseInt(e.target.value) || 30)}
                                         className="w-20 text-center"
                                     />
                                     <span className="text-sm text-gray-700">days since pickup</span>
@@ -360,7 +360,7 @@ export function MessagingSettingsPage() {
                                 min={0}
                                 max={100000}
                                 value={storageFeePerDay}
-                                onChange={(e) => setStorageFeePerDay(parseInt(e.target.value) || 0)}
+                                onChange={(e) => setStorageFeePerDay(Number.parseInt(e.target.value) || 0)}
                                 className="w-32 text-center"
                             />
                             <span className="text-sm text-gray-700">per day</span>
@@ -389,7 +389,7 @@ export function MessagingSettingsPage() {
                                 min={1}
                                 max={90}
                                 value={pickupDeadlineDays}
-                                onChange={(e) => setPickupDeadlineDays(parseInt(e.target.value) || 7)}
+                                onChange={(e) => setPickupDeadlineDays(Number.parseInt(e.target.value) || 7)}
                                 className="w-20 text-center"
                             />
                             <span className="text-sm text-gray-700">days</span>

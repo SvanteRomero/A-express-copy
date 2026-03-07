@@ -14,7 +14,7 @@ export const generateGenericPDF = (
 ): void => {
     let yPosition = addReportTitle(
         pdf,
-        `${reportId.replace(/-/g, " ")} Report`,
+        `${reportId.replaceAll('-', " ")} Report`,
         startY
     );
 

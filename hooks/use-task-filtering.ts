@@ -62,6 +62,8 @@ export function useTaskFiltering(props: UseTaskFilteringProps = {}) {
         ? Number(props.workshopUserId)  // Workshop managers with "all" selected: show assigned + workshop queue
         : undefined
 
+    const deviceStatusParam = deviceStatusFilter === "all" ? undefined : deviceStatusFilter;
+
     const { data: tasksData, isLoading, isError, error, refetch } = useTasks({
         page,
         page_size: props.pageSize || 10,
@@ -73,7 +75,7 @@ export function useTaskFiltering(props: UseTaskFilteringProps = {}) {
         location: locationFilter === "all" ? undefined : locationFilter,
         workshop_status: (props.isWorkshopContext && isFilteringBySpecificTechnician)
             ? "In Workshop"  // Workshop managers filtering by specific technician: only show workshop tasks
-            : (deviceStatusFilter === "all" ? undefined : deviceStatusFilter),
+            : deviceStatusParam,
         exclude_status: props.excludeStatus,
         ...props.extraParams
     })

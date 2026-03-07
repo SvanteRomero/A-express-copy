@@ -107,7 +107,7 @@ export const TechnicianWorkloadPreview = ({ report }: { report: any }) => {
                                         <YAxis />
                                         <ChartTooltip
                                             content={({ active, payload }: any) => {
-                                                if (active && payload && payload.length) {
+                                                if (active && payload?.length) {
                                                     const data = payload[0].payload
                                                     return (
                                                         <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
@@ -226,7 +226,7 @@ export const TechnicianWorkloadPreview = ({ report }: { report: any }) => {
                                         <YAxis />
                                         <ChartTooltip
                                             content={({ active, payload }: any) => {
-                                                if (active && payload && payload.length) {
+                                                if (active && payload?.length) {
                                                     return (
                                                         <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
                                                             <p className="font-medium">{payload[0].payload.name}</p>
@@ -269,7 +269,7 @@ export const TechnicianWorkloadPreview = ({ report }: { report: any }) => {
                                 <div>
                                     <h4 className="font-semibold text-green-800 mb-2">Workload Distribution</h4>
                                     <p className="text-green-700">
-                                        {techniciansWithTasks} technician{techniciansWithTasks !== 1 ? 's' : ''} currently handling {totalAssignedTasks} task{totalAssignedTasks !== 1 ? 's' : ''}
+                                        {techniciansWithTasks} technician{techniciansWithTasks === 1 ? '' : 's'} currently handling {totalAssignedTasks} task{totalAssignedTasks === 1 ? '' : 's'}
                                     </p>
                                 </div>
                             </div>

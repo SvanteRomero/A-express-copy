@@ -24,18 +24,18 @@ export const replaceTemplateVariables = (template: string, customer: Customer) =
     };
 
     return template
-        .replace(/{customer}/g, truncate(customer.name, 15))
-        .replace(/{device}/g, truncate(customer.device, 20))
-        .replace(/{taskId}/g, customer.taskDisplayId)
-        .replace(/{description}/g, truncate(customer.description, 30))
-        .replace(/{status}/g, customer.status.toUpperCase()) // Fallback for simple status
-        .replace(/{status_description}/g, statusDetails.description)
-        .replace(/{pickup_instruction}/g, statusDetails.instruction)
-        .replace(/{notes}/g, customer.deviceNotes ? ` ${truncate(customer.deviceNotes, 25)}` : '')
-        .replace(/{cost}|{amount}/g, customer.amount ? `${parseFloat(customer.amount).toLocaleString()}/=` : "0/=")
-        .replace(/{outstanding_balance}/g, customer.outstandingBalance ? `${parseFloat(customer.outstandingBalance).toLocaleString()}/=` : "0/=")
-        .replace(/{daysWaiting}/g, customer.daysWaiting.toString())
-        .replace(/{daysOverdue}/g, Math.max(0, customer.daysWaiting - 7).toString())
+        .replaceAll('{customer}', truncate(customer.name, 15))
+        .replaceAll('{device}', truncate(customer.device, 20))
+        .replaceAll('{taskId}', customer.taskDisplayId)
+        .replaceAll('{description}', truncate(customer.description, 30))
+        .replaceAll('{status}', customer.status.toUpperCase()) // Fallback for simple status
+        .replaceAll('{status_description}', statusDetails.description)
+        .replaceAll('{pickup_instruction}', statusDetails.instruction)
+        .replaceAll('{notes}', customer.deviceNotes ? ` ${truncate(customer.deviceNotes, 25)}` : '')
+        .replaceAll(/{cost}|{amount}/g, customer.amount ? `${Number.parseFloat(customer.amount).toLocaleString()}/=` : "0/=")
+        .replaceAll('{outstanding_balance}', customer.outstandingBalance ? `${Number.parseFloat(customer.outstandingBalance).toLocaleString()}/=` : "0/=")
+        .replaceAll('{daysWaiting}', customer.daysWaiting.toString())
+        .replaceAll('{daysOverdue}', Math.max(0, customer.daysWaiting - 7).toString())
 };
 
 export function transformTasksToCustomers(
@@ -69,7 +69,7 @@ export function transformTasksToCustomers(
                 workshopStatus: task.workshop_status,
                 amount: task.total_cost,
                 outstandingBalance: task.outstanding_balance,
-                isDebt: task.is_debt && parseFloat(task.outstanding_balance || '0') > 0,
+                isDebt: task.is_debt && Number.parseFloat(task.outstanding_balance || '0') > 0,
                 daysWaiting: Math.floor((Date.now() - new Date(task.created_at).getTime()) / (1000 * 60 * 60 * 24)),
                 selected: selectedTaskIds.has(task.id)
             };

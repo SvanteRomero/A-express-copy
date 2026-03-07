@@ -42,8 +42,8 @@ export function ComposeView() {
 
     // Derive template_filter from selected template
     const currentTemplate = templates.find(t =>
-        (t.key && t.key === selectedTemplate) ||
-        (t.id && t.id.toString() === selectedTemplate)
+        t.key === selectedTemplate ||
+        t.id?.toString() === selectedTemplate
     );
 
     const templateFilter = useMemo(() => {
