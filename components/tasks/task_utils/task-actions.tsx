@@ -81,7 +81,15 @@ export function TaskActions({
         const isPickingUp = pickingUpTaskId === task.title;
         const isPaymentBlocked = !task.is_terminated && task.payment_status !== 'Fully Paid' && !task.is_debt;
         return (
-            <div className="flex gap-2 w-full justify-end" onClick={stopProp}>
+            <div
+                className="flex gap-2 w-full justify-end"
+                onClick={stopProp}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') stopProp(e as unknown as React.MouseEvent);
+                }}
+                role="group"
+                tabIndex={0}
+            >
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                         <Button
@@ -115,7 +123,15 @@ export function TaskActions({
     if (isFrontDeskCompletedView) {
         const isApproving = approvingTaskId === task.title;
         return (
-            <div className="flex gap-2 w-full justify-end" onClick={stopProp}>
+            <div
+                className="flex gap-2 w-full justify-end"
+                onClick={stopProp}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') stopProp(e as unknown as React.MouseEvent);
+                }}
+                role="group"
+                tabIndex={0}
+            >
                 <Button
                     size="sm"
                     className="bg-green-600 hover:bg-green-700 text-white flex-1 sm:flex-none disabled:opacity-50"
@@ -162,7 +178,15 @@ export function TaskActions({
 
     if (isAccountantView) {
         return (
-            <div className="flex gap-2 w-full justify-end" onClick={stopProp}>
+            <div
+                className="flex gap-2 w-full justify-end"
+                onClick={stopProp}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') stopProp(e as unknown as React.MouseEvent);
+                }}
+                role="group"
+                tabIndex={0}
+            >
                 <Button
                     size="sm"
                     className="bg-green-600 hover:bg-green-700 text-white flex-1 sm:flex-none"
@@ -186,10 +210,18 @@ export function TaskActions({
 
     if (isCompletedTab) {
         if (task.status === 'Completed') {
-            return <div className="flex gap-2 w-full justify-end" onClick={stopProp}></div>;
+            return <div className="flex gap-2 w-full justify-end" onClick={stopProp} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') stopProp(e as unknown as React.MouseEvent); }} role="group" tabIndex={0}></div>;
         }
         return (
-            <div className="flex gap-2 w-full justify-end" onClick={stopProp}>
+            <div
+                className="flex gap-2 w-full justify-end"
+                onClick={stopProp}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') stopProp(e as unknown as React.MouseEvent);
+                }}
+                role="group"
+                tabIndex={0}
+            >
                 {task.status !== 'Completed' && (
                     <>
                         <Button
@@ -224,7 +256,15 @@ export function TaskActions({
     // Default actions (Edit/Delete/Terminate)
     if (["Pending", "In Progress"].includes(task.status)) {
         return (
-            <div className="flex gap-2 w-full justify-end" onClick={stopProp}>
+            <div
+                className="flex gap-2 w-full justify-end"
+                onClick={stopProp}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') stopProp(e as unknown as React.MouseEvent);
+                }}
+                role="group"
+                tabIndex={0}
+            >
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                         <Button

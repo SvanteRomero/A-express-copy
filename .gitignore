@@ -53,3 +53,6 @@ venv/
 
 #GEMINI 
 GEMINI.md
+
+.scannerwork/
+*.properties

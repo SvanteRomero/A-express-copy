@@ -144,15 +144,15 @@ class OperationalReportGenerator(ReportGeneratorBase):
                 "end_date": end_date.isoformat() if end_date else None,
             }
         
-        # Determine period type automatically if not specified
-        if duration_days <= 7:
-            period_type = 'daily'
-        elif duration_days <= 30:
-            period_type = 'weekly'
-        elif duration_days <= 90:
-            period_type = 'monthly'
-        else:
-            period_type = 'quarterly'
+        if period_type is None:
+            if duration_days <= 7:
+                period_type = 'daily'
+            elif duration_days <= 30:
+                period_type = 'weekly'
+            elif duration_days <= 90:
+                period_type = 'monthly'
+            else:
+                period_type = 'quarterly'
 
         grouped_data = {}
         task_details = []

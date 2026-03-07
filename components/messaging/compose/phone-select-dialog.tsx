@@ -35,6 +35,15 @@ export function PhoneSelectDialog({
                                 onSelectPhone(customer.taskId, phone);
                                 onClose();
                             }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    onSelectPhone(customer.taskId, phone);
+                                    onClose();
+                                }
+                            }}
+                            role="button"
+                            tabIndex={0}
                         >
                             <span className="font-medium">{phone}</span>
                             {customer.selectedPhone === phone && <Badge>Selected</Badge>}

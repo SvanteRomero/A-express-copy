@@ -35,6 +35,13 @@ export function ReportViewerModal({
         <div
             className="fixed inset-0 bg-gray-900/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300"
             onClick={handleBackdropClick}
+            onKeyDown={(e) => {
+                if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+                    handleBackdropClick(e as unknown as React.MouseEvent<HTMLDivElement>);
+                }
+            }}
+            role="dialog"
+            tabIndex={-1}
         >
             <div className="bg-white rounded-lg w-full max-w-7xl h-[90vh] overflow-hidden flex flex-col animate-in slide-in-from-bottom-10 duration-300">
                 {/* Modal Header */}

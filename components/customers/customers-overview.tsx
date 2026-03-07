@@ -1,4 +1,4 @@
-import { useCustomerStats, useCustomerAcquisition } from "@/hooks/use-customers";
+import { useCustomerStats, useCustomerAcquisition, useCustomers } from "@/hooks/use-customers";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/layout/card";
 import { Badge } from "@/components/ui/core/badge";
 import { Button } from "@/components/ui/core/button";
@@ -8,10 +8,130 @@ import { Users, TrendingUp, Search, Edit } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { EditCustomerDialog } from "./edit-customer-dialog";
 import { Customer } from "@/components/customers/types";
-import { useCustomers } from "@/hooks/use-customers";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Spinner, ListSkeleton, TableSkeleton } from "@/components/ui/core/loaders";
+
+interface CustomerListProps {
+  customers: Customer[] | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  onEditClick: (customer: Customer) => void;
+}
+
+function MobileCustomerList({ customers, isLoading, isError, onEditClick }: Readonly<CustomerListProps>) {
+  if (isLoading) {
+    return <ListSkeleton items={3} />;
+  }
+  if (isError) {
+    return <div className="text-center text-red-500 py-4">Error fetching customers.</div>;
+  }
+  if (!customers || customers.length === 0) {
+    return <div className="text-center py-4">No customers found.</div>;
+  }
+
+  return (
+    <>
+      {customers.map((customer) => (
+        <Card key={customer.id} onClick={() => onEditClick(customer)}>
+          <CardHeader className="p-4 pb-2">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="font-semibold">{customer.name}</div>
+                <div className="text-xs text-muted-foreground">{`CUST${customer.id.toString().padStart(3, '0')}`}</div>
+              </div>
+              <Badge variant="secondary">{customer.customer_type}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 space-y-2">
+            <div className="text-sm">
+              <span className="text-gray-500">Contact: </span>
+              <span>{customer.phone_numbers?.[0]?.phone_number ?? 'N/A'}</span>
+              {customer.phone_numbers && customer.phone_numbers.length > 1 && (
+                <Badge variant="outline" className="ml-2 text-xs">
+                  +{customer.phone_numbers.length - 1} more
+                </Badge>
+              )}
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <div>Tasks: <span className="font-medium">{customer.tasks_count}</span></div>
+              <div className="flex items-center gap-2">
+                Debt: <Badge variant={customer.has_debt ? "destructive" : "default"}>{customer.has_debt ? 'Yes' : 'No'}</Badge>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="p-2 bg-gray-50 flex justify-end gap-2">
+            <Button size="sm" variant="ghost" onClick={(e) => {
+              e.stopPropagation();
+              onEditClick(customer);
+            }}>
+              <Edit className="h-4 w-4" />
+            </Button>
+          </CardFooter>
+        </Card>
+      ))}
+    </>
+  );
+}
+
+function DesktopCustomerTable({ customers, isLoading, isError, onEditClick }: Readonly<CustomerListProps>) {
+  if (isLoading) {
+    return (
+      <TableRow>
+        <TableCell colSpan={7} className="p-0">
+          <TableSkeleton rows={3} columns={7} className="border-0" />
+        </TableCell>
+      </TableRow>
+    );
+  }
+  if (isError) {
+    return (
+      <TableRow>
+        <TableCell colSpan={7} className="text-center text-red-500">Error fetching customers.</TableCell>
+      </TableRow>
+    );
+  }
+  if (!customers || customers.length === 0) {
+    return (
+      <TableRow>
+        <TableCell colSpan={7} className="text-center">No customers found.</TableCell>
+      </TableRow>
+    );
+  }
+
+  return (
+    <>
+      {customers.map((customer) => (
+        <TableRow key={customer.id}>
+          <TableCell className="font-medium">{`CUST${customer.id.toString().padStart(3, '0')}`}</TableCell>
+          <TableCell>{customer.name}</TableCell>
+          <TableCell>
+            <span>{customer.phone_numbers?.[0]?.phone_number ?? 'N/A'}</span>
+            {customer.phone_numbers && customer.phone_numbers.length > 1 && (
+              <Badge variant="outline" className="ml-2 text-xs">
+                +{customer.phone_numbers.length - 1} more
+              </Badge>
+            )}
+          </TableCell>
+          <TableCell>
+            <Badge variant="secondary">{customer.customer_type}</Badge>
+          </TableCell>
+          <TableCell>{customer.tasks_count}</TableCell>
+          <TableCell>
+            <Badge variant={customer.has_debt ? "destructive" : "default"}>{customer.has_debt ? 'Yes' : 'No'}</Badge>
+          </TableCell>
+          <TableCell>
+            <div className="flex items-center space-x-2">
+              <Button variant="ghost" size="sm" onClick={() => onEditClick(customer)}>
+                <Edit className="h-4 w-4" />
+              </Button>
+            </div>
+          </TableCell>
+        </TableRow>
+      ))}
+    </>
+  );
+}
 
 export function CustomersOverview() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -128,52 +248,12 @@ export function CustomersOverview() {
           <CardContent>
             {isMobile ? (
               <div className="space-y-4">
-                {isLoading ? (
-                  <ListSkeleton items={3} />
-                ) : isError ? (
-                  <div className="text-center text-red-500 py-4">Error fetching customers.</div>
-                ) : customers && customers.length > 0 ? (
-                  customers.map((customer) => (
-                    <Card key={customer.id} onClick={() => handleEditClick(customer)}>
-                      <CardHeader className="p-4 pb-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-semibold">{customer.name}</div>
-                            <div className="text-xs text-muted-foreground">{`CUST${customer.id.toString().padStart(3, '0')}`}</div>
-                          </div>
-                          <Badge variant="secondary">{customer.customer_type}</Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-0 space-y-2">
-                        <div className="text-sm">
-                          <span className="text-gray-500">Contact: </span>
-                          <span>{customer.phone_numbers?.[0]?.phone_number ?? 'N/A'}</span>
-                          {customer.phone_numbers && customer.phone_numbers.length > 1 && (
-                            <Badge variant="outline" className="ml-2 text-xs">
-                              +{customer.phone_numbers.length - 1} more
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <div>Tasks: <span className="font-medium">{customer.tasks_count}</span></div>
-                          <div className="flex items-center gap-2">
-                            Debt: <Badge variant={customer.has_debt ? "destructive" : "default"}>{customer.has_debt ? 'Yes' : 'No'}</Badge>
-                          </div>
-                        </div>
-                      </CardContent>
-                      <CardFooter className="p-2 bg-gray-50 flex justify-end gap-2">
-                        <Button size="sm" variant="ghost" onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditClick(customer);
-                        }}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="text-center py-4">No customers found.</div>
-                )}
+                <MobileCustomerList
+                  customers={customers}
+                  isLoading={isLoading}
+                  isError={isError}
+                  onEditClick={handleEditClick}
+                />
               </div>
             ) : (
               <Table>
@@ -189,50 +269,12 @@ export function CustomersOverview() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="p-0">
-                        <TableSkeleton rows={3} columns={7} className="border-0" />
-                      </TableCell>
-                    </TableRow>
-                  ) : isError ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-red-500">Error fetching customers.</TableCell>
-                    </TableRow>
-                  ) : customers && customers.length > 0 ? (
-                    customers.map((customer) => (
-                      <TableRow key={customer.id}>
-                        <TableCell className="font-medium">{`CUST${customer.id.toString().padStart(3, '0')}`}</TableCell>
-                        <TableCell>{customer.name}</TableCell>
-                        <TableCell>
-                          <span>{customer.phone_numbers?.[0]?.phone_number ?? 'N/A'}</span>
-                          {customer.phone_numbers && customer.phone_numbers.length > 1 && (
-                            <Badge variant="outline" className="ml-2 text-xs">
-                              +{customer.phone_numbers.length - 1} more
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">{customer.customer_type}</Badge>
-                        </TableCell>
-                        <TableCell>{customer.tasks_count}</TableCell>
-                        <TableCell>
-                          <Badge variant={customer.has_debt ? "destructive" : "default"}>{customer.has_debt ? 'Yes' : 'No'}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm" onClick={() => handleEditClick(customer)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center">No customers found.</TableCell>
-                    </TableRow>
-                  )}
+                  <DesktopCustomerTable
+                    customers={customers}
+                    isLoading={isLoading}
+                    isError={isError}
+                    onEditClick={handleEditClick}
+                  />
                 </TableBody>
               </Table>
             )}
@@ -261,5 +303,6 @@ export function CustomersOverview() {
         onClose={handleCloseDialog}
       />
     </>
-  )
+  );
 }
+

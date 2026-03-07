@@ -35,15 +35,11 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
-    # Allow a development-only fallback when DEBUG would be True
-    if os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes"):
-        SECRET_KEY = "dev-only-insecure-key-do-not-use-in-production"
-    else:
-        from django.core.exceptions import ImproperlyConfigured
-        raise ImproperlyConfigured(
-            "The SECRET_KEY environment variable is required. "
-            "Set it in your environment or .env file."
-        )
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured(
+        "The SECRET_KEY environment variable is required. "
+        "Set it in your environment or .env file."
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")

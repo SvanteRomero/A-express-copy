@@ -152,6 +152,9 @@ importers:
       recharts:
         specifier: latest
         version: 3.1.0(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react-is@19.1.1)(react@19.2.1)(redux@5.0.1)
+      sonar-scanner:
+        specifier: ^3.1.0
+        version: 3.1.0
       sonner:
         specifier: latest
         version: 2.0.7(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -3071,6 +3074,10 @@ packages:
   side-channel@1.1.0:
     resolution: {integrity: sha512-ZX99e6tRweoUXqR+VBrslhda51Nh5MTQwou5tnUDgbtyM0dBgmhEDtWGP/xbKn6hqfPRHujUNwz5fy/wbbhnpw==}
     engines: {node: '>= 0.4'}
+
+  sonar-scanner@3.1.0:
+    resolution: {integrity: sha512-KD7W3wHCKJKAakhn8ckxNYTxkdb1cnJa3ot0NVvO8CCeJjb0yvF0fW2yGdI09zMHsqxCRsl4dLtyCL2SUv47WA==}
+    hasBin: true
 
   sonner@2.0.7:
     resolution: {integrity: sha512-W6ZN4p58k8aDKA4XPcx2hpIQXBRAgyiWVkYhT7CvK6D3iAu7xjvVyhQHg2/iaKJZ1XVJ4r7XuwGL+WGEK37i9w==}
@@ -6490,6 +6497,8 @@ snapshots:
       side-channel-list: 1.0.0
       side-channel-map: 1.0.1
       side-channel-weakmap: 1.0.2
+
+  sonar-scanner@3.1.0: {}
 
   sonner@2.0.7(react-dom@19.2.1(react@19.2.1))(react@19.2.1):
     dependencies:
