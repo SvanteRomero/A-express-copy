@@ -27,6 +27,7 @@ export function BrandManager() {
                 setError("Failed to fetch brands");
             }
         } catch (err) {
+            console.error("Error fetching brands:", err);
             setError("Failed to fetch brands");
         }
         setLoading(false);
@@ -43,6 +44,7 @@ export function BrandManager() {
                 setError("Failed to create brand");
             }
         } catch (err) {
+            console.error("Error creating brand:", err);
             setError("Failed to create brand");
         }
     };

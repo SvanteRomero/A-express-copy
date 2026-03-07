@@ -8,7 +8,7 @@ import { generatePrintTasksPDF } from "./utils/generators"
 import { ReportViewerModal } from "./report-viewer-modal"
 import { PrintTasksModal } from "./print-tasks-modal"
 import { Printer } from "lucide-react"
-import { API_CONFIG } from "@/lib/config"
+
 
 
 export function ReportsOverview() {

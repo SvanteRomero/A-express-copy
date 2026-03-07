@@ -133,8 +133,6 @@ export function FrontDeskTasksPage() {
     alert(`Notifying ${customerName} for task ${taskTitle}`);
   }, []);
 
-  const isLoading = notCompletedTasks.isLoading || completedTasks.isLoading || pickupTasks.isLoading;
-
   return (
     <div className="flex-1 space-y-6 p-4 md:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

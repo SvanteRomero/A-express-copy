@@ -8,6 +8,14 @@ const ChartContainer = ({ children, className }: any) => {
     return <div className={className}>{children}</div>
 }
 
+const getStatusColor = (status: string): string => {
+    if (status === 'Completed') return '#22c55e';
+    if (status === 'In Progress') return '#f97316';
+    if (status === 'Pending') return '#eab308';
+    if (status === 'Awaiting Parts') return '#f59e0b';
+    return '#6b7280';
+}
+
 const ChartTooltip = (props: any) => {
     return <recharts.Tooltip {...props} />
 }
@@ -135,13 +143,7 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
                                         {statusDistribution.map((entry: any, index: number) => (
                                             <recharts.Cell
                                                 key={`cell-${index}`}
-                                                fill={
-                                                    entry.status === 'Completed' ? '#22c55e' :
-                                                        entry.status === 'In Progress' ? '#f97316' :
-                                                            entry.status === 'Pending' ? '#eab308' :
-                                                                entry.status === 'Awaiting Parts' ? '#f59e0b' :
-                                                                    '#6b7280' // default gray
-                                                }
+                                                fill={getStatusColor(entry.status)}
                                             />
                                         ))}
                                     </recharts.Pie>
@@ -179,14 +181,7 @@ export const TaskStatusPreview = ({ report }: { report: any }) => {
                                     <div className="flex items-center gap-3">
                                         <div
                                             className="w-3 h-3 rounded-full"
-                                            style={{
-                                                backgroundColor:
-                                                    status.status === 'Completed' ? '#22c55e' :
-                                                        status.status === 'In Progress' ? '#f97316' :
-                                                            status.status === 'Pending' ? '#eab308' :
-                                                                status.status === 'Awaiting Parts' ? '#f59e0b' :
-                                                                    '#6b7280'
-                                            }}
+                                            style={{ backgroundColor: getStatusColor(status.status) }}
                                         />
                                         <span className="font-medium">{status.status}</span>
                                     </div>

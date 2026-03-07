@@ -44,7 +44,7 @@ export function AddTransactionDialog({
     const [taskSearch, setTaskSearch] = useState("");
 
     // Use the new search hook
-    const { data: tasksData, isLoading: isLoadingTasks } = useTasksSearch({
+    const { data: tasksData } = useTasksSearch({
         query: taskSearch,
         enabled: isOpen && defaultType === 'Expenditure'
     });

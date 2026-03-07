@@ -14,7 +14,6 @@ import type {
     TaskStatusReport,
     TechnicianWorkloadReport,
     PaymentMethodsReport,
-    InventoryLocationReport,
     FrontDeskPerformanceReport,
 } from "../types"
 

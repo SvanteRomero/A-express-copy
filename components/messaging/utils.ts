@@ -1,4 +1,4 @@
-import { Customer, MessageTemplate } from "./types";
+import { Customer } from "./types";
 
 // Helper to get status description and pickup instruction based on workshop status
 const getStatusDetails = (workshopStatus?: string) => {

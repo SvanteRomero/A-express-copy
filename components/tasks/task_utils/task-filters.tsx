@@ -3,7 +3,7 @@
 import { Input } from "@/components/ui/core/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select"
 import { Button } from "@/components/ui/core/button"
-import { Search, Filter } from "lucide-react"
+import { Search } from "lucide-react"
 
 interface TaskFiltersProps {
   searchQuery: string

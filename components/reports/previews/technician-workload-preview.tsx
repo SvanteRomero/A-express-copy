@@ -9,6 +9,20 @@ const ChartContainer = ({ children, className }: any) => {
     return <div className={className}>{children}</div>
 }
 
+const getWorkloadVariant = (tasks: number): "outline" | "default" | "secondary" | "destructive" => {
+    if (tasks === 0) return "outline";
+    if (tasks <= 2) return "default";
+    if (tasks <= 5) return "secondary";
+    return "destructive";
+}
+
+const getWorkloadLabel = (tasks: number): string => {
+    if (tasks === 0) return "Available";
+    if (tasks <= 2) return "Light";
+    if (tasks <= 5) return "Moderate";
+    return "Heavy";
+}
+
 const ChartTooltip = (props: any) => {
     return <Tooltip {...props} />
 }
@@ -175,16 +189,8 @@ export const TechnicianWorkloadPreview = ({ report }: { report: any }) => {
                                                 )}
                                             </TableCell>
                                             <TableCell>
-                                                <Badge
-                                                    variant={
-                                                        tech.tasks === 0 ? "outline" :
-                                                            tech.tasks <= 2 ? "default" :
-                                                                tech.tasks <= 5 ? "secondary" : "destructive"
-                                                    }
-                                                >
-                                                    {tech.tasks === 0 ? "Available" :
-                                                        tech.tasks <= 2 ? "Light" :
-                                                            tech.tasks <= 5 ? "Moderate" : "Heavy"}
+                                                <Badge variant={getWorkloadVariant(tech.tasks)}>
+                                                    {getWorkloadLabel(tech.tasks)}
                                                 </Badge>
                                             </TableCell>
                                         </TableRow>

@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card";
 import { RevenueOverview } from "./revenue-overview";
-import { ClipboardList, Users, Calendar, UserCog, CreditCard, FileText, BarChart3, Banknote, Package, AlertCircle } from "lucide-react";
+import { ClipboardList, Users, UserCog, CreditCard, FileText, Banknote, Package, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/core/button";
 
 

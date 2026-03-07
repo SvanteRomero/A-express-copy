@@ -11,7 +11,7 @@ import {
     showCustomerCreatedToast,
     showTaskCreatedWithSmsToast,
 } from '@/components/notifications/toast'
-import { useTechnicians, useManagers, useAssignableUsers } from '@/hooks/use-users'
+import { useManagers, useAssignableUsers } from '@/hooks/use-users'
 import { useBrands, useModels } from '@/hooks/use-brands-models'
 import { useLocations } from '@/hooks/use-locations'
 import { useCustomers } from '@/hooks/use-customers'
@@ -83,7 +83,7 @@ export function useNewTaskForm() {
     const [customerSearch, setCustomerSearch] = useState('')
     const [referrerSearch, setReferrerSearch] = useState('')
     const [modelSearch, setModelSearch] = useState('')
-    const [customerPage, setCustomerPage] = useState(1)
+    const [customerPage] = useState(1)
 
     // Duplicate phone alert state
     const [duplicatePhoneAlert, setDuplicatePhoneAlert] = useState<DuplicatePhoneAlertState>({

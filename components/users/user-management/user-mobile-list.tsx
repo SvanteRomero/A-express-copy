@@ -36,7 +36,7 @@ export function UserMobileList({ users, onEdit, onDelete, onToggleStatus, isLoad
                                 <div className="font-semibold">{user.first_name} {user.last_name}</div>
                                 <div className="text-sm text-muted-foreground">{user.username}</div>
                             </div>
-                            <Badge variant="outline" className={user.role === "Manager" ? "bg-blue-100 text-blue-800" : user.role === "Technician" ? "bg-green-100 text-green-800" : user.role === "Accountant" ? "bg-yellow-100 text-yellow-800" : "bg-purple-100 text-purple-800"}>
+                            <Badge variant="outline" className={user.role === "Manager" ? "bg-blue-100 text-blue-800" : (user.role === "Technician" ? "bg-green-100 text-green-800" : (user.role === "Accountant" ? "bg-yellow-100 text-yellow-800" : "bg-purple-100 text-purple-800"))}>
                                 {user.role}
                             </Badge>
                         </div>

@@ -21,10 +21,10 @@ interface FinancialsProps {
   taskId: string
 }
 
-export default function Financials({ taskId }: FinancialsProps) {
+export default function Financials({ taskId }: Readonly<FinancialsProps>) {
   const { user } = useAuth()
   const queryClient = useQueryClient()
-  const { data: taskData, isLoading, isError, error } = useTask(taskId)
+  const { data: taskData, isLoading, isError } = useTask(taskId)
   const { data: paymentMethods } = usePaymentMethods()
   const { toast } = useToast()
 
@@ -43,11 +43,11 @@ export default function Financials({ taskId }: FinancialsProps) {
   const handleAddPayment = async () => {
     if (!newPaymentAmount || !newPaymentMethod || !taskData) return
 
-    const totalCost = parseFloat(taskData.total_cost || "0")
-    const paidAmount = taskData.payments.reduce((acc: any, p: any) => acc + parseFloat(p.amount), 0)
+    const totalCost = Number.parseFloat(taskData.total_cost || "0")
+    const paidAmount = taskData.payments.reduce((acc: any, p: any) => acc + Number.parseFloat(p.amount), 0)
     const remainingAmount = totalCost - paidAmount
 
-    if (parseFloat(newPaymentAmount.toString()) > remainingAmount) {
+    if (Number.parseFloat(newPaymentAmount.toString()) > remainingAmount) {
       toast({
         title: "Payment Exceeds Total Cost",
         description: "The payment amount cannot be more than the remaining amount.",
@@ -58,7 +58,7 @@ export default function Financials({ taskId }: FinancialsProps) {
 
     addTaskPaymentMutation.mutate({
       amount: newPaymentAmount,
-      method: parseInt(newPaymentMethod, 10),
+      method: Number.parseInt(newPaymentMethod, 10),
       date: format(new Date(), "yyyy-MM-dd"),
     })
     setNewPaymentAmount("")
@@ -144,7 +144,7 @@ export default function Financials({ taskId }: FinancialsProps) {
               <TableBody>
                 {taskData.payments.map((payment: any) => (
                   <TableRow key={payment.id}>
-                    <TableCell className="font-medium text-green-600 whitespace-nowrap">TSh {parseFloat(payment.amount).toFixed(2)}</TableCell>
+                    <TableCell className="font-medium text-green-600 whitespace-nowrap">TSh {Number.parseFloat(payment.amount).toFixed(2)}</TableCell>
                     <TableCell className="whitespace-nowrap">{payment.date}</TableCell>
                     <TableCell className="whitespace-nowrap">{payment.method_name}</TableCell>
                   </TableRow>

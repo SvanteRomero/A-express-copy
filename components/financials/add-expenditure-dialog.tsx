@@ -34,7 +34,7 @@ export function AddExpenditureDialog({ isOpen, onClose, mode = 'expenditure', ta
   const [taskSearch, setTaskSearch] = useState("")
 
   // Use the new search hook - only fetches when user types or when pre-filling
-  const { data: tasksData, isLoading: isLoadingTasks } = useTasksSearch({
+  const { data: tasksData } = useTasksSearch({
     query: taskSearch,
     enabled: isOpen
   });

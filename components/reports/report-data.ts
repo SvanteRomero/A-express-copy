@@ -1,6 +1,5 @@
 import type React from "react"
 import {
-  DollarSign,
   CreditCard,
   PieChart,
   ClipboardList,

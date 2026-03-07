@@ -3,14 +3,14 @@
 import { useState } from 'react';
 import { useAccounts, Account } from '@/hooks/use-accounts';
 import { Button } from '@/components/ui/core/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/layout/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/layout/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/layout/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/feedback/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/feedback/alert-dialog';
 import { Input } from '@/components/ui/core/input';
 import { Label } from '@/components/ui/core/label';
 import { CurrencyInput } from '@/components/ui/core/currency-input';
-import { PlusCircle, Edit, Trash2, Loader2, DollarSign, Banknote } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -113,7 +113,7 @@ export function AccountsManagementPage() {
                       </div>
                       <div className="flex items-center text-green-600 font-bold">
                         <DollarSign className="h-4 w-4 mr-1" />
-                        {parseFloat(account.balance).toLocaleString('sw-TZ', { style: 'currency', currency: 'TZS' })}
+                        {Number.parseFloat(account.balance).toLocaleString('sw-TZ', { style: 'currency', currency: 'TZS' })}
                       </div>
                     </div>
                   </CardHeader>
@@ -176,7 +176,7 @@ export function AccountsManagementPage() {
                     <TableCell>
                       <div className="flex items-center">
                         <DollarSign className="h-4 w-4 mr-1 text-green-600" />
-                        {parseFloat(account.balance).toLocaleString('sw-TZ', { style: 'currency', currency: 'TZS' })}
+                        {Number.parseFloat(account.balance).toLocaleString('sw-TZ', { style: 'currency', currency: 'TZS' })}
                       </div>
                     </TableCell>
                     <TableCell>{account.created_by?.full_name || 'N/A'}</TableCell>

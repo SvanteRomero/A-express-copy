@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/core/label"
 import { User, Phone, Pencil, Save, X } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useTask, useUpdateTask } from "@/hooks/use-tasks"
-import { useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 
 interface CustomerInformationProps {
@@ -22,7 +21,6 @@ interface PhoneNumber {
 
 export default function CustomerInformation({ taskId }: CustomerInformationProps) {
   const { user } = useAuth()
-  const queryClient = useQueryClient()
   const { toast } = useToast()
   const { data: taskData, isLoading, isError } = useTask(taskId)
 

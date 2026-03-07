@@ -23,7 +23,6 @@ import {
 import { toast } from "@/hooks/use-toast"
 import {
   showTaskMarkedAsDebtToast,
-  showPaymentRequiredToast,
 } from "@/components/notifications/toast"
 import { SendCustomerUpdateModal } from "@/components/tasks/task_details/main/send-customer-update-modal"
 
@@ -34,8 +33,7 @@ interface TaskHeaderProps {
 export default function TaskHeader({ taskId }: TaskHeaderProps) {
   const { user } = useAuth()
   const router = useRouter()
-  const queryClient = useQueryClient()
-  const { data: taskData, isLoading, isError, error } = useTask(taskId)
+  const { data: taskData, isLoading, isError } = useTask(taskId)
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
   const [isRequestingDebt, setIsRequestingDebt] = useState(false)
 

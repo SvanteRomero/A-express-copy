@@ -26,7 +26,7 @@ export function TaskHistoryPage({
   isManagerView = false,
 }: GenericTaskHistoryPageProps) {
   const router = useRouter();
-  const [showAll, setShowAll] = useState(false);
+  const [showAll] = useState(false);
 
   const twoWeeksAgo = new Date();
   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);

@@ -56,3 +56,5 @@ GEMINI.md
 
 .scannerwork/
 *.properties
+
+.claude/

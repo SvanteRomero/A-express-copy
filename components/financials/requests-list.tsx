@@ -257,37 +257,52 @@ export function RequestsList() {
             const isTransaction = isTransactionRequest(request);
 
             // Dynamic styling based on request type
-            const iconBg = isDebt
-              ? 'bg-purple-100 text-purple-600'
-              : (isTransaction && request.transaction_type === 'Revenue')
-                ? 'bg-green-100 text-green-600'
-                : 'bg-amber-100 text-amber-600';
+            let iconBg: string;
+            if (isDebt) {
+              iconBg = 'bg-purple-100 text-purple-600';
+            } else if (isTransaction && request.transaction_type === 'Revenue') {
+              iconBg = 'bg-green-100 text-green-600';
+            } else {
+              iconBg = 'bg-amber-100 text-amber-600';
+            }
 
-            const icon = isDebt
-              ? <FileText className="h-5 w-5" />
-              : (isTransaction && request.transaction_type === 'Revenue')
-                ? <TrendingUp className="h-5 w-5" />
-                : <TrendingDown className="h-5 w-5" />;
+            let icon: JSX.Element;
+            if (isDebt) {
+              icon = <FileText className="h-5 w-5" />;
+            } else if (isTransaction && request.transaction_type === 'Revenue') {
+              icon = <TrendingUp className="h-5 w-5" />;
+            } else {
+              icon = <TrendingDown className="h-5 w-5" />;
+            }
 
             // Get description and amount based on type
-            const title = isDebt
-              ? `Debt Request: ${request.task_title}`
-              : isTransaction
-                ? request.description
-                : 'Unknown Request';
+            let title: string;
+            if (isDebt) {
+              title = `Debt Request: ${request.task_title}`;
+            } else if (isTransaction) {
+              title = request.description;
+            } else {
+              title = 'Unknown Request';
+            }
 
             const amount = isTransaction ? request.amount : null;
-            const subtitle = isDebt
-              ? request.task_details?.customer_name || 'No customer'
-              : isTransaction
-                ? request.category?.name || 'No category'
-                : '';
+            let subtitle: string;
+            if (isDebt) {
+              subtitle = request.task_details?.customer_name || 'No customer';
+            } else if (isTransaction) {
+              subtitle = request.category?.name || 'No category';
+            } else {
+              subtitle = '';
+            }
 
-            const typeBadge = isDebt
-              ? <Badge className="bg-purple-100 text-purple-700 border-purple-200"><FileText className="h-3 w-3 mr-1" />Debt</Badge>
-              : isTransaction
-                ? getTypeBadge(request.transaction_type)
-                : null;
+            let typeBadge: JSX.Element | null;
+            if (isDebt) {
+              typeBadge = <Badge className="bg-purple-100 text-purple-700 border-purple-200"><FileText className="h-3 w-3 mr-1" />Debt</Badge>;
+            } else if (isTransaction) {
+              typeBadge = getTypeBadge(request.transaction_type);
+            } else {
+              typeBadge = null;
+            }
 
             return (
               <div

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from "react"
-import { Plus, Download, DollarSign, MinusCircle } from "lucide-react"
+import { Download, DollarSign, MinusCircle } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card"
 import { Button } from "@/components/ui/core/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs"

@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/core/badge"
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 import { Button } from "@/components/ui/core/button"
-import { TaskExecutionReport, TaskDetail } from "../types"
+import { TaskExecutionReport } from "../types"
 
 const ChartContainer = ({ children, className }: any) => {
     return <div className={className}>{children}</div>
@@ -191,18 +191,25 @@ export const TaskExecutionPreview = ({
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {isLoading ? (
-                                // Loading state
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-4">
-                                        <div className="flex items-center justify-center">
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600 mr-2"></div>
-                                            Loading tasks...
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ) : taskDetails.length > 0 ? (
-                                taskDetails.map((task, index) => (
+                            {(() => {
+                                if (isLoading) return (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center py-4">
+                                            <div className="flex items-center justify-center">
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600 mr-2"></div>
+                                                Loading tasks...
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                )
+                                if (taskDetails.length === 0) return (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center py-4 text-gray-500">
+                                            No task details available
+                                        </TableCell>
+                                    </TableRow>
+                                )
+                                return taskDetails.map((task, index) => (
                                     <TableRow key={index}>
                                         <TableCell className="font-medium">{task.task_title}</TableCell>
                                         <TableCell>{task.customer_name}</TableCell>
@@ -240,13 +247,7 @@ export const TaskExecutionPreview = ({
                                         </TableCell>
                                     </TableRow>
                                 ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-4 text-gray-500">
-                                        No task details available
-                                    </TableCell>
-                                </TableRow>
-                            )}
+                            })()}
                         </TableBody>
                     </Table>
 

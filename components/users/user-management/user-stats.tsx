@@ -12,7 +12,6 @@ export function UserStats({ users }: UserStatsProps) {
     const totalUsers = users.length
     const technicians = users.filter((user) => user.role === "Technician").length
     const frontDesk = users.filter((user) => user.role === "Front Desk").length
-    const managers = users.filter((user) => user.role === "Manager").length
     const accountants = users.filter((user) => user.role === "Accountant").length
 
     return (

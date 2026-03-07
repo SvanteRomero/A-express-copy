@@ -6,18 +6,16 @@ import { CustomerDeviceSection } from './new-task-form/customer-device-section'
 import { IssueDetailsSection } from './new-task-form/issue-details-section'
 import { DuplicatePhoneDialog } from './task_utils/duplicate-phone-dialog'
 
-interface NewTaskFormProps { }
-
 /**
  * New Task Form - Main Component
- * 
+ *
  * Refactored to use composition pattern with:
  * - useNewTaskForm hook for all state and logic
  * - CustomerDeviceSection for customer/device fields
  * - IssueDetailsSection for issue/assignment fields
  * - DuplicatePhoneDialog for duplicate phone warnings
  */
-export function NewTaskForm({ }: NewTaskFormProps) {
+export function NewTaskForm() {
   const form = useNewTaskForm()
 
   return (

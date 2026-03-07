@@ -175,9 +175,8 @@ const Sidebar = React.forwardRef<
 
   // Calculate the sidebar width style dynamically to prevent layout overlap issues
   // This ensures the placeholder and the fixed sidebar always match exactly
-  const lockedWidth = state === "expanded"
-    ? "var(--sidebar-width)"
-    : (collapsible === "icon" ? "var(--sidebar-width-icon)" : "0px");
+  const collapsedWidth = collapsible === "icon" ? "var(--sidebar-width-icon)" : "0px"
+  const lockedWidth = state === "expanded" ? "var(--sidebar-width)" : collapsedWidth
 
   return (
     <div

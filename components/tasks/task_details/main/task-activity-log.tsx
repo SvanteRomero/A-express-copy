@@ -20,7 +20,6 @@ import {
   ChevronDown,
   ChevronUp,
   User,
-  HardDrive,
   FileText,
   Truck,
   Wrench,
@@ -115,15 +114,16 @@ export function TaskActivityLog({ taskId }: TaskActivityLogProps) {
       </CardHeader>
       <CardContent>
         <ScrollArea>
-          {loading ? (
-            <p>Loading activities...</p>
-          ) : activities.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
-              <Clock className="w-12 h-12 mb-4" />
-              <p className="text-lg">No activities found for this task.</p>
-              <p className="text-sm">As the task progresses, its history will appear here.</p>
-            </div>
-          ) : (
+          {(() => {
+            if (loading) return <p>Loading activities...</p>
+            if (activities.length === 0) return (
+              <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                <Clock className="w-12 h-12 mb-4" />
+                <p className="text-lg">No activities found for this task.</p>
+                <p className="text-sm">As the task progresses, its history will appear here.</p>
+              </div>
+            )
+            return (
             <div className="timeline">
               {activities.map((activity) => (
                 <div key={activity.id} className="timeline-item">
@@ -170,7 +170,8 @@ export function TaskActivityLog({ taskId }: TaskActivityLogProps) {
                 </div>
               ))}
             </div>
-          )}
+            )
+          })()}
         </ScrollArea>
       </CardContent>
     </Card>

@@ -11,7 +11,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTaskFiltering } from "@/hooks/use-task-filtering";
 
 export default function AccountantTasksPage() {
-  const { user } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
 

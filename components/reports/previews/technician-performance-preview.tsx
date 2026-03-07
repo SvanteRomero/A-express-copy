@@ -21,24 +21,17 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
     const [expandedTechnician, setExpandedTechnician] = useState<number | null>(null)
     const technicianPerformance = report.technician_performance || []
     const totalTechnicians = report.total_technicians || 0
-    const dateRange = report.date_range || 'last_30_days'
     const summary = report.summary || {}
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'In Progress': return 'bg-blue-100 text-blue-800'
-            case 'Pending': return 'bg-yellow-100 text-yellow-800'
-            case 'Awaiting Parts': return 'bg-orange-100 text-orange-800'
-            case 'Ready for Pickup': return 'bg-green-100 text-green-800'
-            case 'Completed': return 'bg-purple-100 text-purple-800'
-            default: return 'bg-gray-100 text-gray-800'
-        }
-    }
-
-
 
     const toggleTechnicianDetails = (technicianId: number) => {
         setExpandedTechnician(expandedTechnician === technicianId ? null : technicianId)
+    }
+
+    const getRankClass = (rank: number) => {
+        if (rank === 1) return 'bg-yellow-500 hover:bg-yellow-600'
+        if (rank === 2) return 'bg-gray-400 hover:bg-gray-500'
+        if (rank === 3) return 'bg-orange-600 hover:bg-orange-700'
+        return 'bg-blue-600 hover:bg-blue-700'
     }
 
     return (
@@ -186,10 +179,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                                     </div>
                                                                     <div className="mt-1.5 w-full bg-gray-200 rounded-full h-1.5">
                                                                         <div
-                                                                            className={`h-1.5 rounded-full transition-all ${(tech.solve_rate ?? 0) >= 80 ? 'bg-green-600' :
-                                                                                (tech.solve_rate ?? 0) >= 50 ? 'bg-yellow-600' :
-                                                                                    'bg-red-600'
-                                                                                }`}
+                                                                            className={`h-1.5 rounded-full transition-all ${(tech.solve_rate ?? 0) >= 80 ? 'bg-green-600' : ((tech.solve_rate ?? 0) >= 50 ? 'bg-yellow-600' : 'bg-red-600')}`}
                                                                             style={{ width: `${Math.min(tech.solve_rate ?? 0, 100)}%` }}
                                                                         ></div>
                                                                     </div>
@@ -220,10 +210,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                                 {/* Workshop Rate */}
                                                                 <div className="bg-white rounded-lg border-2 border-orange-200 p-3 hover:shadow-md transition-shadow">
                                                                     <div className="text-xs text-gray-600 mb-1.5">Workshop Rate</div>
-                                                                    <div className={`text-xl font-bold ${(tech.workshop_rate ?? 0) >= 50 ? 'text-red-600' :
-                                                                        (tech.workshop_rate ?? 0) >= 25 ? 'text-orange-600' :
-                                                                            'text-green-600'
-                                                                        }`}>
+                                                                    <div className={`text-xl font-bold ${(tech.workshop_rate ?? 0) >= 50 ? 'text-red-600' : ((tech.workshop_rate ?? 0) >= 25 ? 'text-orange-600' : 'text-green-600')}`}>
                                                                         {(tech.workshop_rate ?? 0).toFixed(1)}%
                                                                     </div>
                                                                     <div className="text-[10px] text-gray-500 mt-0.5">
@@ -259,11 +246,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                                                 <span className="text-sm font-medium text-gray-700">Overall Rank</span>
                                                                                 <Badge
                                                                                     variant={tech.rank === 1 ? "default" : "secondary"}
-                                                                                    className={`text-base px-3 py-1 ${tech.rank === 1 ? 'bg-yellow-500 hover:bg-yellow-600' :
-                                                                                        tech.rank === 2 ? 'bg-gray-400 hover:bg-gray-500' :
-                                                                                            tech.rank === 3 ? 'bg-orange-600 hover:bg-orange-700' :
-                                                                                                'bg-blue-600 hover:bg-blue-700'
-                                                                                        }`}
+                                                                                    className={`text-base px-3 py-1 ${getRankClass(tech.rank)}`}
                                                                                 >
                                                                                     #{tech.rank} of {technicianPerformance.length}
                                                                                 </Badge>

@@ -228,7 +228,14 @@ export const generateTaskExecutionPDF = (
         // Efficiency rating
         const efficiencyScore = ((excellent * 1 + good * 0.8 + average * 0.6 + needsImprovement * 0.3) / executionHours.length) * 100;
         pdf.setFontSize(10);
-        const efficiencyColor = efficiencyScore >= 80 ? PDF_COLORS.success : efficiencyScore >= 60 ? PDF_COLORS.warning : PDF_COLORS.danger;
+        let efficiencyColor;
+        if (efficiencyScore >= 80) {
+            efficiencyColor = PDF_COLORS.success;
+        } else if (efficiencyScore >= 60) {
+            efficiencyColor = PDF_COLORS.warning;
+        } else {
+            efficiencyColor = PDF_COLORS.danger;
+        }
         pdf.setTextColor(...efficiencyColor);
         pdf.text(`Overall Efficiency Score: ${efficiencyScore.toFixed(1)}%`, 20, yPosition);
     }
@@ -270,13 +277,23 @@ export const generateInventoryLocationPDF = (
     if (data.locations?.length > 0) {
         yPosition = addSectionHeader(pdf, "Inventory by Location", yPosition);
 
-        const locationData = data.locations.map((location: any) => [
-            location.location,
-            location.laptop_count?.toString() || "0",
-            location.capacity?.toString() || "0",
-            `${location.utilization || "0"}%`,
-            location.utilization >= 90 ? "Full" : location.utilization >= 70 ? "Busy" : "Available",
-        ]);
+        const locationData = data.locations.map((location: any) => {
+            let locationStatus: string;
+            if (location.utilization >= 90) {
+                locationStatus = "Full";
+            } else if (location.utilization >= 70) {
+                locationStatus = "Busy";
+            } else {
+                locationStatus = "Available";
+            }
+            return [
+                location.location,
+                location.laptop_count?.toString() || "0",
+                location.capacity?.toString() || "0",
+                `${location.utilization || "0"}%`,
+                locationStatus,
+            ];
+        });
 
         autoTable(pdf, {
             head: [["Location", "Laptop Count", "Capacity", "Utilization", "Status"]],

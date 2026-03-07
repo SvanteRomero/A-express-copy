@@ -167,6 +167,15 @@ export function SettingsOverview() {
     window.location.href = href
   }
 
+  let accessLevelText: string
+  if (isAdmin) {
+    accessLevelText = "You have full administrative access to all settings."
+  } else if (isManager) {
+    accessLevelText = "You have manager-level access to most settings."
+  } else {
+    accessLevelText = "You have limited access to settings based on your role."
+  }
+
   return (
     <div className="flex-1 space-y-6 p-6">
       {/* Header Section */}
@@ -186,11 +195,7 @@ export function SettingsOverview() {
             <div>
               <p className="font-medium text-blue-900">Access Level: {user?.role}</p>
               <p className="text-sm text-blue-700">
-                {isAdmin
-                  ? "You have full administrative access to all settings."
-                  : isManager
-                    ? "You have manager-level access to most settings."
-                    : "You have limited access to settings based on your role."}
+                {accessLevelText}
               </p>
             </div>
           </div>

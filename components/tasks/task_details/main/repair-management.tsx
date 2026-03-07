@@ -20,8 +20,7 @@ interface RepairManagementProps {
 
 export default function RepairManagement({ taskId }: RepairManagementProps) {
   const { user } = useAuth()
-  const queryClient = useQueryClient()
-  const { data: taskData, isLoading, isError, error } = useTask(taskId)
+  const { data: taskData, isLoading, isError } = useTask(taskId)
   const { data: technicians } = useAssignableUsers()
   const { data: locations } = useLocations()
   const { data: statusOptions } = useTaskStatusOptions()

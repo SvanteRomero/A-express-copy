@@ -7,7 +7,6 @@ import {
   ClipboardList,
   MessageSquare,
   Package,
-  Users,
   Calendar,
 } from "lucide-react"
 

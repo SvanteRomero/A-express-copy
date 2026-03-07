@@ -355,23 +355,18 @@ export function TasksDisplay({
                   </Button>
                 </TableHead>
                 <TableHead className="font-semibold text-gray-900">Device</TableHead>
-                {isMyTasksTab ? (
-                  <TableHead className="font-semibold text-gray-900">Issue</TableHead>
-                ) : isManagerView ? (
-                  <TableHead className="font-semibold text-gray-900">{isCurrentTasks ? "Location" : "Device Status"}</TableHead>
-                ) : isAccountantView ? (
-                  <TableHead className="font-semibold text-gray-900">Outstanding Balance</TableHead>
-                ) : (
-                  <TableHead className="font-semibold text-gray-900">Issue</TableHead>
-                )}
+                {(() => {
+                  if (isMyTasksTab) return <TableHead className="font-semibold text-gray-900">Issue</TableHead>;
+                  if (isManagerView) return <TableHead className="font-semibold text-gray-900">{isCurrentTasks ? "Location" : "Device Status"}</TableHead>;
+                  if (isAccountantView) return <TableHead className="font-semibold text-gray-900">Outstanding Balance</TableHead>;
+                  return <TableHead className="font-semibold text-gray-900">Issue</TableHead>;
+                })()}
                 <TableHead className="font-semibold text-gray-900">{isPickupView ? "Device Status" : "Task Status"}</TableHead>
                 {(isCurrentTasks || isMyTasksTab) && (
                   <TableHead className="font-semibold text-gray-900">Device Status</TableHead>
                 )}
                 <TableHead className="font-semibold text-gray-900">Technician</TableHead>
-                {isMyTasksTab ? (
-                  <TableHead className="font-semibold text-gray-900">Task Urgency</TableHead>
-                ) : isManagerView && !isCompletedTab ? (
+                {(isMyTasksTab || (isManagerView && !isCompletedTab)) ? (
                   <TableHead className="font-semibold text-gray-900">Task Urgency</TableHead>
                 ) : (
                   <TableHead className="font-semibold text-gray-900">Payment</TableHead>

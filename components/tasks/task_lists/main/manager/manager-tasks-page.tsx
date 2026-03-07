@@ -16,12 +16,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/feedback/dialog";
-import { useUpdateTask, useTasks } from "@/hooks/use-tasks";
+import { useUpdateTask } from "@/hooks/use-tasks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageSkeleton } from "@/components/ui/core/loaders";
 import { useTaskFiltering } from "@/hooks/use-task-filtering";
 import Link from "next/link";
-import { useAssignableUsers } from "@/hooks/use-users";
 
 type Tab = 'pending' | 'completed' | 'myTasks';
 const TABS_ORDER: Tab[] = ['pending', 'myTasks', 'completed'];

@@ -21,10 +21,6 @@ export const generateOutstandingPaymentsPDF = (
 
     // Summary
     if (data.summary) {
-        const overdueCount = data.outstanding_tasks?.filter(
-            (task: any) => task.days_overdue > 0
-        ).length ?? 0;
-
         const summaryData: [string, string][] = [
             ["Total Outstanding", formatCurrency(data.summary.total_outstanding)],
             ["Total Tasks", data.summary.task_count?.toString() || "0"],

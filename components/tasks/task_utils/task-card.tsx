@@ -1,8 +1,7 @@
 
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/layout/card"
-import { Badge } from "@/components/ui/core/badge"
 import { Laptop, MapPin, User as UserIcon } from "lucide-react"
-import { StatusBadge, PaymentStatusBadge, WorkshopStatusBadge, UrgencyBadge } from "./task-badges"
+import { StatusBadge, PaymentStatusBadge, WorkshopStatusBadge } from "./task-badges"
 import { TaskActions } from "./task-actions"
 
 interface TaskCardProps {
@@ -58,18 +57,20 @@ export function TaskCard({
                 </div>
 
                 <div className="text-sm text-gray-600">
-                    {isManagerView ? (
-                        <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4" />
-                            <span>{task.current_location_details?.name}</span>
-                        </div>
-                    ) : isAccountantView ? (
-                        <div className="font-medium">
-                            Balance: TSh {task.outstanding_balance}
-                        </div>
-                    ) : (
-                        <p className="line-clamp-2">{task.description}</p>
-                    )}
+                    {(() => {
+                        if (isManagerView) return (
+                            <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4" />
+                                <span>{task.current_location_details?.name}</span>
+                            </div>
+                        )
+                        if (isAccountantView) return (
+                            <div className="font-medium">
+                                Balance: TSh {task.outstanding_balance}
+                            </div>
+                        )
+                        return <p className="line-clamp-2">{task.description}</p>
+                    })()}
                 </div>
 
                 <div className="flex items-center justify-between text-sm">

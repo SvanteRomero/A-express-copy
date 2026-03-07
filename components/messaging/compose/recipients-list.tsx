@@ -99,17 +99,17 @@ export function RecipientsList({
                 <div className="space-y-2 pr-2">
                     {isLoading ? (
                         <div className="text-center py-8 text-muted-foreground">Loading customers...</div>
-                    ) : customers.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                            {canSelect ? "No customers found matching your search." : "Please select a template first."}
-                        </div>
-                    ) : (
+                    ) : customers.length > 0 ? (
                         customers.map(customer => {
                             const isExpanded = expandedCustomers.has(customer.customerId);
                             const isFullySelected = isCustomerFullySelected(customer);
                             const isPartiallySelected = isCustomerPartiallySelected(customer);
                             const selectedPhone = getCustomerPhone(customer.customerId);
                             const hasMultipleTasks = customer.tasks.length > 1;
+                            let containerBg: string
+                            if (isFullySelected) containerBg = 'bg-primary/5 border-primary'
+                            else if (isPartiallySelected) containerBg = 'bg-primary/3 border-primary/50'
+                            else containerBg = 'hover:bg-muted/50'
 
                             // In broadcast mode, show a simpler, cleaner UI
                             if (isBroadcastMode) {
@@ -155,9 +155,7 @@ export function RecipientsList({
                             return (
                                 <div
                                     key={customer.customerId}
-                                    className={`border rounded-lg transition-colors ${isFullySelected ? 'bg-primary/5 border-primary' :
-                                        isPartiallySelected ? 'bg-primary/3 border-primary/50' : 'hover:bg-muted/50'
-                                        } ${!canSelect ? 'opacity-50' : ''}`}
+                                    className={`border rounded-lg transition-colors ${containerBg} ${!canSelect ? 'opacity-50' : ''}`}
                                 >
                                     {/* Customer Header */}
                                     <div className="p-3 flex items-center gap-3">

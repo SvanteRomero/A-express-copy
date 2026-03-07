@@ -42,9 +42,8 @@ export function useTaskFiltering(props: UseTaskFilteringProps = {}) {
     }, [])
 
     // Derived filters for API
-    const apiStatus = props.exactStatus
-        ? props.exactStatus
-        : (taskStatusFilter === "all" ? props.initialStatus : taskStatusFilter)
+    const resolvedStatus = taskStatusFilter === "all" ? props.initialStatus : taskStatusFilter;
+    const apiStatus = props.exactStatus ? props.exactStatus : resolvedStatus;
 
     // Construct API params
     // For workshop managers in My Tasks:

@@ -38,11 +38,10 @@ export function SessionManagementCard() {
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="space-y-3">
-                    {loadingSessions ? (
-                        <p className="text-sm text-gray-600">Loading sessions...</p>
-                    ) : (
-                        sessions.length > 0 ? (
-                            sessions.map((s) => (
+                    {(() => {
+                        if (loadingSessions) return <p className="text-sm text-gray-600">Loading sessions...</p>
+                        if (sessions.length === 0) return <p className="text-sm text-gray-600">No active sessions found.</p>
+                        return sessions.map((s) => (
                                 <div key={s.id} className={`flex items-center justify-between p-3 border rounded-lg ${s.is_current ? 'border-green-300 bg-green-50' : ''}`}>
                                     <div className="flex items-center gap-3">
                                         <div className={`p-2 rounded-lg ${s.is_current ? 'bg-green-100' : 'bg-gray-100'}`}>
@@ -91,10 +90,7 @@ export function SessionManagementCard() {
                                     </div>
                                 </div>
                             ))
-                        ) : (
-                            <p className="text-sm text-gray-600">No active sessions found.</p>
-                        )
-                    )}
+                    })()}
                 </div>
                 <Button variant="outline" className="w-full bg-transparent text-red-600 hover:bg-red-50 hover:text-red-700" onClick={async () => {
                     // Show confirmation dialog

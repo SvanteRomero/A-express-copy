@@ -62,7 +62,7 @@ export function TechnicianTaskDetails({ taskId }: TechnicianTaskDetailsProps) {
   const { data: task, isLoading, isError, error } = useTask(taskId);
   const { data: workshopLocations } = useWorkshopLocations();
 
-  const [updating, setUpdating] = useState(false)
+  const [updating] = useState(false)
   const [newNote, setNewNote] = useState("")
   const [noteType, setNoteType] = useState("note")
   const [isSendToWorkshopDialogOpen, setIsSendToWorkshopDialogOpen] = useState(false)

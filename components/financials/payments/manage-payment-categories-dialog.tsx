@@ -19,7 +19,7 @@ export default function ManagePaymentCategoriesDialog({
   onClose,
 }: ManagePaymentCategoriesDialogProps) {
   const queryClient = useQueryClient();
-  const { data: paymentCategories, refetch: refetchPaymentCategories } = usePaymentCategories();
+  const { data: paymentCategories } = usePaymentCategories();
   const [newPaymentCategoryName, setNewPaymentCategoryName] = useState("");
   const [editingPaymentCategory, setEditingPaymentCategory] = useState<PaymentCategory | null>(null);
 

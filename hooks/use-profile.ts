@@ -16,7 +16,7 @@ export interface ProfileData {
 }
 
 export function useProfile() {
-  const { user, refreshAuth } = useAuth()
+  const { refreshAuth } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)

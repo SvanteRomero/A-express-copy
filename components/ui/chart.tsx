@@ -2,10 +2,8 @@
 import * as React from "react"
 import {
   createContext,
-  useCallback,
   useContext,
   useMemo,
-  useState,
 } from "react"
 import {
   Bar,
@@ -107,7 +105,6 @@ const ChartTooltipContent = React.forwardRef<
         <div className="grid gap-1.5">
           {payload.map((item, i) => {
             const key = `${item.name || nameKey}`
-            const color = item.color as Color
             const { label, icon: Icon } = config[key] as LegendConfig
 
             return (

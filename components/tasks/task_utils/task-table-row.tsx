@@ -1,10 +1,8 @@
 
 import { TableCell, TableRow } from "@/components/ui/layout/table"
-import { Badge } from "@/components/ui/core/badge"
 import { Laptop, User as UserIcon } from "lucide-react"
 import { StatusBadge, PaymentStatusBadge, WorkshopStatusBadge, UrgencyBadge } from "./task-badges"
 import { TaskActions } from "./task-actions"
-import { Button } from "@/components/ui/core/button"
 
 interface TaskTableRowProps {
     task: any
@@ -42,6 +40,21 @@ export function TaskTableRow({
     ...actionProps
 }: TaskTableRowProps) {
     const isCurrentTasks = isManagerView && !isCompletedTab
+    const managerLocationContent = !isCompletedTab
+        ? task.current_location_details?.name
+        : <WorkshopStatusBadge status={task.workshop_status || "N/A"} />
+
+    let contextCell;
+    if (isMyTasksTab) {
+        contextCell = <TableCell className="text-gray-600 max-w-xs truncate">{task.description}</TableCell>;
+    } else if (isManagerView) {
+        contextCell = <TableCell className="text-gray-600 max-w-xs truncate">{managerLocationContent}</TableCell>;
+    } else if (isAccountantView) {
+        contextCell = <TableCell className="text-gray-600 max-w-xs truncate">TSh {task.outstanding_balance}</TableCell>;
+    } else {
+        contextCell = <TableCell className="text-gray-600 max-w-xs truncate">{task.description}</TableCell>;
+    }
+
     return (
         <TableRow
             className="hover:bg-gray-50 cursor-pointer transition-colors"
@@ -63,23 +76,7 @@ export function TaskTableRow({
                     <span className="text-gray-900">{task.laptop_model_details?.name}</span>
                 </div>
             </TableCell>
-            {isMyTasksTab ? (
-                <TableCell className="text-gray-600 max-w-xs truncate">
-                    {task.description}
-                </TableCell>
-            ) : isManagerView ? (
-                <TableCell className="text-gray-600 max-w-xs truncate">
-                    {!isCompletedTab ? task.current_location_details?.name : <WorkshopStatusBadge status={task.workshop_status || "N/A"} />}
-                </TableCell>
-            ) : isAccountantView ? (
-                <TableCell className="text-gray-600 max-w-xs truncate">
-                    TSh {task.outstanding_balance}
-                </TableCell>
-            ) : (
-                <TableCell className="text-gray-600 max-w-xs truncate">
-                    {task.description}
-                </TableCell>
-            )}
+            {contextCell}
             <TableCell>
                 {isPickupView ? (
                     <WorkshopStatusBadge status={task.workshop_status || "N/A"} />
@@ -101,9 +98,7 @@ export function TaskTableRow({
                 </div>
             </TableCell>
             <TableCell>
-                {isMyTasksTab ? (
-                    <UrgencyBadge urgency={task.urgency} />
-                ) : isManagerView && !isCompletedTab ? (
+                {(isMyTasksTab || (isManagerView && !isCompletedTab)) ? (
                     <UrgencyBadge urgency={task.urgency} />
                 ) : (
                     <PaymentStatusBadge status={task.payment_status} />

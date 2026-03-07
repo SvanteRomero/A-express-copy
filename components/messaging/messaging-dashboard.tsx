@@ -6,7 +6,7 @@ import { ComposeView } from "@/components/messaging/compose-view";
 import { MessageHistory } from "@/components/messaging/history-view";
 import { TemplateManager } from "@/components/messaging/templates-view";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card";
-import { Users, Send, AlertCircle, Package } from "lucide-react";
+import { Package } from "lucide-react";
 import { getDashboardStats } from "@/lib/api-client";
 import { useAuth } from "@/hooks/use-auth";
 

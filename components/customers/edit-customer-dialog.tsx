@@ -27,7 +27,7 @@ function validatePhoneNumber(phone: string): string | null {
     return 'Phone number is required';
   }
   // Remove common formatting characters for validation
-  const cleaned = phone.replace(/[\s\-\+\(\)]/g, '');
+  const cleaned = phone.replaceAll(/[\s\-+()]/g, '');
   if (!/^\d+$/.test(cleaned)) {
     return 'Only digits allowed';
   }
@@ -40,7 +40,7 @@ function validatePhoneNumber(phone: string): string | null {
   return null;
 }
 
-export function EditCustomerDialog({ customer, isOpen, onClose }: EditCustomerDialogProps) {
+export function EditCustomerDialog({ customer, isOpen, onClose }: Readonly<EditCustomerDialogProps>) {
   const [name, setName] = useState('');
   const [customerType, setCustomerType] = useState('Normal');
   const [phoneNumbers, setPhoneNumbers] = useState<{ id?: number; phone_number: string }[]>([]);

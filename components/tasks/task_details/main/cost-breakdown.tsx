@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createCostBreakdown, deleteCostBreakdown } from '@/lib/api-client';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/layout/card";
@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/core/input";
 import { Label } from "@/components/ui/core/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/core/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table";
-import { DollarSign, Edit, Plus, Trash2, Loader2 } from "lucide-react";
-import { Task, CostBreakdown as CostBreakdownType } from '@/components/tasks/types';
+import { DollarSign, Plus, Trash2, Loader2 } from "lucide-react";
+import { Task } from '@/components/tasks/types';
 
 interface CostBreakdownProps {
   task: Task;
@@ -98,8 +98,8 @@ export function CostBreakdown({ task }: CostBreakdownProps) {
                 <TableRow key={item.id}>
                   <TableCell className="whitespace-nowrap">{item.description}</TableCell>
                   <TableCell
-                    className={`text-right whitespace-nowrap ${item.cost_type === 'Subtractive' ? 'text-red-600' : item.cost_type === 'Additive' ? 'text-green-600' : ''}`}>
-                    {item.cost_type === 'Subtractive' ? '- ' : item.cost_type === 'Additive' ? '+ ' : ''}TSh {parseFloat(item.amount).toFixed(2)}
+                    className={`text-right whitespace-nowrap ${item.cost_type === 'Subtractive' ? 'text-red-600' : (item.cost_type === 'Additive' ? 'text-green-600' : '')}`}>
+                    {item.cost_type === 'Subtractive' ? '- ' : (item.cost_type === 'Additive' ? '+ ' : '')}TSh {parseFloat(item.amount).toFixed(2)}
                   </TableCell>
                   {isManager && (
                     <TableCell className="text-right">

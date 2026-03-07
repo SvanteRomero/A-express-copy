@@ -24,8 +24,6 @@ export const generateTechnicianPerformancePDF = (
     const technicianData = data.technician_performance || [];
     const summary = data.summary || {};
     const totalTechnicians = data.total_technicians || 0;
-    const dateRange = data.date_range || "N/A";
-
     const summaryData: [string, string][] = [
         ["Total Technicians", totalTechnicians.toString()],
         ["Total Executed Tasks", summary.total_completed_tasks?.toString() || "0"],

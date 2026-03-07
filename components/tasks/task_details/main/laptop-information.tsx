@@ -9,7 +9,6 @@ import { Laptop, Edit, User, MapPin } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useTask, useUpdateTask } from "@/hooks/use-tasks"
 import { useBrands, useModels } from "@/hooks/use-brands-models"
-import { useQueryClient } from "@tanstack/react-query"
 import { SetStateAction, useState } from "react"
 import { SimpleCombobox } from "@/components/ui/core/combobox"
 
@@ -17,10 +16,9 @@ interface LaptopInformationProps {
   taskId: string
 }
 
-export default function LaptopInformation({ taskId }: LaptopInformationProps) {
+export default function LaptopInformation({ taskId }: Readonly<LaptopInformationProps>) {
   const { user } = useAuth()
-  const queryClient = useQueryClient()
-  const { data: taskData, isLoading, isError, error } = useTask(taskId)
+  const { data: taskData, isLoading, isError } = useTask(taskId)
   const { data: brands } = useBrands()
   const [modelSearch, setModelSearch] = useState("")
   const { data: models, isLoading: isLoadingModels } = useModels({ query: modelSearch })
@@ -77,7 +75,7 @@ export default function LaptopInformation({ taskId }: LaptopInformationProps) {
               <div className="flex gap-2">
                 <Select
                   value={taskData.brand?.toString() || ""}
-                  onValueChange={value => handleFieldUpdate("brand", parseInt(value, 10))}
+                  onValueChange={value => handleFieldUpdate("brand", Number.parseInt(value, 10))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a brand" />

@@ -73,12 +73,10 @@ export function TaskNotes({ taskId }: TaskNotesProps) {
           </div>
           <ScrollArea className='h-72'>
             <div className='space-y-4'>
-              {loading ? (
-                <p>Loading notes...</p>
-              ) : notes.length === 0 ? (
-                <p>No notes found for this task.</p>
-              ) : (
-                notes.map((note) => (
+              {(() => {
+                if (loading) return <p>Loading notes...</p>
+                if (notes.length === 0) return <p>No notes found for this task.</p>
+                return notes.map((note) => (
                   <div key={note.id} className='flex items-start gap-4'>
                     <Avatar className='h-9 w-9'>
                       <AvatarImage src={getMediaUrl(note.user?.profile_picture_url)} alt='Avatar' />
@@ -95,7 +93,7 @@ export function TaskNotes({ taskId }: TaskNotesProps) {
                     </div>
                   </div>
                 ))
-              )}
+              })()}
             </div>
           </ScrollArea>
         </div>
