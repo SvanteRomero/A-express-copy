@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs"
 import { useAuth } from "@/hooks/use-auth"
 import { useTechnicianTasks } from "@/hooks/use-tasks"
@@ -10,6 +10,41 @@ import { TaskListSkeleton } from "@/components/ui/core/loaders"
 import { Button } from "@/components/ui/core/button"
 import { TasksDisplay } from "@/components/tasks/task_utils/tasks-display"
 
+
+function PaginationControls({ taskCount, currentPage, count, totalPages, activeTab, setPages }: Readonly<{
+  taskCount: number
+  currentPage: number
+  count: number
+  totalPages: number
+  activeTab: string
+  setPages: React.Dispatch<React.SetStateAction<Record<string, number>>>
+}>) {
+  return (
+    <div className="flex items-center justify-between mt-4 border-t pt-4">
+      <div className="text-sm text-gray-500">
+        Showing {taskCount > 0 ? (currentPage - 1) * 10 + 1 : 0} to {Math.min(currentPage * 10, count)} of {count} tasks
+      </div>
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPages(prev => ({ ...prev, [activeTab]: Math.max(1, prev[activeTab] - 1) }))}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPages(prev => ({ ...prev, [activeTab]: Math.min(totalPages, prev[activeTab] + 1) }))}
+          disabled={currentPage >= totalPages}
+        >
+          Next
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 export function TechnicianTasksPage() {
   const { user } = useAuth()
@@ -74,32 +109,6 @@ export function TechnicianTasksPage() {
       </div>
     )
   }
-
-  const PaginationControls = () => (
-    <div className="flex items-center justify-between mt-4 border-t pt-4">
-      <div className="text-sm text-gray-500">
-        Showing {tasks.length > 0 ? (currentPage - 1) * 10 + 1 : 0} to {Math.min(currentPage * 10, count)} of {count} tasks
-      </div>
-      <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setPages(prev => ({ ...prev, [activeTab]: Math.max(1, prev[activeTab] - 1) }))}
-          disabled={currentPage === 1}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setPages(prev => ({ ...prev, [activeTab]: Math.min(totalPages, prev[activeTab] + 1) }))}
-          disabled={currentPage >= totalPages}
-        >
-          Next
-        </Button>
-      </div>
-    </div>
-  )
 
   // Helper to render TasksDisplay or TaskListCard based on context
   const renderTasksContent = (title: string, description: string) => (
@@ -189,7 +198,7 @@ export function TechnicianTasksPage() {
             description="Tasks that are currently being worked on."
             tasks={tasks}
           >
-            <PaginationControls />
+            <PaginationControls taskCount={tasks.length} currentPage={currentPage} count={count} totalPages={totalPages} activeTab={activeTab} setPages={setPages} />
           </TaskListCard>
         </TabsContent>
         <TabsContent value="in-workshop">
@@ -198,7 +207,7 @@ export function TechnicianTasksPage() {
             description="Tasks that are currently in the workshop."
             tasks={tasks}
           >
-            <PaginationControls />
+            <PaginationControls taskCount={tasks.length} currentPage={currentPage} count={count} totalPages={totalPages} activeTab={activeTab} setPages={setPages} />
           </TaskListCard>
         </TabsContent>
         <TabsContent value="completed">
@@ -207,7 +216,7 @@ export function TechnicianTasksPage() {
             description="Tasks that have been marked as completed."
             tasks={tasks}
           >
-            <PaginationControls />
+            <PaginationControls taskCount={tasks.length} currentPage={currentPage} count={count} totalPages={totalPages} activeTab={activeTab} setPages={setPages} />
           </TaskListCard>
         </TabsContent>
       </Tabs>

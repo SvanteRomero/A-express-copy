@@ -17,7 +17,7 @@ function getBaseApiUrl() {
   }
 
   // 2. If running in the browser (client-side), detect the deployment URL
-  if (typeof globalThis.window !== "undefined") {
+  if (globalThis.window !== undefined) {
     const host = globalThis.location.hostname;
     const protocol = globalThis.location.protocol;
 

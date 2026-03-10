@@ -159,7 +159,7 @@ class MessageBuilder:
             template = TEMPLATE_READY_NOT_SOLVED
         return self.sanitize(self.substitute_variables(template))
     
-    def build_debt_reminder_message(self) -> str:
+    def build_debt_reminder_message(self) -> str | None:
         """Build debt reminder SMS message."""
         template = get_template_by_key_or_id(key='debt_reminder')
         if not template:
@@ -178,7 +178,7 @@ class MessageBuilder:
         """Build pickup reminder SMS for tasks that are ready but not picked up."""
         return self.sanitize(self.substitute_variables(TEMPLATE_PICKUP_REMINDER))
     
-    def build_template_message(self, template_key: str) -> str:
+    def build_template_message(self, template_key: str) -> str | None:
         """
         Build a message from a template key without sending it.
         Used for preview functionality.

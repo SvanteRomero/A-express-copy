@@ -143,24 +143,6 @@ class TaskDetailSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-# class SavedReportSerializer(serializers.ModelSerializer):
-#     created_by_details = UserSerializer(source="created_by", read_only=True)
-
-#     class Meta:
-#         model = SavedReport
-#         fields = [
-#             "id",
-#             "name",
-#             "description",
-#             "config",
-#             "created_by",
-#             "created_by_details",
-#             "created_at",
-#             "is_public",
-#         ]
-#         read_only_fields = ["created_by", "created_at"]
-
-
 class ReportConfigSerializer(serializers.Serializer):
     reportName = serializers.CharField(max_length=255)
     selectedType = serializers.CharField()

@@ -9,13 +9,21 @@ import { addTaskActivity } from "@/lib/api-client"
 import { useTask, useTaskStatusOptions, useTaskUrgencyOptions, useUpdateTask } from "@/hooks/use-tasks"
 import { useAssignableUsers } from "@/hooks/use-users"
 import { useLocations } from "@/hooks/use-locations"
-import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useMemo, useState } from "react"
 import { showRepairManagementSavedToast } from "@/components/notifications/toast"
 import { StatusBadge } from "@/components/tasks/task_utils/task-badges"
 
 interface RepairManagementProps {
   taskId: string
+}
+
+function getChangedFieldNames(changes: Record<string, unknown>): string[] {
+  const names: string[] = []
+  if (changes.assigned_to !== undefined) names.push('Technician')
+  if (changes.status !== undefined) names.push('Status')
+  if (changes.current_location !== undefined) names.push('Location')
+  if (changes.urgency !== undefined) names.push('Urgency')
+  return names
 }
 
 export default function RepairManagement({ taskId }: Readonly<RepairManagementProps>) {
@@ -74,13 +82,7 @@ export default function RepairManagement({ taskId }: Readonly<RepairManagementPr
     }
 
     if (Object.keys(changes).length > 0) {
-      // Track what fields changed for the toast
-      const changedFieldNames: string[] = []
-      if (changes.assigned_to !== undefined) changedFieldNames.push('Technician')
-      if (changes.status !== undefined) changedFieldNames.push('Status')
-      if (changes.current_location !== undefined) changedFieldNames.push('Location')
-      if (changes.urgency !== undefined) changedFieldNames.push('Urgency')
-
+      const changedFieldNames = getChangedFieldNames(changes)
       updateTaskMutation.mutate({ id: taskId, updates: changes }, {
         onSuccess: () => {
           showRepairManagementSavedToast(changedFieldNames)

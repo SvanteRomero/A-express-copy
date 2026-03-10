@@ -71,6 +71,85 @@ export function useCreateTask() {
   });
 }
 
+function applyTabStatusUpdates({
+  status,
+  activeTab,
+  taskExists,
+  results,
+  count,
+  id,
+  previousTask,
+  updates
+}: {
+  status: unknown,
+  activeTab: string,
+  taskExists: boolean,
+  results: Task[],
+  count: number,
+  id: string,
+  previousTask: Task | undefined,
+  updates: Record<string, unknown>
+}): { results: Task[]; count: number } {
+  if (status === 'Completed') {
+    const shouldRemove = taskExists && (activeTab === 'in-progress' || activeTab === 'in-workshop');
+    const shouldAdd = !taskExists && previousTask && activeTab === 'completed';
+
+    if (shouldRemove) return { results: results.filter(t => t.title !== id), count: count - 1 };
+    if (shouldAdd) return { results: [{ ...previousTask, ...updates } as Task, ...results], count: count + 1 };
+  }
+
+  if (status === 'In Progress') {
+    const shouldRemove = taskExists && activeTab === 'completed';
+    const shouldAdd = !taskExists && previousTask && activeTab === 'in-progress';
+
+    if (shouldRemove) return { results: results.filter(t => t.title !== id), count: count - 1 };
+    if (shouldAdd) return { results: [{ ...previousTask, ...updates } as Task, ...results], count: count + 1 };
+  }
+
+  return { results, count };
+}
+
+function computeOptimisticTechnicianData(
+  oldData: PaginatedTasks,
+  activeTab: string,
+  id: string,
+  updates: Record<string, unknown>,
+  previousTask: Task | undefined
+): PaginatedTasks | null {
+  if (!Array.isArray(oldData.results)) return null;
+
+  let newResults = oldData.results;
+  let newCount = oldData.count;
+
+  const taskIndex = newResults.findIndex(t => t.title === id);
+  const taskExists = taskIndex !== -1;
+
+  if (taskExists) {
+    newResults = [...newResults];
+    newResults[taskIndex] = { ...newResults[taskIndex], ...updates };
+  }
+
+  if (updates.status) {
+    const updated = applyTabStatusUpdates({
+      status: updates.status,
+      activeTab,
+      taskExists,
+      results: newResults,
+      count: newCount,
+      id,
+      previousTask,
+      updates
+    });
+    newResults = updated.results;
+    newCount = updated.count;
+  }
+
+  if (newResults !== oldData.results || newCount !== oldData.count) {
+    return { ...oldData, results: newResults, count: newCount };
+  }
+  return null;
+}
+
 export function useUpdateTask() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -92,64 +171,10 @@ export function useUpdateTask() {
 
       // Iterate over all cached technician task queries to apply smart updates
       previousTechnicianTasks.forEach(([queryKey, oldData]) => {
-        if (!oldData || !Array.isArray(oldData.results)) return;
-
+        if (!oldData) return;
         const activeTab = queryKey[3] as string; // ['technicianTasks', userId, isWorkshopTech, activeTab, page]
-
-        let newResults = [...oldData.results];
-        let newCount = oldData.count;
-
-        // 1. Check if task exists in this list
-        const taskIndex = newResults.findIndex(t => t.title === id);
-        const taskExists = taskIndex !== -1;
-
-        // 2. Base update: if it exists, update it in place first
-        if (taskExists) {
-          newResults[taskIndex] = { ...newResults[taskIndex], ...updates };
-        }
-
-        // 3. Move logic based on status change
-        if (updates.status) {
-          const isCompleted = updates.status === 'Completed';
-          const isInProgress = updates.status === 'In Progress';
-
-          if (isCompleted) {
-            // If moved to Completed
-            if (activeTab === 'in-progress' || activeTab === 'in-workshop') {
-              // Remove from In Progress / In Workshop
-              if (taskExists) {
-                newResults = newResults.filter(t => t.title !== id);
-                newCount--;
-              }
-            } else if (activeTab === 'completed') {
-              // Add to Completed if not present
-              if (!taskExists && previousTask) {
-                newResults = [{ ...previousTask, ...updates }, ...newResults];
-                newCount++;
-              }
-            }
-          } else if (isInProgress) {
-            // If moved to In Progress
-            if (activeTab === 'completed') {
-              // Remove from Completed
-              if (taskExists) {
-                newResults = newResults.filter(t => t.title !== id);
-                newCount--;
-              }
-            } else if (activeTab === 'in-progress') {
-              // Add to In Progress if not present
-              if (!taskExists && previousTask) {
-                newResults = [{ ...previousTask, ...updates }, ...newResults];
-                newCount++;
-              }
-            }
-          }
-        }
-
-        // Only set data if there were changes
-        if (newResults !== oldData.results || newCount !== oldData.count) {
-          queryClient.setQueryData(queryKey, { ...oldData, results: newResults, count: newCount });
-        }
+        const newData = computeOptimisticTechnicianData(oldData, activeTab, id, updates, previousTask);
+        if (newData) queryClient.setQueryData(queryKey, newData);
       });
 
       // Also update any general 'tasks' queries (Search/Admin views)

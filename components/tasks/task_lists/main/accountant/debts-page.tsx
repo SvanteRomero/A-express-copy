@@ -105,6 +105,7 @@ const DebtsPage = () => {
         setPreviewMessage("Could not load message preview");
       }
     } catch (err) {
+      console.error('Failed to load message preview:', err)
       setPreviewMessage("Could not load message preview");
     } finally {
       setIsLoadingPreview(false);

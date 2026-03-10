@@ -6,7 +6,7 @@
  * Each category has: enabled (show/hide toasts) + sound (play notification sound).
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { registerSoundChecker } from '@/hooks/use-toast';
 
 // ── Category definitions ──
@@ -119,7 +119,7 @@ interface NotificationPreferencesContextType {
 const NotificationPreferencesContext = createContext<NotificationPreferencesContextType | undefined>(undefined);
 
 function loadPreferences(): NotificationPreferences {
-    if (typeof globalThis.window === 'undefined') return DEFAULT_PREFERENCES;
+    if (globalThis.window === undefined) return DEFAULT_PREFERENCES;
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
@@ -182,8 +182,10 @@ export function NotificationPreferencesProvider({ children }: Readonly<{ childre
         _currentPreferences = DEFAULT_PREFERENCES;
     }, []);
 
+    const contextValue = useMemo(() => ({ preferences, updateCategoryPreference, resetToDefaults }), [preferences, updateCategoryPreference, resetToDefaults]);
+
     return (
-        <NotificationPreferencesContext.Provider value={{ preferences, updateCategoryPreference, resetToDefaults }}>
+        <NotificationPreferencesContext.Provider value={contextValue}>
             {children}
         </NotificationPreferencesContext.Provider>
     );

@@ -7,7 +7,6 @@ import { StatusBadge, UrgencyBadge, PaymentStatusBadge, WorkshopStatusBadge } fr
 import { useAuth } from "@/hooks/use-auth"
 import { addTaskActivity, requestDebt } from "@/lib/api-client"
 import { useTask, useUpdateTask } from "@/hooks/use-tasks"
-import { useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import {
   AlertDialog,
@@ -71,6 +70,7 @@ export default function TaskHeader({ taskId }: Readonly<TaskHeaderProps>) {
         className: 'bg-blue-600 text-white border-blue-600',
       })
     } catch (error) {
+      console.error('Failed to send debt request:', error)
       toast({
         title: '❌ Error',
         description: 'Failed to send debt request. Please try again.',

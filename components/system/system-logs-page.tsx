@@ -242,7 +242,7 @@ export function SystemLogsPage() {
     link.download = `system-logs-${new Date().toISOString().split("T")[0]}.csv`
     document.body.appendChild(link)
     link.click()
-    document.body.removeChild(link)
+    link.remove()
     URL.revokeObjectURL(url)
   }
 
@@ -415,8 +415,9 @@ export function SystemLogsPage() {
           {/* Filter Controls */}
           <div className="grid gap-4 md:grid-cols-5">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Date From</label>
+              <label htmlFor="log-date-from" className="text-sm font-medium text-gray-700">Date From</label>
               <Input
+                id="log-date-from"
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
@@ -424,8 +425,9 @@ export function SystemLogsPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Date To</label>
+              <label htmlFor="log-date-to" className="text-sm font-medium text-gray-700">Date To</label>
               <Input
+                id="log-date-to"
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
@@ -433,7 +435,7 @@ export function SystemLogsPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Log Level</label>
+              <p className="text-sm font-medium text-gray-700">Log Level</p>
               <Select value={levelFilter} onValueChange={setLevelFilter}>
                 <SelectTrigger className="h-10 border-gray-300 focus:border-red-500 focus:ring-red-500">
                   <SelectValue />
@@ -448,7 +450,7 @@ export function SystemLogsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Category</label>
+              <p className="text-sm font-medium text-gray-700">Category</p>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="h-10 border-gray-300 focus:border-red-500 focus:ring-red-500">
                   <SelectValue />
@@ -467,7 +469,7 @@ export function SystemLogsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Actions</label>
+              <p className="text-sm font-medium text-gray-700">Actions</p>
               <div className="flex gap-2">
                 <Button
                   variant="outline"

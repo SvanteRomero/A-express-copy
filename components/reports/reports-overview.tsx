@@ -68,8 +68,8 @@ export function ReportsOverview() {
       }
 
       // Add pagination parameters
-      const paginatedReports = ['outstanding-payments', 'task-execution']
-      if (paginatedReports.includes(reportId)) {
+      const paginatedReports = new Set(['outstanding-payments', 'task-execution'])
+      if (paginatedReports.has(reportId)) {
         params.page = page.toString()
         params.page_size = pageSize.toString()
         console.log('📄 DEBUG - Added pagination params:', { page, pageSize })

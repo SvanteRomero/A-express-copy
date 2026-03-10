@@ -175,7 +175,7 @@ export function ComposeView() {
             if (data.success) {
                 toast({
                     title: "Messages Sent",
-                    description: `${data.summary.sent} messages sent successfully. ${data.summary.failed > 0 ? `${data.summary.failed} failed.` : ''}`,
+                    description: (() => { const failedPart = data.summary.failed > 0 ? ` ${data.summary.failed} failed.` : ''; return `${data.summary.sent} messages sent successfully.${failedPart}`; })(),
                     variant: "default",
                 });
                 clearSelections();

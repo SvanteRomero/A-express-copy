@@ -57,7 +57,7 @@ export function TaskHistoryPage({
 
   const { data: technicians } = useTechnicians();
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<any | null>(null);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
 
   const handleRowClick = (task: any) => {
     router.push(`/dashboard/tasks/${task.title}`);
@@ -67,8 +67,6 @@ export function TaskHistoryPage({
     setSelectedTask(task);
     setIsReturnDialogOpen(true);
   };
-
-  // const tasks = useMemo(() => tasksData?.results || [], [tasksData]); // No longer needed
 
   if (isLoading && page === 1) {
     return (

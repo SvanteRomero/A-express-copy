@@ -5,6 +5,9 @@ from django.utils import timezone
 from Eapp.models import Task, User, TaskActivity
 from .base import ReportGeneratorBase
 
+_PICKED_UP = "Picked Up"
+_IN_PROGRESS = "In Progress"
+
 
 class TechnicianReportGenerator(ReportGeneratorBase):
     """Generates technician-related reports."""
@@ -48,7 +51,7 @@ class TechnicianReportGenerator(ReportGeneratorBase):
         # Must be computed before the loop since it's used for percentage calculations
         unique_completed_task_ids = set()
         unique_current_task_ids = set()
-        completion_statuses_for_unique = ["Completed", "Ready for Pickup", "Picked Up"]
+        completion_statuses_for_unique = ["Completed", "Ready for Pickup", _PICKED_UP]
         
         for task in tasks:
             # Check if task was completed in date range
@@ -58,7 +61,7 @@ class TechnicianReportGenerator(ReportGeneratorBase):
                 e_date = end_date.date() if hasattr(end_date, 'date') else end_date
                 if s_date <= task_date <= e_date:
                     unique_completed_task_ids.add(task.id)
-            elif task.status == "In Progress":
+            elif task.status == _IN_PROGRESS:
                 unique_current_task_ids.add(task.id)
 
         final_report = []
@@ -66,7 +69,7 @@ class TechnicianReportGenerator(ReportGeneratorBase):
             tech_tasks = tasks_by_tech[tech.id]
             
             # Completed tasks breakdown (includes Completed, Ready for Pickup, and Picked Up)
-            completion_statuses = ["Completed", "Ready for Pickup", "Picked Up"]
+            completion_statuses = ["Completed", "Ready for Pickup", _PICKED_UP]
             
             # Filter by date range if completed_at is set
             completed_tasks = []
@@ -105,7 +108,7 @@ class TechnicianReportGenerator(ReportGeneratorBase):
             
             # In Progress tasks and In Workshop subset
             # Note: in_progress_count excludes tasks that are In Workshop (they're counted separately)
-            in_progress_tasks = [t for t in tech_tasks if t.status == "In Progress"]
+            in_progress_tasks = [t for t in tech_tasks if t.status == _IN_PROGRESS]
             in_workshop_count = sum(1 for t in in_progress_tasks if t.workshop_status == "In Workshop")
             in_progress_count = sum(1 for t in in_progress_tasks if t.workshop_status != "In Workshop")
             
@@ -247,11 +250,11 @@ class TechnicianReportGenerator(ReportGeneratorBase):
             .annotate(
                 total_tasks=Count(
                     "tasks",
-                    filter=~Q(tasks__status__in=["Completed", "Picked Up"]) & date_filter
+                    filter=~Q(tasks__status__in=["Completed", _PICKED_UP]) & date_filter
                 ),
                 in_progress_tasks=Count(
                     "tasks",
-                    filter=Q(tasks__status="In Progress") & date_filter
+                    filter=Q(tasks__status=_IN_PROGRESS) & date_filter
                 ),
                 awaiting_parts_tasks=Count(
                     "tasks",

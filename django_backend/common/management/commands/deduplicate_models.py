@@ -66,48 +66,50 @@ class Command(BaseCommand):
                 continue
                 
             duplicates_found += 1
-            self.stdout.write(f"Found duplicate group for '{norm_name}': {[m.name for m in models_in_group]}")
-            
-            # 4. Determine Target (Best Model)
-            # Priority: 
-            # 1. Matches Title Case (heuristic for "cleaner" name)
-            # 2. Most tasks (to minimize updates)
-            # 3. Oldest ID (stability)
-            
-            # Augment models with task counts for decision making
-            for m in models_in_group:
-                m._task_count = Task.objects.filter(laptop_model=m).count()
-                
-            def score_model(m):
-                # Higher score is better
-                score = 0
-                if m.name == m.name.title(): # Prefer "Pavilion" over "PAVILION"
-                    score += 1000
-                if m.name == m.name.strip(): # Prefer no whitespace
-                    score += 100
-                score += m._task_count # Prefer one with data
-                return score
-            
-            # Sort by score descending, then by ID ascending (prefer older)
-            models_in_group.sort(key=lambda m: (-score_model(m), m.id))
-            
-            target_model = models_in_group[0]
-            models_to_merge = models_in_group[1:]
-            
-            self.stdout.write(f"  -> Selected Target: '{target_model.name}' (ID: {target_model.id}, Tasks: {target_model._task_count})")
-            
-            for source_model in models_to_merge:
-                self.stdout.write(f"  -> Merging from: '{source_model.name}' (ID: {source_model.id}, Tasks: {source_model._task_count})")
-                
-                if not dry_run:
-                    with transaction.atomic():
-                        # Move tasks
-                        updated_count = Task.objects.filter(laptop_model=source_model).update(laptop_model=target_model)
-                        # Delete source
-                        source_model.delete()
-                    self.stdout.write(self.style.SUCCESS(f"     [OK] Moved {updated_count} tasks and deleted source."))
-                else:
-                    self.stdout.write(self.style.WARNING(f"     [DRY RUN] Would move tasks and delete source."))
+            self._merge_duplicate_group(norm_name, models_in_group, dry_run)
         
         return duplicates_found
 
+    def _merge_duplicate_group(self, norm_name, models_in_group, dry_run):
+        self.stdout.write(f"Found duplicate group for '{norm_name}': {[m.name for m in models_in_group]}")
+        
+        # 4. Determine Target (Best Model)
+        # Priority: 
+        # 1. Matches Title Case (heuristic for "cleaner" name)
+        # 2. Most tasks (to minimize updates)
+        # 3. Oldest ID (stability)
+        
+        # Augment models with task counts for decision making
+        for m in models_in_group:
+            m._task_count = Task.objects.filter(laptop_model=m).count()
+            
+        # Sort by score descending, then by ID ascending (prefer older)
+        models_in_group.sort(key=lambda m: (-self._score_model(m), m.id))
+        
+        target_model = models_in_group[0]
+        models_to_merge = models_in_group[1:]
+        
+        self.stdout.write(f"  -> Selected Target: '{target_model.name}' (ID: {target_model.id}, Tasks: {target_model._task_count})")
+        
+        for source_model in models_to_merge:
+            self.stdout.write(f"  -> Merging from: '{source_model.name}' (ID: {source_model.id}, Tasks: {source_model._task_count})")
+            
+            if not dry_run:
+                with transaction.atomic():
+                    # Move tasks
+                    updated_count = Task.objects.filter(laptop_model=source_model).update(laptop_model=target_model)
+                    # Delete source
+                    source_model.delete()
+                self.stdout.write(self.style.SUCCESS(f"     [OK] Moved {updated_count} tasks and deleted source."))
+            else:
+                self.stdout.write(self.style.WARNING("     [DRY RUN] Would move tasks and delete source."))
+
+    def _score_model(self, m):
+        # Higher score is better
+        score = 0
+        if m.name == m.name.title(): # Prefer "Pavilion" over "PAVILION"
+            score += 1000
+        if m.name == m.name.strip(): # Prefer no whitespace
+            score += 100
+        score += getattr(m, '_task_count', 0) # Prefer one with data
+        return score

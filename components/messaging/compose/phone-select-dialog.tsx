@@ -28,26 +28,18 @@ export function PhoneSelectDialog({
                 </DialogHeader>
                 <div className="space-y-2 py-4">
                     {customer.phoneNumbers.map((phone) => (
-                        <div
+                        <button
+                            type="button"
                             key={phone}
-                            className={`flex items-center justify-between p-3 rounded border cursor-pointer hover:bg-muted ${customer.selectedPhone === phone ? 'border-primary bg-primary/5' : ''}`}
+                            className={`flex items-center justify-between p-3 rounded border cursor-pointer hover:bg-muted w-full text-left ${customer.selectedPhone === phone ? 'border-primary bg-primary/5' : ''}`}
                             onClick={() => {
                                 onSelectPhone(customer.taskId, phone);
                                 onClose();
                             }}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    e.preventDefault();
-                                    onSelectPhone(customer.taskId, phone);
-                                    onClose();
-                                }
-                            }}
-                            role="button"
-                            tabIndex={0}
                         >
                             <span className="font-medium">{phone}</span>
                             {customer.selectedPhone === phone && <Badge>Selected</Badge>}
-                        </div>
+                        </button>
                     ))}
                 </div>
             </DialogContent>

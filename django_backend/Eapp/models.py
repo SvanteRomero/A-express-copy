@@ -4,6 +4,8 @@ from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
 from users.models import User
 
+_LOCATION_REF = 'common.Location'
+
 def get_current_date():
     return timezone.now().date()
     
@@ -72,7 +74,7 @@ class Task(models.Model):
         db_index=True
     )
     current_location = models.ForeignKey(
-        'common.Location',
+        _LOCATION_REF,
         on_delete=models.PROTECT,
         related_name='current_tasks',
         help_text='Current location of the task'
@@ -98,14 +100,14 @@ class Task(models.Model):
         help_text='Indicates task outcome requires verification by original technician'
     )
     workshop_location = models.ForeignKey(
-        'common.Location', on_delete=models.SET_NULL, null=True, blank=True, related_name='workshop_tasks'
+        _LOCATION_REF, on_delete=models.SET_NULL, null=True, blank=True, related_name='workshop_tasks'
     )
     # Snapshot fields for performance and data-proofing
     original_technician_snapshot = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='original_technician_snapshot_tasks'
     )
     original_location_snapshot = models.ForeignKey(
-        'common.Location',
+        _LOCATION_REF,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

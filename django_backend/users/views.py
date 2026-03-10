@@ -200,7 +200,7 @@ class AuthViewSet(viewsets.ViewSet):
             except Exception:
                 expires_at_val = None
 
-            session = Session.objects.create(
+            Session.objects.create(
                 user=user,
                 jti=jti,
                 refresh_token_hash=Session.hash_token(str(refresh)),
@@ -262,7 +262,7 @@ class AuthViewSet(viewsets.ViewSet):
             response = clear_jwt_cookies(response)
             return response
             
-        except Exception as e:
+        except Exception:
             # Still clear cookies even on error
             response = Response({"error": "Logout failed. Please try again."}, status=status.HTTP_400_BAD_REQUEST)
             response = clear_jwt_cookies(response)
@@ -538,7 +538,7 @@ def refresh_token_cookie(request):
         
         return response
         
-    except (InvalidToken, TokenError) as e:
+    except (InvalidToken, TokenError):
         # Clear cookies if refresh fails
         response = Response(
             {'error': 'Session expired. Please log in again.'},

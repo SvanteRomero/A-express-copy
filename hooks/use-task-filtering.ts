@@ -1,8 +1,7 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useTasks, useTaskUrgencyOptions, useTaskWorkshopStatusOptions } from "@/hooks/use-tasks"
 import { useTechnicians } from "@/hooks/use-users"
 import { getLocations } from "@/lib/api-client"
-import { useEffect } from "react"
 
 export interface UseTaskFilteringProps {
     initialStatus?: string

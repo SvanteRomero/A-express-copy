@@ -278,18 +278,18 @@ class OperationalReportGenerator(ReportGeneratorBase):
             for p in periods_data:
                 try:
                     p['period'] = datetime.strptime(p['period'], "%Y-%m-%d").strftime("%b %d, %Y")
-                except: pass
+                except Exception: pass
         elif period_type == 'monthly':
             for p in periods_data:
                 try:
                     p['period'] = datetime.strptime(p['period'], "%Y-%m").strftime("%b %Y")
-                except: pass
+                except Exception: pass
         elif period_type == 'weekly':
             for p in periods_data:
                 try:
                     year, week = p['period'].split('-W')
                     p['period'] = f"Week {week}, {year}"
-                except: pass
+                except Exception: pass
         
         # Sort by execution time (slowest first)
         task_details.sort(key=lambda x: x["execution_hours"], reverse=True)

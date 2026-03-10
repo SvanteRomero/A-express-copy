@@ -18,7 +18,7 @@ const getStatusDetails = (workshopStatus?: string) => {
 export const replaceTemplateVariables = (template: string, customer: Customer) => {
     const statusDetails = getStatusDetails(customer.workshopStatus);
 
-    const truncate = (str: string = '', length: number) => {
+    const truncate = (str: string, length: number) => {
         if (str.length <= length) return str;
         return str.substring(0, length) + '..';
     };

@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { Button } from "@/components/ui/core/button"
 import { ReportViewer } from "./report-viewer"
 import { BarChart3, Download } from "lucide-react"
@@ -22,28 +23,37 @@ export function ReportViewerModal({
     onSearch,
     reports
 }: Readonly<ReportViewerModalProps>) {
-    const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
-        if (event.target === event.currentTarget) {
-            onClose()
-        }
-    }
-
     const report = reports.find(r => r.id === selectedReport.id)
     const IconComponent = report?.icon || BarChart3
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose()
+            }
+        }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [onClose])
+
     return (
-        <div
-            className="fixed inset-0 bg-gray-900/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300"
-            onClick={handleBackdropClick}
-            onKeyDown={(e) => {
-                if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
-                    handleBackdropClick(e as unknown as React.MouseEvent<HTMLDivElement>);
-                }
-            }}
-            role="dialog"
-            tabIndex={-1}
-        >
-            <div className="bg-white rounded-lg w-full max-w-7xl h-[90vh] overflow-hidden flex flex-col animate-in slide-in-from-bottom-10 duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+            <div 
+                className="fixed inset-0 bg-gray-900/30 backdrop-blur-sm"
+                onClick={onClose}
+                onKeyDown={(e) => {
+                    if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+                        onClose();
+                    }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label="Close report viewer background"
+            />
+            <dialog
+                open
+                className="bg-white rounded-lg w-full max-w-7xl h-[90vh] overflow-hidden flex flex-col animate-in slide-in-from-bottom-10 duration-300 relative z-10 m-0 p-0 border-0 shadow-xl"
+            >
                 {/* Modal Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white sticky top-0 z-10">
                     <div className="flex items-center gap-3">
@@ -120,7 +130,7 @@ export function ReportViewerModal({
                         </div>
                     </div>
                 </div>
-            </div>
+            </dialog>
         </div>
     )
 }

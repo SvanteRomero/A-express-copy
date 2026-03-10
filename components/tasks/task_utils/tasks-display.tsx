@@ -94,7 +94,7 @@ export function TasksDisplay({
 
   // Payment Dialog State
   const [isAddPaymentDialogOpen, setIsAddPaymentDialogOpen] = useState(false)
-  const [selectedTaskToPay, setSelectedTaskToPay] = useState<any | null>(null)
+  const [selectedTaskToPay, setSelectedTaskToPay] = useState<any>(null)
 
   const [internalSearchQuery, setInternalSearchQuery] = useState(externalSearchQuery || "")
 
@@ -207,9 +207,9 @@ export function TasksDisplay({
   // (Moving logic from useTaskFiltering)
 
   const uniqueTechnicians = technicians.map((tech) => ({ id: tech.id, full_name: `${tech.first_name} ${tech.last_name}`.trim() }));
-  const uniqueUrgencies = [...new Set(tasks.map((task) => task?.urgency || "").filter((urgency: any) => urgency))];
-  const uniqueDeviceStatuses = [...new Set(tasks.map((task) => task?.workshop_status || "").filter((status: any) => status))];
-  const uniqueLocations = [...new Set(tasks.map((task) => task?.current_location || "").filter((location: any) => location))];
+  const uniqueUrgencies = [...new Set(tasks.map((task) => task?.urgency || "").filter(Boolean))];
+  const uniqueDeviceStatuses = [...new Set(tasks.map((task) => task?.workshop_status || "").filter(Boolean))];
+  const uniqueLocations = [...new Set(tasks.map((task) => task?.current_location || "").filter(Boolean))];
 
   // Use passed options if available, otherwise fall back to computed ones
   const effectiveUniqueUrgencies = filterOptions?.urgencies || uniqueUrgencies;

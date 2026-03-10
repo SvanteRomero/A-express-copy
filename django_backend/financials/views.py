@@ -36,6 +36,8 @@ from users.permissions import (
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.utils import timezone
+
+ALREADY_PROCESSED_MSG = "This request has already been processed."
 from datetime import timedelta, datetime
 from django.db.models import Sum, Q
 
@@ -204,7 +206,7 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
             "task", "category", "payment_method", "requester", "approver"
         )
 
-        if not user.is_staff and not user.role in ["Manager", "Admin"]:
+        if not user.is_staff and user.role not in ["Manager", "Admin"]:
             queryset = queryset.filter(requester=user)
 
         # Filter by status
@@ -310,7 +312,7 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
         transaction = self.get_object()
         if transaction.status != "Pending":
             return Response(
-                {"error": "This request has already been processed."},
+                {"error": ALREADY_PROCESSED_MSG},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -348,7 +350,7 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
         transaction = self.get_object()
         if transaction.status != "Pending":
             return Response(
-                {"error": "This request has already been processed."},
+                {"error": ALREADY_PROCESSED_MSG},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -423,7 +425,7 @@ class DebtRequestViewSet(viewsets.ModelViewSet):
         
         if debt_request.status != DebtRequest.Status.PENDING:
             return Response(
-                {"error": "This request has already been processed."},
+                {"error": ALREADY_PROCESSED_MSG},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -476,7 +478,7 @@ class DebtRequestViewSet(viewsets.ModelViewSet):
         
         if debt_request.status != DebtRequest.Status.PENDING:
             return Response(
-                {"error": "This request has already been processed."},
+                {"error": ALREADY_PROCESSED_MSG},
                 status=status.HTTP_400_BAD_REQUEST
             )
         

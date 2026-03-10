@@ -27,7 +27,7 @@ const API_ENDPOINTS: Record<string, string> = {
 };
 
 // Reports that need date range parameters
-const DATE_RANGE_REPORTS = ["technician-performance", "payment-methods"];
+const DATE_RANGE_REPORTS = new Set(["technician-performance", "payment-methods"]);
 
 /**
  * Add standard header to PDF
@@ -140,7 +140,7 @@ export const generatePDF = async (
             }
 
             const params: Record<string, string> = {};
-            if (DATE_RANGE_REPORTS.includes(reportId)) {
+            if (DATE_RANGE_REPORTS.has(reportId)) {
                 params.date_range = "last_30_days";
             }
 

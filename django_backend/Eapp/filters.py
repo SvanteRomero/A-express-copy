@@ -4,6 +4,8 @@ from financials.models import Payment
 from django.utils import timezone
 from django.db.models import Q
 
+_PICKED_UP = 'Picked Up'
+
 class TaskFilter(django_filters.FilterSet):
     created_at = django_filters.DateFromToRangeFilter()
     updated_at = django_filters.DateFromToRangeFilter()
@@ -68,10 +70,10 @@ class TaskFilter(django_filters.FilterSet):
             return queryset.filter(status='Ready for Pickup')
         elif value == 'repair_in_progress':
             # Exclude finished statuses
-            finished_statuses = ['Ready for Pickup', 'Picked Up', 'Completed', 'Terminated', 'Cancelled']
+            finished_statuses = ['Ready for Pickup', _PICKED_UP, 'Completed', 'Terminated', 'Cancelled']
             return queryset.exclude(status__in=finished_statuses)
         elif value == 'debt_reminder':
-            return queryset.filter(is_debt=True, status='Picked Up')
+            return queryset.filter(is_debt=True, status=_PICKED_UP)
         return queryset
     
     def search_filter(self, queryset, name, value):
@@ -93,7 +95,7 @@ class TaskFilter(django_filters.FilterSet):
             return queryset.exclude(
                 payment_status='Fully Paid'
             ).exclude(
-                status='Picked Up'
+                status=_PICKED_UP
             ).exclude(
                 status='Terminated'
             )

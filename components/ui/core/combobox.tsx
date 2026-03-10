@@ -65,15 +65,17 @@ export function SimpleCombobox({
         <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">
           <ul>
             {options.map((option) => (
-              <li
-                key={option.value}
-                className="px-3 py-2 cursor-pointer hover:bg-gray-100"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  handleOptionClick(option.value, option.label);
-                }}
-              >
-                {option.label}
+              <li key={option.value}>
+                <button
+                  type="button"
+                  className="w-full text-left px-3 py-2 cursor-pointer hover:bg-gray-100"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleOptionClick(option.value, option.label);
+                  }}
+                >
+                  {option.label}
+                </button>
               </li>
             ))}
           </ul>

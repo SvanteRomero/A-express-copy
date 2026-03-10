@@ -59,18 +59,42 @@ const getTypeBadge = (type: string) => {
 }
 
 interface RequestCardProps {
-  request: UnifiedApprovalRequest;
-  isManager: boolean;
-  isAccountant: boolean;
-  onApprove: (request: UnifiedApprovalRequest) => void;
-  onReject: (request: UnifiedApprovalRequest) => void;
-  onCancel: (id: number) => void;
-  isApprovePending: boolean;
-  isRejectPending: boolean;
-  isCancelPending: boolean;
+  readonly request: UnifiedApprovalRequest;
+  readonly isManager: boolean;
+  readonly isAccountant: boolean;
+  readonly onApprove: (request: UnifiedApprovalRequest) => void;
+  readonly onReject: (request: UnifiedApprovalRequest) => void;
+  readonly onCancel: (id: number) => void;
+  readonly isApprovePending: boolean;
+  readonly isRejectPending: boolean;
+  readonly isCancelPending: boolean;
 }
 
-function RequestCard({
+function RequestCardMeta({ request, typeBadge }: { readonly request: UnifiedApprovalRequest; readonly typeBadge: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 mt-2 flex-wrap text-xs">
+      {typeBadge}
+      {getStatusBadge(request.status)}
+      <span className="text-muted-foreground">
+        by {request.requester_name}
+      </span>
+      <span className="text-muted-foreground">•</span>
+      <span className="text-muted-foreground">
+        {request.created_at ? format(new Date(request.created_at), 'MMM d, yyyy h:mm a') : 'N/A'}
+      </span>
+      {request.approver_name && (
+        <>
+          <span className="text-muted-foreground">•</span>
+          <span className="text-muted-foreground">
+            {request.status === 'Approved' ? '✓' : '✗'} by {request.approver_name}
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function RequestCardActions({
   request,
   isManager,
   isAccountant,
@@ -81,49 +105,88 @@ function RequestCard({
   isRejectPending,
   isCancelPending
 }: RequestCardProps) {
+  if (request.status !== 'Pending') return null;
+  if (!isManager && !isAccountant) return null;
+
+  const isTransaction = isTransactionRequest(request);
+
+  return (
+    <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+      {isManager && (
+        <>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-green-600 border-green-600 hover:bg-green-50"
+            onClick={() => onApprove(request)}
+            disabled={isApprovePending}
+          >
+            <Check className="h-4 w-4 mr-1" /> Approve
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-red-600 border-red-600 hover:bg-red-50"
+            onClick={() => onReject(request)}
+            disabled={isRejectPending}
+          >
+            <X className="h-4 w-4 mr-1" /> Reject
+          </Button>
+        </>
+      )}
+      {isAccountant && !isManager && isTransaction && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-red-600 border-red-600 hover:bg-red-50"
+          onClick={() => onCancel(request.id)}
+          disabled={isCancelPending}
+        >
+          <X className="h-4 w-4 mr-1" /> Cancel
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function RequestCard(props: RequestCardProps) {
+  const { request } = props;
   const isDebt = isDebtRequest(request);
   const isTransaction = isTransactionRequest(request);
 
-  // Dynamic styling based on request type
-  const iconBg = isDebt
-    ? 'bg-purple-100 text-purple-600'
-    : isTransaction && request.transaction_type === 'Revenue'
-      ? 'bg-green-100 text-green-600'
-      : 'bg-amber-100 text-amber-600';
+  let iconBg = 'bg-gray-100 text-gray-600';
+  let icon = <FileText className="h-5 w-5" />;
+  let title = 'Unknown Request';
+  let subtitle = '';
+  let typeBadge = null;
+  let amountClass = '';
 
-  const icon = isDebt
-    ? <FileText className="h-5 w-5" />
-    : isTransaction && request.transaction_type === 'Revenue'
-      ? <TrendingUp className="h-5 w-5" />
-      : <TrendingDown className="h-5 w-5" />;
-
-  const title = isDebt
-    ? `Debt Request: ${request.task_title}`
-    : isTransaction
-      ? request.description
-      : 'Unknown Request';
+  if (isDebt) {
+    iconBg = 'bg-purple-100 text-purple-600';
+    icon = <FileText className="h-5 w-5" />;
+    title = `Debt Request: ${request.task_title || ''}`;
+    subtitle = request.task_details?.customer_name || 'No customer';
+    typeBadge = <Badge className="bg-purple-100 text-purple-700 border-purple-200"><FileText className="h-3 w-3 mr-1" />Debt</Badge>;
+  } else if (isTransaction) {
+    const isRevenue = request.transaction_type === 'Revenue';
+    iconBg = isRevenue ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600';
+    icon = isRevenue ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />;
+    title = request.description || 'Unknown Request';
+    subtitle = request.category?.name || 'No category';
+    typeBadge = getTypeBadge(request.transaction_type);
+    amountClass = isRevenue ? 'text-green-600' : 'text-amber-600';
+  }
 
   const amount = isTransaction ? request.amount : null;
-  const subtitle = isDebt
-    ? request.task_details?.customer_name || 'No customer'
-    : isTransaction
-      ? request.category?.name || 'No category'
-      : '';
 
-  const typeBadge = isDebt
-    ? <Badge className="bg-purple-100 text-purple-700 border-purple-200"><FileText className="h-3 w-3 mr-1" />Debt</Badge>
-    : isTransaction
-      ? getTypeBadge(request.transaction_type)
-      : null;
+  let borderColorClass = '';
+  if (request.status === 'Pending') borderColorClass = 'border-l-4 border-l-yellow-400';
+  else if (request.status === 'Approved') borderColorClass = 'border-l-4 border-l-green-400 opacity-75';
+  else if (request.status === 'Rejected') borderColorClass = 'border-l-4 border-l-red-400 opacity-75';
 
   return (
     <div
-      className={`
-        rounded-lg border bg-card p-4 transition-all hover:shadow-md
-        ${request.status === 'Pending' ? 'border-l-4 border-l-yellow-400' : ''}
-        ${request.status === 'Approved' ? 'border-l-4 border-l-green-400 opacity-75' : ''}
-        ${request.status === 'Rejected' ? 'border-l-4 border-l-red-400 opacity-75' : ''}
-      `}
+      className={`rounded-lg border bg-card p-4 transition-all hover:shadow-md ${borderColorClass}`}
     >
       <div className="flex items-start gap-4">
         {/* Icon */}
@@ -141,8 +204,8 @@ function RequestCard({
 
             {/* Amount (for transactions) */}
             {amount && (
-              <div className={`text-sm font-semibold ${isTransaction && request.transaction_type === 'Revenue' ? 'text-green-600' : 'text-amber-600'}`}>
-                TSh {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number.parseFloat(amount as string))}
+              <div className={`text-sm font-semibold ${amountClass}`}>
+                TSh {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number.parseFloat(amount))}
               </div>
             )}
 
@@ -154,65 +217,8 @@ function RequestCard({
             )}
           </div>
 
-          {/* Meta row */}
-          <div className="flex items-center gap-2 mt-2 flex-wrap text-xs">
-            {typeBadge}
-            {getStatusBadge(request.status)}
-            <span className="text-muted-foreground">
-              by {request.requester_name}
-            </span>
-            <span className="text-muted-foreground">•</span>
-            <span className="text-muted-foreground">
-              {request.created_at ? format(new Date(request.created_at), 'MMM d, yyyy h:mm a') : 'N/A'}
-            </span>
-            {request.approver_name && (
-              <>
-                <span className="text-muted-foreground">•</span>
-                <span className="text-muted-foreground">
-                  {request.status === 'Approved' ? '✓' : '✗'} by {request.approver_name}
-                </span>
-              </>
-            )}
-          </div>
-
-          {/* Actions */}
-          {request.status === 'Pending' && (isManager || isAccountant) && (
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t">
-              {isManager && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-green-600 border-green-600 hover:bg-green-50"
-                    onClick={() => onApprove(request)}
-                    disabled={isApprovePending}
-                  >
-                    <Check className="h-4 w-4 mr-1" /> Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-red-600 border-red-600 hover:bg-red-50"
-                    onClick={() => onReject(request)}
-                    disabled={isRejectPending}
-                  >
-                    <X className="h-4 w-4 mr-1" /> Reject
-                  </Button>
-                </>
-              )}
-              {isAccountant && !isManager && isTransaction && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-red-600 border-red-600 hover:bg-red-50"
-                  onClick={() => onCancel(request.id)}
-                  disabled={isCancelPending}
-                >
-                  <X className="h-4 w-4 mr-1" /> Cancel
-                </Button>
-              )}
-            </div>
-          )}
+          <RequestCardMeta request={request} typeBadge={typeBadge} />
+          <RequestCardActions {...props} />
         </div>
       </div>
     </div>

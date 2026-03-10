@@ -135,7 +135,7 @@ class EncryptedFieldMixin:
             return encrypt_value(value)
         return value
     
-    def from_db_value(self, value, expression, connection):
+    def from_db_value(self, value, _expression, _connection):
         """Decrypt value when reading from database."""
         if value:
             return decrypt_value(value)

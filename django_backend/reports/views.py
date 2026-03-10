@@ -244,8 +244,6 @@ def get_dashboard_data(request):
 
 
     # Average repair time - simplified placeholder
-    avg_repair_time = "3.2 days"  # Could be calculated from latest_pickup_at - date_in
-
     kpi_data = {
         "totalActiveTasks": total_active_tasks,
         "revenueThisMonth": float(revenue_this_month),
@@ -308,6 +306,21 @@ def get_outstanding_payments(request):
     })
 
 
+def _serialize_print_task(t):
+    return {
+        "task_title": t.title,
+        "customer_name": t.customer.name if t.customer else "N/A",
+        "brand": t.brand.name if t.brand else "N/A",
+        "laptop_model": str(t.laptop_model) if t.laptop_model else "N/A",
+        "location": t.current_location.name if t.current_location else "N/A",
+        "status": t.status or "N/A",
+        "workshop_status": t.workshop_status or "N/A",
+        "technician": t.assigned_to.get_full_name() if t.assigned_to else "Unassigned",
+        "urgency": t.urgency or "N/A",
+        "is_debt": t.is_debt,
+    }
+
+
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated, IsAdminOrManagerOrFrontDeskOrAccountant])
 @api_view_try_except
@@ -336,20 +349,7 @@ def get_print_tasks(request):
         .order_by("-date_in")
     )
 
-    task_list = []
-    for t in tasks:
-        task_list.append({
-            "task_title": t.title,
-            "customer_name": t.customer.name if t.customer else "N/A",
-            "brand": t.brand.name if t.brand else "N/A",
-            "laptop_model": str(t.laptop_model) if t.laptop_model else "N/A",
-            "location": t.current_location.name if t.current_location else "N/A",
-            "status": t.status or "N/A",
-            "workshop_status": t.workshop_status or "N/A",
-            "technician": t.assigned_to.get_full_name() if t.assigned_to else "Unassigned",
-            "urgency": t.urgency or "N/A",
-            "is_debt": t.is_debt,
-        })
+    task_list = [_serialize_print_task(t) for t in tasks]
 
     return Response({
         "success": True,

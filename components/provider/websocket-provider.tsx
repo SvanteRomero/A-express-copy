@@ -5,9 +5,9 @@
  * Manages WebSocket connection lifecycle and provides context to child components.
  */
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/hooks/use-auth';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useQueryClient, QueryClient } from '@tanstack/react-query';
+import { useAuth, User } from '@/hooks/use-auth';
 import {
     getWebSocketClient,
     NotificationWebSocket,
@@ -18,8 +18,6 @@ import {
     DataUpdateMessage,
     TransactionRequestMessage,
     DebtRequestMessage,
-    DebtRequestResolvedMessage,
-    TransactionRequestResolvedMessage,
     ConnectionQuality,
 } from '@/lib/websocket';
 import { showSchedulerNotificationToast } from '@/components/notifications/toast';
@@ -27,6 +25,83 @@ import { dispatchWebSocketToast } from '@/components/notifications/toast/websock
 import { showTransactionRequestToast, dismissTransactionRequestToast } from '@/components/notifications/toast/request-toast';
 import { showDebtRequestToast, dismissDebtRequestToast } from '@/components/notifications/toast/debt-request-toast';
 import { isToastEnabled } from '@/components/provider/notification-preferences';
+
+function processSchedulerNotification(msg: SchedulerNotificationMessage): void {
+    if (isToastEnabled(msg.job_type)) {
+        showSchedulerNotificationToast({
+            id: Date.now(),
+            job_type: msg.job_type,
+            tasks_found: msg.tasks_found,
+            messages_sent: msg.messages_sent,
+            messages_failed: msg.messages_failed,
+            failure_details: msg.failure_details,
+            created_at: msg.created_at,
+        });
+    }
+}
+
+function processToastNotification(msg: ToastNotificationMessage, qc: QueryClient): void {
+    dispatchWebSocketToast(msg);
+    if (msg.toast_type === 'debt_request_approved' || msg.toast_type === 'debt_request_rejected') {
+        qc.invalidateQueries({ queryKey: ['tasks'] });
+        if (msg.data.task_title) {
+            qc.invalidateQueries({ queryKey: ['task', msg.data.task_title] });
+        }
+    }
+}
+
+function processTaskStatusUpdate(msg: TaskStatusUpdateMessage, qc: QueryClient): void {
+    qc.invalidateQueries({ queryKey: ['tasks'] });
+    qc.invalidateQueries({ queryKey: ['task', msg.task_id] });
+    qc.invalidateQueries({ queryKey: ['technicianTasks'] });
+    qc.invalidateQueries({ queryKey: ['technicianHistoryTasks'] });
+}
+
+function processDataUpdate(msg: DataUpdateMessage, qc: QueryClient): void {
+    if (msg.type === 'payment_update') {
+        qc.invalidateQueries({ queryKey: ['payments'] });
+        qc.invalidateQueries({ queryKey: ['revenue-overview'] });
+        qc.invalidateQueries({ queryKey: ['tasks'] });
+        qc.invalidateQueries({ queryKey: ['technicianTasks'] });
+        if (msg.task_id) qc.invalidateQueries({ queryKey: ['task', msg.task_id] });
+    } else if (msg.type === 'customer_update') {
+        qc.invalidateQueries({ queryKey: ['customers'] });
+        qc.invalidateQueries({ queryKey: ['customer-stats'] });
+    } else if (msg.type === 'account_update') {
+        qc.invalidateQueries({ queryKey: ['accounts'] });
+    } else if (msg.type === 'transaction_update') {
+        qc.invalidateQueries({ queryKey: ['transactionRequests'] });
+        qc.invalidateQueries({ queryKey: ['expenditureRequests'] });
+        qc.invalidateQueries({ queryKey: ['financial-summary'] });
+        qc.invalidateQueries({ queryKey: ['payments'] });
+        qc.invalidateQueries({ queryKey: ['accounts'] });
+    } else if (msg.type === 'payment_method_update') {
+        qc.invalidateQueries({ queryKey: ['paymentMethods'] });
+        qc.invalidateQueries({ queryKey: ['paymentCategories'] });
+    }
+}
+
+function processTransactionRequest(msg: TransactionRequestMessage, currentUser: User | null, qc: QueryClient): boolean {
+    if (currentUser?.id === msg.requester_id) return true;
+    if (isToastEnabled('transaction_request')) {
+        showTransactionRequestToast(msg, () => {
+            qc.invalidateQueries({ queryKey: ['transactionRequests'] });
+            qc.invalidateQueries({ queryKey: ['expenditureRequests'] });
+        });
+    }
+    return false;
+}
+
+function processDebtRequest(msg: DebtRequestMessage, currentUser: User | null, qc: QueryClient): boolean {
+    if (currentUser?.id === msg.requester_id) return true;
+    if (isToastEnabled('debt_request')) {
+        showDebtRequestToast(msg, () => {
+            qc.invalidateQueries({ queryKey: ['tasks'] });
+            qc.invalidateQueries({ queryKey: ['task', msg.task_id] });
+        });
+    }
+    return false;
+}
 
 interface WebSocketContextType {
     isConnected: boolean;
@@ -60,134 +135,24 @@ export function WebSocketProvider({ children }: Readonly<{ children: React.React
     const handleMessage = useCallback((message: WebSocketMessage) => {
         const currentUser = userRef.current;
         const currentQueryClient = queryClientRef.current;
-
         setLastMessage(message);
 
-        // Handle scheduler notifications - show toast (if category enabled)
         if (message.type === 'scheduler_notification') {
-            const notification = message as SchedulerNotificationMessage;
-            if (isToastEnabled(notification.job_type)) {
-                showSchedulerNotificationToast({
-                    id: Date.now(),
-                    job_type: notification.job_type,
-                    tasks_found: notification.tasks_found,
-                    messages_sent: notification.messages_sent,
-                    messages_failed: notification.messages_failed,
-                    failure_details: notification.failure_details,
-                    created_at: notification.created_at,
-                });
-            }
-        }
-
-        // Handle toast notifications - dispatch to appropriate toast
-        if (message.type === 'toast_notification') {
-            const toastMessage = message as ToastNotificationMessage;
-            dispatchWebSocketToast(toastMessage);
-
-            // Invalidate queries for debt-related toasts to update UI in real-time
-            if (toastMessage.toast_type === 'debt_request_approved' || toastMessage.toast_type === 'debt_request_rejected') {
-                // Extract task_id from the task_title if needed, or invalidate all tasks
-                currentQueryClient.invalidateQueries({ queryKey: ['tasks'] });
-                // If we can extract task_id from data, invalidate specific task
-                if (toastMessage.data.task_title) {
-                    currentQueryClient.invalidateQueries({ queryKey: ['task', toastMessage.data.task_title] });
-                }
-            }
-        }
-
-        // Handle task status updates - invalidate React Query caches for live updates
-        if (message.type === 'task_status_update') {
-            const { task_id } = message as TaskStatusUpdateMessage;
-            currentQueryClient.invalidateQueries({ queryKey: ['tasks'] });
-            currentQueryClient.invalidateQueries({ queryKey: ['task', task_id] });
-            currentQueryClient.invalidateQueries({ queryKey: ['technicianTasks'] });
-            currentQueryClient.invalidateQueries({ queryKey: ['technicianHistoryTasks'] });
-        }
-
-        // Handle payment updates
-        if (message.type === 'payment_update') {
-            const data = message as DataUpdateMessage;
-            currentQueryClient.invalidateQueries({ queryKey: ['payments'] });
-            currentQueryClient.invalidateQueries({ queryKey: ['revenue-overview'] });
-            currentQueryClient.invalidateQueries({ queryKey: ['tasks'] }); // Update lists
-            currentQueryClient.invalidateQueries({ queryKey: ['technicianTasks'] }); // Update technician lists
-            if (data.task_id) {
-                currentQueryClient.invalidateQueries({ queryKey: ['task', data.task_id] });
-            }
-        }
-
-        // Handle customer updates
-        if (message.type === 'customer_update') {
-            currentQueryClient.invalidateQueries({ queryKey: ['customers'] });
-            currentQueryClient.invalidateQueries({ queryKey: ['customer-stats'] });
-        }
-
-        // Handle account updates
-        if (message.type === 'account_update') {
-            currentQueryClient.invalidateQueries({ queryKey: ['accounts'] });
-        }
-
-        // Handle transaction updates
-        if (message.type === 'transaction_update') {
-            currentQueryClient.invalidateQueries({ queryKey: ['transactionRequests'] });
-            currentQueryClient.invalidateQueries({ queryKey: ['expenditureRequests'] }); // Legacy query key alias
-            currentQueryClient.invalidateQueries({ queryKey: ['financial-summary'] });
-            currentQueryClient.invalidateQueries({ queryKey: ['payments'] });
-            currentQueryClient.invalidateQueries({ queryKey: ['accounts'] });
-        }
-
-        // Handle payment method updates
-        if (message.type === 'payment_method_update') {
-            currentQueryClient.invalidateQueries({ queryKey: ['paymentMethods'] });
-            currentQueryClient.invalidateQueries({ queryKey: ['paymentCategories'] });
-        }
-
-        // Handle transaction request notifications - show interactive toast to managers
-        if (message.type === 'transaction_request') {
-            const data = message as TransactionRequestMessage;
-
-            // Validate: Don't show toast to the person who made the request
-            if (currentUser?.id === data.requester_id) {
-                return;
-            }
-
-            // Check notification preferences
-            if (isToastEnabled('transaction_request')) {
-                showTransactionRequestToast(data, () => {
-                    currentQueryClient.invalidateQueries({ queryKey: ['transactionRequests'] });
-                    currentQueryClient.invalidateQueries({ queryKey: ['expenditureRequests'] });
-                });
-            }
-        }
-
-        // Handle debt request notifications - show interactive toast to managers
-        if (message.type === 'debt_request') {
-            const data = message as DebtRequestMessage;
-
-            // Validate: Don't show toast to the person who made the request
-            if (currentUser?.id === data.requester_id) {
-                return;
-            }
-
-            // Check notification preferences
-            if (isToastEnabled('debt_request')) {
-                showDebtRequestToast(data, () => {
-                    currentQueryClient.invalidateQueries({ queryKey: ['tasks'] });
-                    currentQueryClient.invalidateQueries({ queryKey: ['task', data.task_id] });
-                });
-            }
-        }
-
-        // Handle debt request resolved - dismiss toast for all managers
-        if (message.type === 'debt_request_resolved') {
-            const data = message as DebtRequestResolvedMessage;
-            dismissDebtRequestToast(data.request_id);
-        }
-
-        // Handle transaction request resolved - dismiss toast for all managers
-        if (message.type === 'transaction_request_resolved') {
-            const data = message as TransactionRequestResolvedMessage;
-            dismissTransactionRequestToast(data.request_id);
+            processSchedulerNotification(message);
+        } else if (message.type === 'toast_notification') {
+            processToastNotification(message, currentQueryClient);
+        } else if (message.type === 'task_status_update') {
+            processTaskStatusUpdate(message, currentQueryClient);
+        } else if (message.type === 'payment_update' || message.type === 'customer_update' || message.type === 'account_update' || message.type === 'transaction_update' || message.type === 'payment_method_update') {
+            processDataUpdate(message, currentQueryClient);
+        } else if (message.type === 'transaction_request') {
+            if (processTransactionRequest(message, currentUser, currentQueryClient)) return;
+        } else if (message.type === 'debt_request') {
+            if (processDebtRequest(message, currentUser, currentQueryClient)) return;
+        } else if (message.type === 'debt_request_resolved') {
+            dismissDebtRequestToast(message.request_id);
+        } else if (message.type === 'transaction_request_resolved') {
+            dismissTransactionRequestToast(message.request_id);
         }
     }, []); // Empty deps - uses refs for stable reference
 
@@ -243,17 +208,17 @@ export function WebSocketProvider({ children }: Readonly<{ children: React.React
                     wsClient.current = null;
                 }
             };
-        } else {
+        } else if (wsClient.current) {
             // Disconnect if user logs out or role changes
-            if (wsClient.current) {
-                wsClient.current.disconnect();
-                wsClient.current = null;
-            }
+            wsClient.current.disconnect();
+            wsClient.current = null;
         }
     }, [user, isAuthenticated, connectWebSocket, handleMessage, handleStatusChange, handleQualityChange]);
 
+    const contextValue = useMemo(() => ({ isConnected, connectionQuality, lastMessage, forceReconnect }), [isConnected, connectionQuality, lastMessage, forceReconnect]);
+
     return (
-        <WebSocketContext.Provider value={{ isConnected, connectionQuality, lastMessage, forceReconnect }}>
+        <WebSocketContext.Provider value={contextValue}>
             {children}
         </WebSocketContext.Provider>
     );

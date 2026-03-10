@@ -268,7 +268,7 @@ export function AddTransactionDialog({
                     {isAccountant && (
                         <div className="grid gap-2 md:col-span-2">
                             <Label htmlFor="approver_id">
-                                Approver (Optional)
+                                Approver (Optional){' '}
                                 <span className="text-xs text-muted-foreground ml-2">
                                     {selectedApprover ? 'Will be auto-approved' : 'Leave blank to send for manager approval'}
                                 </span>

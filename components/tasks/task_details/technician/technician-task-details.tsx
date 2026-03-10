@@ -221,27 +221,27 @@ export function TechnicianTaskDetails({ taskId }: Readonly<TechnicianTaskDetails
               {/* Read-only fields */}
               <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                 <div>
-                  <label className="text-xs sm:text-sm font-medium text-gray-700">Task ID</label>
+                  <p className="text-xs sm:text-sm font-medium text-gray-700">Task ID</p>
                   <p className="text-base sm:text-lg font-semibold text-gray-900">{task.title}</p>
                 </div>
                 <div>
-                  <label className="text-xs sm:text-sm font-medium text-gray-700">Customer Name</label>
+                  <p className="text-xs sm:text-sm font-medium text-gray-700">Customer Name</p>
                   <p className="text-base sm:text-lg font-semibold text-gray-900">{task.customer_details?.name}</p>
                 </div>
                 <div>
-                  <label className="text-xs sm:text-sm font-medium text-gray-700">Laptop Model</label>
+                  <p className="text-xs sm:text-sm font-medium text-gray-700">Laptop Model</p>
                   <p className="text-base sm:text-lg font-semibold text-gray-900 break-words">{task.brand_details?.name} {task.laptop_model_details?.name || task.laptop_model}</p>
                 </div>
                 <div>
-                  <label className="text-xs sm:text-sm font-medium text-gray-700">Date In</label>
+                  <p className="text-xs sm:text-sm font-medium text-gray-700">Date In</p>
                   <p className="text-base sm:text-lg font-semibold text-gray-900">{task.date_in}</p>
                 </div>
                 <div>
-                  <label className="text-xs sm:text-sm font-medium text-gray-700">Priority</label>
+                  <p className="text-xs sm:text-sm font-medium text-gray-700">Priority</p>
                   <div className="mt-1"><UrgencyBadge urgency={task.urgency} /></div>
                 </div>
                 <div>
-                  <label className="text-xs sm:text-sm font-medium text-gray-700">Assigned Technician</label>
+                  <p className="text-xs sm:text-sm font-medium text-gray-700">Assigned Technician</p>
                   <p className="text-base sm:text-lg font-semibold text-gray-900">{task.assigned_to_details?.full_name}</p>
                 </div>
               </div>
@@ -262,7 +262,7 @@ export function TechnicianTaskDetails({ taskId }: Readonly<TechnicianTaskDetails
             </CardHeader>
             <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0 space-y-4">
               <div>
-                <label className="text-xs sm:text-sm font-medium text-gray-700">Current Status</label>
+                <p className="text-xs sm:text-sm font-medium text-gray-700">Current Status</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <StatusBadge status={task.status} />
                   {['Solved', 'Not Solved'].includes(task.workshop_status || '') && (

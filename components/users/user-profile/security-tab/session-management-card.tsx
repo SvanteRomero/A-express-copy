@@ -27,6 +27,34 @@ export function SessionManagementCard() {
         loadSessions()
     }, [])
 
+    const handleRevokeSession = async (s: any) => {
+        const confirmMessage = s.is_current
+            ? "This will end your current session and log you out. Are you sure?"
+            : "Are you sure you want to revoke this session?";
+        if (!globalThis.confirm(confirmMessage)) return;
+        try {
+            const resp = await revokeSession(s.id);
+            setSessions((prev) => prev.map((ps) => ps.id === s.id ? { ...ps, is_revoked: true } : ps));
+            if (resp.data?.logout_required) {
+                localStorage.removeItem('auth_user');
+                globalThis.location.href = '/';
+            }
+        } catch (err) {
+            console.error('Failed to revoke session', err);
+        }
+    }
+
+    const handleRevokeAllSessions = async () => {
+        if (!globalThis.confirm("This will sign you out of ALL devices, including this one. You will need to log in again. Are you sure?")) return;
+        try {
+            await revokeAllSessions();
+            localStorage.removeItem('auth_user');
+            globalThis.location.href = '/';
+        } catch (err) {
+            console.error('Failed to revoke all sessions', err);
+        }
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -61,29 +89,7 @@ export function SessionManagementCard() {
                                         {s.is_revoked ? (
                                             <Badge className="bg-gray-100 text-gray-700">Revoked</Badge>
                                         ) : (
-                                            <Button variant="outline" size="sm" onClick={async () => {
-                                                // Show confirmation dialog
-                                                const confirmMessage = s.is_current
-                                                    ? "This will end your current session and log you out. Are you sure?"
-                                                    : "Are you sure you want to revoke this session?";
-
-                                                if (!globalThis.confirm(confirmMessage)) {
-                                                    return;
-                                                }
-
-                                                try {
-                                                    const resp = await revokeSession(s.id);
-                                                    setSessions((prev) => prev.map((ps) => ps.id === s.id ? { ...ps, is_revoked: true } : ps));
-
-                                                    // If revoking current session, redirect to login
-                                                    if (resp.data?.logout_required) {
-                                                        localStorage.removeItem('auth_user');
-                                                        globalThis.location.href = '/';
-                                                    }
-                                                } catch (err) {
-                                                    console.error('Failed to revoke session', err);
-                                                }
-                                            }}>
+                                            <Button variant="outline" size="sm" onClick={() => handleRevokeSession(s)}>
                                                 {s.is_current ? 'End Session' : 'Revoke'}
                                             </Button>
                                         )}
@@ -92,21 +98,7 @@ export function SessionManagementCard() {
                             ))
                     })()}
                 </div>
-                <Button variant="outline" className="w-full bg-transparent text-red-600 hover:bg-red-50 hover:text-red-700" onClick={async () => {
-                    // Show confirmation dialog
-                    if (!globalThis.confirm("This will sign you out of ALL devices, including this one. You will need to log in again. Are you sure?")) {
-                        return;
-                    }
-
-                    try {
-                        await revokeAllSessions();
-                        // Clear local storage and redirect to login
-                        localStorage.removeItem('auth_user');
-                        globalThis.location.href = '/';
-                    } catch (err) {
-                        console.error('Failed to revoke all sessions', err);
-                    }
-                }}>
+                <Button variant="outline" className="w-full bg-transparent text-red-600 hover:bg-red-50 hover:text-red-700" onClick={handleRevokeAllSessions}>
                     Sign Out All Devices
                 </Button>
             </CardContent>

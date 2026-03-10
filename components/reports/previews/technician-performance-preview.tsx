@@ -4,12 +4,25 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/layout/table"
 import { Badge } from "@/components/ui/core/badge"
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
-import { useState } from "react"
-import React from "react"
+import React, { useState } from "react"
 import type { TechnicianPerformanceReport } from "../types"
 
 const ChartContainer = ({ children, className }: any) => {
     return <div className={className}>{children}</div>
+}
+
+function WorkloadTooltip({ active, payload }: any) {
+    if (active && payload?.length) {
+        const data = payload[0].payload
+        return (
+            <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
+                <p className="font-medium">{data.technician_name}</p>
+                <p className="text-sm text-blue-600">Completed: {data.completed_tasks_count}</p>
+                <p className="text-sm text-orange-600">Current: {data.current_assigned_tasks}</p>
+            </div>
+        )
+    }
+    return null
 }
 
 function getSolveRateTextColor(rate: number) {
@@ -177,7 +190,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                         {/* Key Performance Indicators */}
                                                         <div>
                                                             <h4 className="font-semibold text-base mb-3 flex items-center gap-2">
-                                                                <span className="w-1 h-5 bg-blue-600 rounded"></span>
+                                                                <span className="w-1 h-5 bg-blue-600 rounded"></span>{" "}
                                                                 Key Performance Indicators
                                                             </h4>
                                                             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -250,7 +263,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                         {tech.rank && (
                                                             <div>
                                                                 <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                                                                    <span className="w-1 h-6 bg-purple-600 rounded"></span>
+                                                                    <span className="w-1 h-6 bg-purple-600 rounded"></span>{" "}
                                                                     Peer Comparison
                                                                 </h4>
                                                                 <div className="bg-white rounded-lg border-2 border-gray-200 p-5">
@@ -303,7 +316,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                                         {/* Current Tasks Summary */}
                                                         <div>
                                                             <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                                                                <span className="w-1 h-6 bg-green-600 rounded"></span>
+                                                                <span className="w-1 h-6 bg-green-600 rounded"></span>{" "}
                                                                 Current Workload
                                                             </h4>
                                                             <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -367,21 +380,7 @@ export const TechnicianPerformancePreview = ({ report }: { report: TechnicianPer
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis type="number" />
                                         <YAxis dataKey="technician_name" type="category" width={100} />
-                                        <ChartTooltip
-                                            content={({ active, payload }: any) => {
-                                                if (active && payload?.length) {
-                                                    const data = payload[0].payload
-                                                    return (
-                                                        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
-                                                            <p className="font-medium">{data.technician_name}</p>
-                                                            <p className="text-sm text-blue-600">Completed: {data.completed_tasks_count}</p>
-                                                            <p className="text-sm text-orange-600">Current: {data.current_assigned_tasks}</p>
-                                                        </div>
-                                                    )
-                                                }
-                                                return null
-                                            }}
-                                        />
+                                        <ChartTooltip content={WorkloadTooltip} />
                                         <Legend />
                                         <Bar dataKey="completed_tasks_count" fill="#3b82f6" name="Completed Tasks" />
                                         <Bar dataKey="current_assigned_tasks" fill="#f97316" name="Current Tasks" />

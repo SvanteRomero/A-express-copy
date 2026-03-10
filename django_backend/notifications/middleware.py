@@ -53,14 +53,14 @@ class JWTAuthMiddleware:
             from rest_framework_simplejwt.tokens import AccessToken
             from django.contrib.auth import get_user_model
             
-            User = get_user_model()
-            
+            user_model = get_user_model()
+
             # Validate token
             access_token = AccessToken(token)
             user_id = access_token.get('user_id')
-            
+
             if user_id:
-                return User.objects.get(id=user_id)
+                return user_model.objects.get(id=user_id)
         except Exception:
             pass
         

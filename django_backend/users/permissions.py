@@ -1,5 +1,8 @@
 from rest_framework import permissions
 
+_FRONT_DESK = 'Front Desk'
+
+
 class IsAdminOrManager(permissions.BasePermission):
     """
     Custom permission to only allow admins or managers to add users.
@@ -17,7 +20,7 @@ class IsManager(permissions.BasePermission):
 
 class IsFrontDesk(permissions.BasePermission):
     def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated and request.user.role == 'Front Desk'
+        return request.user and request.user.is_authenticated and request.user.role == _FRONT_DESK
 
 
 class IsTechnician(permissions.BasePermission):
@@ -37,7 +40,7 @@ class IsAdminOrManagerOrFrontDesk(permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        return request.user.is_superuser or request.user.role in ['Manager', 'Front Desk']
+        return request.user.is_superuser or request.user.role in ['Manager', _FRONT_DESK]
 
 
 class IsAdminOrManagerOrFrontDeskOrAccountant(permissions.BasePermission):
@@ -47,7 +50,7 @@ class IsAdminOrManagerOrFrontDeskOrAccountant(permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        return request.user.is_superuser or request.user.role in ['Manager', 'Front Desk', 'Accountant']
+        return request.user.is_superuser or request.user.role in ['Manager', _FRONT_DESK, 'Accountant']
 
 
 class IsAdminOrManagerOrAccountant(permissions.BasePermission):

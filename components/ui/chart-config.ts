@@ -1,16 +1,14 @@
-export type Color = string
-
 export type ShadcnChartConfig = {
   [key: string]: {
     label: string
-    color: Color
+    color: string
     icon?: React.ComponentType
   }
 }
 
 export type LegendConfig = {
   label: string
-  color: Color
+  color: string
   icon?: React.ComponentType
 }
 

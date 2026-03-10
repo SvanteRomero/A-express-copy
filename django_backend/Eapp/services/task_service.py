@@ -111,6 +111,8 @@ class TaskUpdateService:
     Service for updating tasks with all associated business logic.
     """
     
+    STATUS_READY_FOR_PICKUP = 'Ready for Pickup'
+    
     @staticmethod
     def update_task(task, data, user):
         """
@@ -144,14 +146,60 @@ class TaskUpdateService:
         # Store original values for comparison
         original_assigned_to = task.assigned_to
         
-        logger.warning(f"[SERVICE DEBUG] Handling customer update")
-        # Handle customer update
+        logger.warning("[SERVICE DEBUG] Handling customer update")
+        TaskUpdateService._handle_customer_update(task, data)
+        
+        logger.warning("[SERVICE DEBUG] Handling partial payment")
+        TaskUpdateService._handle_partial_payment(task, data)
+        
+        logger.warning("[SERVICE DEBUG] Handling referrer")
+        referrer_obj = TaskUpdateService._handle_referrer_update(task, data)
+        
+        logger.warning("[SERVICE DEBUG] Applying business logic for status based on assignment")
+        logger.warning(f"[SERVICE DEBUG] 'assigned_to' in data: {'assigned_to' in data}")
+        TaskUpdateService._handle_assignment_status(data, logger)
+        
+        logger.warning("[SERVICE DEBUG] Handling payment status (accountant only)")
+        TaskUpdateService._handle_payment_status(task, data, user)
+        
+        logger.warning("[SERVICE DEBUG] Handling workshop operations")
+        workshop_response = TaskUpdateService._handle_workshop_operations(
+            task, data, user
+        )
+        if workshop_response:
+            logger.warning("[SERVICE DEBUG] Workshop handler returned response")
+            return workshop_response
+        
+        logger.warning("[SERVICE DEBUG] Handling is_terminated flag")
+        TaskUpdateService._handle_termination(task, data, user)
+        
+        logger.warning("[SERVICE DEBUG] Handling status transitions")
+        logger.warning(f"[SERVICE DEBUG] Current task status: {task.status}")
+        logger.warning(f"[SERVICE DEBUG] New status in data: {data.get('status', 'NOT SET')}")
+        status_response = TaskUpdateService._handle_status_transition(
+            task, data, user, original_assigned_to
+        )
+        if status_response:
+            logger.warning(f"[SERVICE DEBUG] Status transition handler returned response: {status_response.status_code}")
+            return status_response
+        
+        logger.warning("[SERVICE DEBUG] Returning success dict")
+        return {
+            'data': data,
+            'referrer_obj': referrer_obj,
+            'original_assigned_to': original_assigned_to
+        }
+
+    @staticmethod
+    def _handle_customer_update(task, data):
+        """Handle customer update logic."""
         customer_data = data.pop('customer', None)
         if customer_data:
             CustomerHandler.update_customer(task.customer, customer_data)
-        
-        logger.warning(f"[SERVICE DEBUG] Handling partial payment")
-        # Handle partial payment
+
+    @staticmethod
+    def _handle_partial_payment(task, data):
+        """Handle partial payment logic."""
         partial_payment_amount = data.pop("partial_payment_amount", None)
         if partial_payment_amount is not None:
             payment_method, _ = PaymentMethod.objects.get_or_create(name="Partial Payment")
@@ -160,54 +208,50 @@ class TaskUpdateService:
                 amount=partial_payment_amount,
                 method=payment_method
             )
-        
-        logger.warning(f"[SERVICE DEBUG] Handling referrer")
-        # Handle referrer
+
+    @staticmethod
+    def _handle_referrer_update(task, data):
+        """Handle referrer update logic."""
         referred_by_name = data.pop("referred_by", None)
         is_referred = data.get("is_referred", task.is_referred)
-        referrer_obj = task.referred_by
         
         if is_referred:
             if referred_by_name:
                 referrer_obj, _ = Referrer.objects.get_or_create(name=referred_by_name)
+                return referrer_obj
         else:
-            referrer_obj = None
-        
-        logger.warning(f"[SERVICE DEBUG] Applying business logic for status based on assignment")
-        logger.warning(f"[SERVICE DEBUG] 'assigned_to' in data: {'assigned_to' in data}")
-        # Apply business logic for status based on assignment
+            return None
+            
+        return task.referred_by
+
+    @staticmethod
+    def _handle_assignment_status(data, logger):
+        """Apply business logic for status based on assignment."""
         if "assigned_to" in data:
             logger.warning(f"[SERVICE DEBUG] assigned_to value: {data.get('assigned_to')}")
             if data["assigned_to"]:
-                logger.warning(f"[SERVICE DEBUG] Setting status to 'In Progress'")
+                logger.warning("[SERVICE DEBUG] Setting status to 'In Progress'")
                 data["status"] = "In Progress"
             else:
-                logger.warning(f"[SERVICE DEBUG] Setting status to 'Pending'")
+                logger.warning("[SERVICE DEBUG] Setting status to 'Pending'")
                 data["status"] = "Pending"
-        
-        logger.warning(f"[SERVICE DEBUG] Handling payment status (accountant only)")
-        # Handle payment status update (accountant only)
+
+    @staticmethod
+    def _handle_payment_status(task, data, user):
+        """Handle payment status update (accountant only)."""
         if user.role == 'Accountant' and 'payment_status' in data:
             task.payment_status = data['payment_status']
             task.save(update_fields=['payment_status'])
-        
-        logger.warning(f"[SERVICE DEBUG] Handling workshop operations")
-        # Handle workshop operations
-        workshop_response = TaskUpdateService._handle_workshop_operations(
-            task, data, user
-        )
-        if workshop_response:
-            logger.warning(f"[SERVICE DEBUG] Workshop handler returned response")
-            return workshop_response
-        
-        logger.warning(f"[SERVICE DEBUG] Handling is_terminated flag")
-        # Handle is_terminated flag
+
+    @staticmethod
+    def _handle_termination(task, data, user):
+        """Handle execution of termination logic."""
         if data.get('is_terminated') is True:
             from notifications.utils import broadcast_toast_notification
             task.is_terminated = True
             # Ensure status is set to Ready for Pickup when terminated
-            if 'status' not in data or data['status'] != 'Ready for Pickup':
-                data['status'] = 'Ready for Pickup'
+            if 'status' not in data or data['status'] != TaskUpdateService.STATUS_READY_FOR_PICKUP:
+                data['status'] = TaskUpdateService.STATUS_READY_FOR_PICKUP
             task.save(update_fields=['is_terminated'])
             ActivityLogger.log_task_terminated(task, user)
             
@@ -221,24 +265,6 @@ class TaskUpdateService:
                     'user_name': user.get_full_name() or user.username,
                 }
             )
-        
-        logger.warning(f"[SERVICE DEBUG] Handling status transitions")
-        logger.warning(f"[SERVICE DEBUG] Current task status: {task.status}")
-        logger.warning(f"[SERVICE DEBUG] New status in data: {data.get('status', 'NOT SET')}")
-        # Handle status transitions
-        status_response = TaskUpdateService._handle_status_transition(
-            task, data, user, original_assigned_to
-        )
-        if status_response:
-            logger.warning(f"[SERVICE DEBUG] Status transition handler returned response: {status_response.status_code}")
-            return status_response
-        
-        logger.warning(f"[SERVICE DEBUG] Returning success dict")
-        return {
-            'data': data,
-            'referrer_obj': referrer_obj,
-            'original_assigned_to': original_assigned_to
-        }
     
     @staticmethod
     def _handle_workshop_operations(task, data, user):
@@ -352,7 +378,7 @@ class TaskUpdateService:
         
         
         # Update ready_for_pickup_at timestamp
-        if new_status == 'Ready for Pickup':
+        if new_status == TaskUpdateService.STATUS_READY_FOR_PICKUP:
             task.ready_for_pickup_at = timezone.now()
             task.save(update_fields=['ready_for_pickup_at'])
         

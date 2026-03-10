@@ -20,7 +20,7 @@ export default function ManagePaymentMethodsDialog({
   const queryClient = useQueryClient();
   const { data: paymentMethods } = usePaymentMethods();
   const [newPaymentMethodName, setNewPaymentMethodName] = useState("");
-  const [editingPaymentMethod, setEditingPaymentMethod] = useState<any | null>(null);
+  const [editingPaymentMethod, setEditingPaymentMethod] = useState<{ id: number; name: string } | null>(null);
 
   const createPaymentMethodMutation = useMutation({
     mutationFn: createPaymentMethod,

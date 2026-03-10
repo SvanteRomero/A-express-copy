@@ -1,7 +1,6 @@
 'use client';
 
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/use-auth";
 import { addTaskPayment } from "@/lib/api-client";
 import { TasksDisplay } from "@/components/tasks/task_utils/tasks-display";
 import { useMutation, useQueryClient } from "@tanstack/react-query";

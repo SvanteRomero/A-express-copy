@@ -12,7 +12,7 @@ class FrontDeskReportGenerator(ReportGeneratorBase):
     def generate_performance(date_range='last_30_days', start_date=None, end_date=None):
         """Generate front desk performance report with custom date range support."""
         # For activities, filter by timestamp
-        date_filter, actual_date_range, duration_days, duration_description, start_date, end_date = (
+        date_filter, _, _, _, start_date, end_date = (
             ReportGeneratorBase.get_date_filter(date_range, start_date, end_date, field='timestamp')
         )
         

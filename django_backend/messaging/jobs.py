@@ -5,8 +5,128 @@ Contains the pickup reminder job that runs periodically.
 import logging
 from django.utils import timezone
 from django.db.models import Q
+from messaging.models import MessageLog
+from messaging.services import send_pickup_reminder_sms
+from common.encryption import decrypt_value
+from settings.models import SystemSettings
+from Eapp.models import Task
+from messaging.models import SchedulerNotification
+from notifications.utils import broadcast_scheduler_notification
+
+    
 
 logger = logging.getLogger(__name__)
+
+
+def _process_pickup_task(task, now, reminder_hours):
+    """Process a single task for pickup reminder."""
+    
+   # Check when was the last reminder sent for this task
+    last_reminder = MessageLog.objects.filter(
+        task=task,
+        status='sent',
+        message_content__icontains='tunakukumbusha'  # Reminder keyword
+    ).order_by('-sent_at').first()
+    
+    # Determine when to compare against
+    if last_reminder:
+        last_contact_time = last_reminder.sent_at
+    else:
+        # No reminder sent yet - use approved time
+        last_contact_time = task.approved_at
+    
+    if not last_contact_time:
+        logger.warning(f"Task {task.title}: No approved_at time, skipping")
+        return None, None
+    
+    # Calculate hours since last contact
+    hours_since_contact = (now - last_contact_time).total_seconds() / 3600
+    
+    if hours_since_contact < reminder_hours:
+        logger.debug(
+            f"Task {task.title}: Only {hours_since_contact:.1f}h since last contact, "
+            f"need {reminder_hours}h"
+        )
+        return None, None
+        
+    # Get customer phone
+    if not task.customer or not task.customer.phone_numbers.exists():
+        logger.warning(f"Task {task.title}: No phone number, skipping")
+        return None, None
+    
+    # Use primary phone number (decrypt since stored encrypted in PostgreSQL)
+    primary_phone = task.customer.phone_numbers.first()
+    phone_number = decrypt_value(primary_phone.phone_number)
+    
+    # Send reminder
+    result = send_pickup_reminder_sms(task, phone_number)
+    
+    if result.get('success'):
+        logger.info(f"Sent reminder for task {task.title} to {phone_number}")
+        return True, None
+    else:
+        error_msg = result.get('error', 'Unknown error')
+        logger.error(f"Failed to send reminder for task {task.title}: {error_msg}")
+        return False, {
+            'task_id': task.title,
+            'task_title': task.title,
+            'error': error_msg
+        }
+
+
+def _process_debt_task(task, now, reminder_hours):
+    """Process a single task for debt reminder."""
+    # Check when was the last debt reminder sent for this task
+    last_reminder = MessageLog.objects.filter(
+        task=task,
+        status='sent',
+        message_content__icontains='deni'  # Debt reminder keyword in Swahili
+    ).order_by('-sent_at').first()
+    
+    # Determine when to compare against
+    if last_reminder:
+        last_contact_time = last_reminder.sent_at
+    else:
+        # No reminder sent yet - use when task was last updated (likely when marked as debt)
+        last_contact_time = task.updated_at
+    
+    if not last_contact_time:
+        logger.warning(f"Task {task.title}: No timestamp available, skipping")
+        return None, None
+    
+    # Calculate hours since last contact
+    hours_since_contact = (now - last_contact_time).total_seconds() / 3600
+    
+    if hours_since_contact < reminder_hours:
+        logger.debug(
+            f"Task {task.title}: Only {hours_since_contact:.1f}h since last contact, "
+            f"need {reminder_hours}h"
+        )
+        return None, None
+        
+    # Get customer phone
+    if not task.customer or not task.customer.phone_numbers.exists():
+        logger.warning(f"Task {task.title}: No phone number, skipping")
+        return None, None
+    
+    # Use primary phone number (decrypt since stored encrypted in PostgreSQL)
+    primary_phone = task.customer.phone_numbers.first()
+    phone_number = decrypt_value(primary_phone.phone_number)
+    
+    # Send reminder using existing debt reminder service
+    result = send_debt_reminder_sms(task, phone_number, user=None)
+    
+    if result.get('success'):
+        logger.info(f"Sent debt reminder for task {task.title} to {phone_number}")
+        return True, None
+    else:
+        error_msg = result.get('error', 'Unknown error')
+        logger.error(f"Failed to send debt reminder for task {task.title}: {error_msg}")
+        return False, {
+            'task_id': task.title,
+            'task_title': task.title,
+            'error': error_msg
+        }
 
 
 def send_pickup_reminders():
@@ -21,11 +141,6 @@ def send_pickup_reminders():
        - The task was approved (if no reminder sent yet)
     4. Send reminder SMS and log it
     """
-    from settings.models import SystemSettings
-    from Eapp.models import Task
-    from messaging.models import MessageLog
-    from messaging.services import send_pickup_reminder_sms
-    
     # Get settings
     settings = SystemSettings.get_settings()
     
@@ -48,64 +163,17 @@ def send_pickup_reminders():
     
     for task in ready_tasks:
         try:
-            # Check when was the last reminder sent for this task
-            last_reminder = MessageLog.objects.filter(
-                task=task,
-                status='sent',
-                message_content__icontains='tunakukumbusha'  # Reminder keyword
-            ).order_by('-sent_at').first()
-            
-            # Determine when to compare against
-            if last_reminder:
-                last_contact_time = last_reminder.sent_at
-            else:
-                # No reminder sent yet - use approved time
-                last_contact_time = task.approved_at
-            
-            if not last_contact_time:
-                logger.warning(f"Task {task.title}: No approved_at time, skipping")
-                continue
-            
-            # Calculate hours since last contact
-            hours_since_contact = (now - last_contact_time).total_seconds() / 3600
-            
-            if hours_since_contact >= reminder_hours:
-                # Get customer phone
-                if not task.customer or not task.customer.phone_numbers.exists():
-                    logger.warning(f"Task {task.title}: No phone number, skipping")
-                    continue
-                
-                # Use primary phone number (decrypt since stored encrypted in PostgreSQL)
-                from common.encryption import decrypt_value
-                primary_phone = task.customer.phone_numbers.first()
-                phone_number = decrypt_value(primary_phone.phone_number)
-                
-                # Send reminder
-                result = send_pickup_reminder_sms(task, phone_number)
-                
-                if result.get('success'):
-                    reminders_sent += 1
-                    logger.info(f"Sent reminder for task {task.title} to {phone_number}")
-                else:
-                    failures.append({
-                        'task_id': task.title,
-                        'task_title': task.title,
-                        'error': result.get('error', 'Unknown error')
-                    })
-                    logger.error(f"Failed to send reminder for task {task.title}: {result.get('error')}")
-            else:
-                logger.debug(
-                    f"Task {task.title}: Only {hours_since_contact:.1f}h since last contact, "
-                    f"need {reminder_hours}h"
-                )
-                
+            success, failure_data = _process_pickup_task(task, now, reminder_hours)
+            if success is True:
+                reminders_sent += 1
+            elif success is False and failure_data:
+                failures.append(failure_data)
         except Exception as e:
             logger.exception(f"Error processing task {task.title}: {e}")
     
     logger.info(f"Pickup reminder job completed: {reminders_sent} reminders sent")
     
     # Create notification for frontend
-    from messaging.models import SchedulerNotification
     notification = SchedulerNotification.objects.create(
         job_type='pickup_reminder',
         tasks_found=ready_tasks.count(),
@@ -115,7 +183,6 @@ def send_pickup_reminders():
     )
     
     # Broadcast via WebSocket for instant notifications
-    from notifications.utils import broadcast_scheduler_notification
     broadcast_scheduler_notification(notification)
     
     # Cleanup: Delete notifications older than 7 days
@@ -134,12 +201,7 @@ def send_debt_reminders():
     2. Find tasks with is_debt=True and status='Picked Up'
     3. Skip tasks older than debt_reminder_max_days since pickup
     4. Send reminder if debt_reminder_hours have passed since last debt reminder
-    """
-    from settings.models import SystemSettings
-    from Eapp.models import Task
-    from messaging.models import MessageLog
-    from messaging.services import send_debt_reminder_sms
-    
+    """    
     # Get settings
     settings = SystemSettings.get_settings()
     
@@ -168,57 +230,11 @@ def send_debt_reminders():
     
     for task in debt_tasks:
         try:
-            # Check when was the last debt reminder sent for this task
-            last_reminder = MessageLog.objects.filter(
-                task=task,
-                status='sent',
-                message_content__icontains='deni'  # Debt reminder keyword in Swahili
-            ).order_by('-sent_at').first()
-            
-            # Determine when to compare against
-            if last_reminder:
-                last_contact_time = last_reminder.sent_at
-            else:
-                # No reminder sent yet - use when task was last updated (likely when marked as debt)
-                last_contact_time = task.updated_at
-            
-            if not last_contact_time:
-                logger.warning(f"Task {task.title}: No timestamp available, skipping")
-                continue
-            
-            # Calculate hours since last contact
-            hours_since_contact = (now - last_contact_time).total_seconds() / 3600
-            
-            if hours_since_contact >= reminder_hours:
-                # Get customer phone
-                if not task.customer or not task.customer.phone_numbers.exists():
-                    logger.warning(f"Task {task.title}: No phone number, skipping")
-                    continue
-                
-                # Use primary phone number (decrypt since stored encrypted in PostgreSQL)
-                from common.encryption import decrypt_value
-                primary_phone = task.customer.phone_numbers.first()
-                phone_number = decrypt_value(primary_phone.phone_number)
-                
-                # Send reminder using existing debt reminder service
-                result = send_debt_reminder_sms(task, phone_number, user=None)
-                
-                if result.get('success'):
-                    reminders_sent += 1
-                    logger.info(f"Sent debt reminder for task {task.title} to {phone_number}")
-                else:
-                    failures.append({
-                        'task_id': task.title,
-                        'task_title': task.title,
-                        'error': result.get('error', 'Unknown error')
-                    })
-                    logger.error(f"Failed to send debt reminder for task {task.title}: {result.get('error')}")
-            else:
-                logger.debug(
-                    f"Task {task.title}: Only {hours_since_contact:.1f}h since last contact, "
-                    f"need {reminder_hours}h"
-                )
-                
+            success, failure_data = _process_debt_task(task, now, reminder_hours)
+            if success is True:
+                reminders_sent += 1
+            elif success is False and failure_data:
+                failures.append(failure_data)
         except Exception as e:
             logger.exception(f"Error processing debt task {task.title}: {e}")
     

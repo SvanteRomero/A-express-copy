@@ -69,14 +69,14 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed, logout user
         // Refresh failed, logout user via event
-        if (typeof globalThis.window !== 'undefined') {
+        if (globalThis.window !== undefined) {
           globalThis.dispatchEvent(new CustomEvent('auth:logout'));
         }
-        return Promise.reject(refreshError);
+        throw refreshError;
       }
     }
 
-    return Promise.reject(error);
+    throw error;
   }
 );
 
@@ -126,6 +126,7 @@ export const checkAuth = async () => {
     const response = await apiClient.get('/auth/me/');
     return response.data;
   } catch (error) {
+    console.debug('Auth check failed:', error)
     return null;
   }
 };

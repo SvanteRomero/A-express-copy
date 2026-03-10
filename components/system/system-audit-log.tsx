@@ -391,7 +391,7 @@ export function SystemAuditLog() {
       link.style.visibility = "hidden"
       document.body.appendChild(link)
       link.click()
-      document.body.removeChild(link)
+      link.remove()
     } catch (error) {
       console.error("Error exporting CSV:", error)
     } finally {

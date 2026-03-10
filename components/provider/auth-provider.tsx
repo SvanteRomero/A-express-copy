@@ -1,10 +1,9 @@
 "use client"
 
 import type React from "react"
-import { createContext, useState, useEffect } from "react"
+import { createContext, useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { login as apiLogin, checkAuth } from "@/lib/api-client"
-import { apiClient } from "@/lib/api-client"
+import { login as apiLogin, checkAuth, apiClient } from "@/lib/api-client"
 import axios from 'axios';
 import { getApiUrl } from '@/lib/config';
 
@@ -64,6 +63,7 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
                 }
             } catch (error) {
                 // Auth check failed - user is not authenticated
+                console.debug('Auth check failed:', error)
                 setUser(null)
                 localStorage.removeItem("auth_user")
             } finally {
@@ -141,7 +141,7 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
         }
     }
 
-    const value = {
+    const value = useMemo(() => ({
         user,
         isAuthenticated: !!user,
         setUser,
@@ -149,7 +149,7 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
         login,
         logout,
         refreshAuth,
-    }
+    }), [user, isLoading, login, logout, refreshAuth])
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

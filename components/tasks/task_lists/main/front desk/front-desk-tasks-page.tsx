@@ -77,6 +77,7 @@ export function FrontDeskTasksPage() {
       // so if we invalidate "tasks" key, all hooks should update.
       // useUpdateTask should probably handle invalidation or we do it here if needed.
     } catch (error) {
+      console.error('Task approval failed:', error)
       showTaskApprovalErrorToast();
     } finally {
       setApprovingTaskId(null);
@@ -122,6 +123,7 @@ export function FrontDeskTasksPage() {
         });
         // Toast handled via WebSocket
       } catch (error) {
+        console.error('Task pickup failed:', error)
         showPickupErrorToast();
       } finally {
         setPickingUpTaskId(null);

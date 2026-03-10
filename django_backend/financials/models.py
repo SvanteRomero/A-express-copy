@@ -3,6 +3,8 @@ from django.utils.translation import gettext_lazy as _
 from users.models import User
 from django.utils import timezone
 
+_TASK_REF = 'Eapp.Task'
+
 def get_current_date():
     return timezone.localdate()
 
@@ -32,7 +34,7 @@ class PaymentCategory(models.Model):
 
 class Payment(models.Model):
 
-    task = models.ForeignKey('Eapp.Task', on_delete=models.CASCADE, related_name='payments', null=True, blank=True)
+    task = models.ForeignKey(_TASK_REF, on_delete=models.CASCADE, related_name='payments', null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     date = models.DateField(default=get_current_date)
     method = models.ForeignKey(PaymentMethod, on_delete=models.SET_NULL, null=True, blank=True)
@@ -75,7 +77,7 @@ class CostBreakdown(models.Model):
         REJECTED = 'Rejected', _('Rejected')
 
 
-    task = models.ForeignKey('Eapp.Task', on_delete=models.CASCADE, related_name='cost_breakdowns')
+    task = models.ForeignKey(_TASK_REF, on_delete=models.CASCADE, related_name='cost_breakdowns')
     description = models.CharField(max_length=255)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     cost_type = models.CharField(max_length=20, choices=CostType.choices, default=CostType.INCLUSIVE)
@@ -188,7 +190,7 @@ class TransactionRequest(ApprovalRequest):
     )
     description = models.TextField()
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    task = models.ForeignKey('Eapp.Task', on_delete=models.SET_NULL, null=True, blank=True, related_name='transaction_requests')
+    task = models.ForeignKey(_TASK_REF, on_delete=models.SET_NULL, null=True, blank=True, related_name='transaction_requests')
     category = models.ForeignKey(PaymentCategory, on_delete=models.PROTECT)
     payment_method = models.ForeignKey(PaymentMethod, on_delete=models.SET_NULL, null=True, blank=True)
     payment_method_name = models.CharField(max_length=100, blank=True, null=True)
@@ -230,7 +232,7 @@ class DebtRequest(ApprovalRequest):
     Inherits common approval fields from ApprovalRequest.
     """
     # Debt-specific fields
-    task = models.ForeignKey('Eapp.Task', on_delete=models.CASCADE, related_name='debt_requests')
+    task = models.ForeignKey(_TASK_REF, on_delete=models.CASCADE, related_name='debt_requests')
     task_title = models.CharField(max_length=255, blank=True)
     
     def save(self, *args, **kwargs):

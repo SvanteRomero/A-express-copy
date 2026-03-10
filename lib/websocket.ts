@@ -110,61 +110,61 @@ export interface WebSocketClientConfig {
     heartbeatTimeout?: number;
 }
 
+function httpToWsUrl(httpUrl: string): string | null {
+    try {
+        const url = new URL(httpUrl);
+        const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+        return `${wsProtocol}//${url.host}`;
+    } catch {
+        return null;
+    }
+}
+
+function getProductionWebSocketUrl(protocol: string, host: string): string {
+    const backendUrl = (globalThis as unknown as { __BACKEND_URL__?: string }).__BACKEND_URL__;
+    if (backendUrl) {
+        const wsUrl = httpToWsUrl(backendUrl);
+        if (wsUrl) return wsUrl;
+        console.error('Invalid __BACKEND_URL__:', backendUrl);
+    }
+    console.warn('WebSocket: No NEXT_PUBLIC_API_URL set for production. WebSocket will not connect.');
+    return '';
+}
+
+function getCloudDevWebSocketUrl(protocol: string, host: string): string {
+    if (host.includes('-3000')) {
+        return `${protocol}//${host.replace('-3000', '-8000')}`;
+    }
+    return 'ws://localhost:8000';
+}
+
 /**
  * Get the WebSocket base URL from the API URL.
  * Converts http://localhost:8000/api to ws://localhost:8000
  */
 function getWebSocketBaseUrl(): string {
-    if (typeof globalThis.window === 'undefined') {
+    if (globalThis.window === undefined) {
         return 'ws://localhost:8000';
     }
 
-    // Try to get from environment variable first (build-time)
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (apiUrl) {
-        try {
-            // Convert http(s)://host/api to ws(s)://host
-            const url = new URL(apiUrl);
-            const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-            return `${wsProtocol}//${url.host}`;
-        } catch (e) {
-            console.error('Invalid NEXT_PUBLIC_API_URL:', apiUrl);
-        }
+        const wsUrl = httpToWsUrl(apiUrl);
+        if (wsUrl) return wsUrl;
+        console.error('Invalid NEXT_PUBLIC_API_URL:', apiUrl);
     }
 
     const host = globalThis.location.hostname;
     const protocol = globalThis.location.protocol === 'https:' ? 'wss:' : 'ws:';
 
-    // Railway deployment: frontend and backend are separate services
-    // The backend URL should be set via NEXT_PUBLIC_API_URL
-    // If not set, we can't auto-detect it (different Railway services have different URLs)
     if (host.includes('railway.app') || host.includes('vercel.app')) {
-        // Check if there's a backend URL stored in window (set by config)
-        const backendUrl = (globalThis as unknown as { __BACKEND_URL__?: string }).__BACKEND_URL__;
-        if (backendUrl) {
-            try {
-                const url = new URL(backendUrl);
-                return `${url.protocol === 'https:' ? 'wss:' : 'ws:'}//${url.host}`;
-            } catch (e) {
-                console.error('Invalid __BACKEND_URL__:', backendUrl);
-            }
-        }
-
-        // Fallback: try to derive from API client config if available
-        console.warn('WebSocket: No NEXT_PUBLIC_API_URL set for production. WebSocket will not connect.');
-        return '';  // Empty URL will prevent connection attempts
+        return getProductionWebSocketUrl(protocol, host);
     }
 
-    // Cloud development environments (GitHub Codespaces, Gitpod)
     if (host.includes('github.dev') || host.includes('gitpod.io')) {
-        // Replace frontend port with backend port
-        if (host.includes('-3000')) {
-            const backendHost = host.replace('-3000', '-8000');
-            return `${protocol}//${backendHost}`;
-        }
+        return getCloudDevWebSocketUrl(protocol, host);
     }
 
-    // Default: localhost with Django port
     return 'ws://localhost:8000';
 }
 
@@ -182,15 +182,15 @@ const DEFAULT_CONFIG: Required<WebSocketClientConfig> = {
  */
 export class NotificationWebSocket {
     private ws: WebSocket | null = null;
-    private messageHandlers: Set<MessageHandler> = new Set();
-    private statusHandlers: Set<ConnectionStatusHandler> = new Set();
-    private qualityHandlers: Set<ConnectionQualityHandler> = new Set();
+    private readonly messageHandlers: Set<MessageHandler> = new Set();
+    private readonly statusHandlers: Set<ConnectionStatusHandler> = new Set();
+    private readonly qualityHandlers: Set<ConnectionQualityHandler> = new Set();
     private reconnectAttempts = 0;
     private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
     private reconnectResetTimeout: ReturnType<typeof setTimeout> | null = null;
     private pingInterval: ReturnType<typeof setInterval> | null = null;
     private heartbeatTimeout: ReturnType<typeof setTimeout> | null = null;
-    private config: Required<WebSocketClientConfig>;
+    private readonly config: Required<WebSocketClientConfig>;
     private isIntentionalClose = false;
     private lastMessageTime: number = Date.now();
     private connectionQuality: ConnectionQuality = 'disconnected';

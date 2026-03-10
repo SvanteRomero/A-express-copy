@@ -1,19 +1,27 @@
 
 from Eapp.models import User, Task
 
+_IN_PROGRESS = 'In Progress'
+_AWAITING_PARTS = 'Awaiting Parts'
+_PENDING = 'Pending'
+_COMPLETED = 'Completed'
+_READY_FOR_PICKUP = 'Ready for Pickup'
+_PICKED_UP = 'Picked Up'
+_TERMINATED = 'Terminated'
+
 ALLOWED_TRANSITIONS = {
     'Front Desk': {
-        'Completed': ['Ready for Pickup', 'In Progress', 'Pending'],
-        'Ready for Pickup': ['Picked Up', 'Pending', 'In Progress'],
-        'Picked Up': ['In Progress'],
-        'Pending': ['Terminated', 'In Progress'],
-        'In Progress': ['Terminated', 'Pending', 'In Progress'],
-        'Awaiting Parts': ['In Progress'],
+        _COMPLETED: [_READY_FOR_PICKUP, _IN_PROGRESS, _PENDING],
+        _READY_FOR_PICKUP: [_PICKED_UP, _PENDING, _IN_PROGRESS],
+        _PICKED_UP: [_IN_PROGRESS],
+        _PENDING: [_TERMINATED, _IN_PROGRESS],
+        _IN_PROGRESS: [_TERMINATED, _PENDING, _IN_PROGRESS],
+        _AWAITING_PARTS: [_IN_PROGRESS],
     },
     'Technician': {
-        'Pending': ['In Progress'],
-        'In Progress': ['Awaiting Parts', 'Completed'],
-        'Awaiting Parts': ['In Progress'],
+        _PENDING: [_IN_PROGRESS],
+        _IN_PROGRESS: [_AWAITING_PARTS, _COMPLETED],
+        _AWAITING_PARTS: [_IN_PROGRESS],
     },
     'Manager': {
         # Managers can transition from any status to any other status.

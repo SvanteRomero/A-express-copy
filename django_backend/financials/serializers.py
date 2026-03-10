@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.core.validators import MinValueValidator
 from decimal import Decimal
+
+_TASK_TITLE_SOURCE = "task.title"
 from .models import (
     ApprovalRequest,
     TransactionRequest,
@@ -17,7 +19,7 @@ from users.models import User
 
 
 class CostBreakdownSerializer(serializers.ModelSerializer):
-    task_title = serializers.CharField(source="task.title", read_only=True)
+    task_title = serializers.CharField(source=_TASK_TITLE_SOURCE, read_only=True)
 
     class Meta:
         model = CostBreakdown
@@ -59,7 +61,7 @@ class PaymentCategorySerializer(serializers.ModelSerializer):
 
 class PaymentSerializer(serializers.ModelSerializer):
     method_name = serializers.SerializerMethodField()
-    task_title = serializers.CharField(source="task.title", read_only=True)
+    task_title = serializers.CharField(source=_TASK_TITLE_SOURCE, read_only=True)
     task_status = serializers.CharField(source="task.status", read_only=True)
     category_name = serializers.CharField(
         source="category.name", read_only=True, allow_null=True
@@ -97,7 +99,7 @@ class TransactionRequestSerializer(serializers.ModelSerializer):
     requester = UserSerializer(read_only=True)
     approver = UserSerializer(read_only=True)
     task_title = serializers.CharField(
-        source="task.title", read_only=True, allow_null=True
+        source=_TASK_TITLE_SOURCE, read_only=True, allow_null=True
     )
     category = PaymentCategorySerializer(read_only=True)
     payment_method = PaymentMethodSerializer(read_only=True)

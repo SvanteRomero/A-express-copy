@@ -50,7 +50,7 @@ export function DateSelectionModal({
                             checked={dateRangeType === 'preset'}
                             onChange={(e) => onDateRangeTypeChange(e.target.value as 'preset' | 'custom')}
                             className="mr-2"
-                        />
+                        />{" "}
                         Preset Range
                     </label>
                     <label className="flex items-center">
@@ -60,7 +60,7 @@ export function DateSelectionModal({
                             checked={dateRangeType === 'custom'}
                             onChange={(e) => onDateRangeTypeChange(e.target.value as 'preset' | 'custom')}
                             className="mr-2"
-                        />
+                        />{" "}
                         Custom Range
                     </label>
                 </div>
@@ -68,10 +68,11 @@ export function DateSelectionModal({
                 {/* Preset Date Range */}
                 {dateRangeType === 'preset' && (
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="preset-range" className="block text-sm font-medium text-gray-700 mb-2">
                             Time Period
                         </label>
                         <select
+                            id="preset-range"
                             value={presetRange}
                             onChange={(e) => onPresetRangeChange(e.target.value)}
                             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
@@ -88,10 +89,11 @@ export function DateSelectionModal({
                 {dateRangeType === 'custom' && (
                     <div className="mb-4 space-y-3">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="custom-start-date" className="block text-sm font-medium text-gray-700 mb-1">
                                 Start Date
                             </label>
                             <input
+                                id="custom-start-date"
                                 type="date"
                                 value={customStartDate}
                                 onChange={(e) => onCustomStartDateChange(e.target.value)}
@@ -99,10 +101,11 @@ export function DateSelectionModal({
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="custom-end-date" className="block text-sm font-medium text-gray-700 mb-1">
                                 End Date
                             </label>
                             <input
+                                id="custom-end-date"
                                 type="date"
                                 value={customEndDate}
                                 onChange={(e) => onCustomEndDateChange(e.target.value)}

@@ -40,7 +40,7 @@ class CookieJWTAuthentication(JWTAuthentication):
             user = self.get_user(validated_token)
             return (user, validated_token)
             
-        except (InvalidToken, TokenError) as e:
+        except (InvalidToken, TokenError):
             # Access token is invalid/expired - try to refresh
             refresh_token = request.COOKIES.get(settings.JWT_AUTH_REFRESH_COOKIE)
             

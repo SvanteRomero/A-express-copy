@@ -262,23 +262,9 @@ def bulk_send_sms(request):
     recipients_data = serializer.validated_data['recipients'] # List of {task_id, phone}
     task_ids = [int(r['task_id']) for r in recipients_data]
     
-    manual_message = serializer.validated_data.get('message')
-    template_id = serializer.validated_data.get('template_id')
-    template_key = serializer.validated_data.get('template_key')
-    
-    # Determine message content
-    message_content = manual_message
-    
-    if not message_content:
-        from .services import get_template_by_key_or_id
-        content = get_template_by_key_or_id(key=template_key, template_id=template_id)
-        if content:
-            message_content = content
-        else:
-            return Response({'error': 'Template not found'}, status=status.HTTP_404_NOT_FOUND)
-            
-    # Sanitize message: remove newlines (API provider constraint)
-    message_content = message_content.replace('\n', ' ').replace('\r', '').strip()
+    message_content, error_response = _resolve_bulk_message_content(serializer.validated_data)
+    if error_response:
+        return error_response
     
     # Get company info for placeholders
     from settings.models import SystemSettings
@@ -310,104 +296,23 @@ def bulk_send_sms(request):
             errors.append(f"Task {task_id} not found")
             continue
 
-        # Resolve variables
-        # Dynamic template resolution per task
-        final_message = message_content
-        
-        if template_key == 'ready_for_pickup':
-            from messaging.services import TEMPLATE_READY_SOLVED, TEMPLATE_READY_NOT_SOLVED
-            
-            # Use specific template based on workshop_status
-            if task.workshop_status == 'Solved':
-                final_message = TEMPLATE_READY_SOLVED
-            elif task.workshop_status == 'Not Solved':
-                final_message = TEMPLATE_READY_NOT_SOLVED
-            # Else fallback to default 'ready_for_pickup' content
-        
-        # Replace variables
-        final_message = final_message.replace('{customer}', task.customer.name)
-        final_message = final_message.replace('{device}', f"{task.brand or ''} {task.laptop_model or ''}".strip() or "Device")
-        final_message = final_message.replace('{taskId}', task.title)
-        
-        # Handle description
-        description = task.description or "Unknown Issue"
-        final_message = final_message.replace('{DESCRIPTION}', description.upper())
-        final_message = final_message.replace('{description}', description) # Support lowercase placeholder key too
-        
-        final_message = final_message.replace('{notes}', task.device_notes or '')
-        
-        # Swahili status translation
-        status_map = {
-            'Pending': 'Imepokelewa',
-            'In Progress': 'Inashughulikiwa',
-            'Ready for Pickup': 'Ipo Tayari',
-            'Picked Up': 'Imeshachukuliwa',
-            'Completed': 'Imekamilika',
-        }
-        swahili_status = status_map.get(task.status, task.status)
-        
-        final_message = final_message.replace('{status}', swahili_status)
-        
-        # Handle amount properly
-        amount_val = str(task.total_cost)
-        if hasattr(task, 'total_cost') and task.total_cost:
-            amount_val = "{:,.0f}".format(task.total_cost)
-        final_message = final_message.replace('{amount}', amount_val)
-        
-        # Handle outstanding balance for debt reminder
-        outstanding = task.total_cost - task.paid_amount
-        outstanding_str = "{:,.0f}".format(outstanding) if outstanding > 0 else "0"
-        final_message = final_message.replace('{outstanding_balance}', outstanding_str)
-        
-        final_message = final_message.replace('{company_name}', company_name)
-        final_message = final_message.replace('{contact_info}', contact_info_str)
-        
-        # Configurable template values from settings
-        final_message = final_message.replace('{storage_fee}', f'{system_settings.storage_fee_per_day:,}')
-        final_message = final_message.replace('{pickup_deadline_days}', str(system_settings.pickup_deadline_days))
-
-        # Use specific phone number if provided, otherwise default fallback (shouldn't happen with new UI)
         if not phone_number:
-             # Fallback logic if needed, or error
-             failed_count += 1
-             errors.append(f"Task {task_id}: No phone number provided")
-             continue
+            failed_count += 1
+            errors.append(f"Task {task_id}: No phone number provided")
+            continue
 
-        if phone_number:
-            # Create log
-            log = MessageLog.objects.create(
-                task=task,
-                recipient_phone=phone_number,
-                message_content=final_message,
-                status='pending',
-                sent_by=request.user
-            )
-            
-            # Send
-            result = briq_client.send_sms(content=final_message, recipients=[phone_number])
-            
-            if result.get('success'):
-                log.status = 'sent'
-                log.response_data = result.get('data')
-                success_count += 1
-                
-                # Activity log
-                TaskActivity.objects.create(
-                    task=task,
-                    user=request.user,
-                    type='sms_sent',
-                    message=f"Bulk SMS sent"
-                )
-            else:
-                log.status = 'failed'
-                log.response_data = result
-                failed_count += 1
-                errors.append(f"Task {task.id}: {result.get('error')}")
-            
-            log.save()
+        final_message = _format_bulk_message(
+            task, message_content, template_key, 
+            system_settings, company_name, contact_info_str
+        )
+        
+        is_success, error_msg = _send_single_bulk_sms(task, phone_number, final_message, request.user)
+        
+        if is_success:
+            success_count += 1
         else:
-             failed_count += 1
-             errors.append(f"Task {task.id}: No phone number")
+            failed_count += 1
+            errors.append(f"Task {task.id}: {error_msg}")
 
     return Response({
         'success': True,
@@ -418,6 +323,104 @@ def bulk_send_sms(request):
         },
         'errors': errors
     })
+
+def _resolve_bulk_message_content(validated_data):
+    manual_message = validated_data.get('message')
+    template_id = validated_data.get('template_id')
+    template_key = validated_data.get('template_key')
+    
+    message_content = manual_message
+    
+    if not message_content:
+        from .services import get_template_by_key_or_id
+        content = get_template_by_key_or_id(key=template_key, template_id=template_id)
+        if content:
+            message_content = content
+        else:
+            return None, Response({'error': 'Template not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+    # Sanitize message: remove newlines (API provider constraint)
+    message_content = message_content.replace('\n', ' ').replace('\r', '').strip()
+    return message_content, None
+
+def _format_bulk_message(task, base_message, template_key, system_settings, company_name, contact_info_str):
+    final_message = base_message
+    
+    if template_key == 'ready_for_pickup':
+        from messaging.services import TEMPLATE_READY_SOLVED, TEMPLATE_READY_NOT_SOLVED
+        if task.workshop_status == 'Solved':
+            final_message = TEMPLATE_READY_SOLVED
+        elif task.workshop_status == 'Not Solved':
+            final_message = TEMPLATE_READY_NOT_SOLVED
+            
+    final_message = final_message.replace('{customer}', task.customer.name)
+    final_message = final_message.replace('{device}', f"{task.brand or ''} {task.laptop_model or ''}".strip() or "Device")
+    final_message = final_message.replace('{taskId}', task.title)
+    
+    description = task.description or "Unknown Issue"
+    final_message = final_message.replace('{DESCRIPTION}', description.upper())
+    final_message = final_message.replace('{description}', description)
+    final_message = final_message.replace('{notes}', task.device_notes or '')
+    
+    status_map = {
+        'Pending': 'Imepokelewa',
+        'In Progress': 'Inashughulikiwa',
+        'Ready for Pickup': 'Ipo Tayari',
+        'Picked Up': 'Imeshachukuliwa',
+        'Completed': 'Imekamilika',
+    }
+    final_message = final_message.replace('{status}', status_map.get(task.status, task.status))
+    
+    amount_val = str(task.total_cost)
+    if hasattr(task, 'total_cost') and task.total_cost:
+        amount_val = "{:,.0f}".format(task.total_cost)
+    final_message = final_message.replace('{amount}', amount_val)
+    
+    outstanding = task.total_cost - task.paid_amount
+    outstanding_str = "{:,.0f}".format(outstanding) if outstanding > 0 else "0"
+    final_message = final_message.replace('{outstanding_balance}', outstanding_str)
+    
+    final_message = final_message.replace('{company_name}', company_name)
+    final_message = final_message.replace('{contact_info}', contact_info_str)
+    final_message = final_message.replace('{storage_fee}', f'{system_settings.storage_fee_per_day:,}')
+    final_message = final_message.replace('{pickup_deadline_days}', str(system_settings.pickup_deadline_days))
+    
+    return final_message
+
+def _send_single_bulk_sms(task, phone_number, final_message, request_user):
+    from .models import MessageLog
+    from Eapp.models import TaskActivity
+    from .services import briq_client
+    
+    log = MessageLog.objects.create(
+        task=task,
+        recipient_phone=phone_number,
+        message_content=final_message,
+        status='pending',
+        sent_by=request_user
+    )
+    
+    result = briq_client.send_sms(content=final_message, recipients=[phone_number])
+    
+    if result.get('success'):
+        log.status = 'sent'
+        log.response_data = result.get('data')
+        TaskActivity.objects.create(
+            task=task,
+            user=request_user,
+            type='sms_sent',
+            message="Bulk SMS sent"
+        )
+        is_success = True
+        error_msg = None
+    else:
+        log.status = 'failed'
+        log.response_data = result
+        is_success = False
+        error_msg = result.get('error')
+    
+    log.save()
+    return is_success, error_msg
 
 
 # --- Scheduler Notification Endpoints ---

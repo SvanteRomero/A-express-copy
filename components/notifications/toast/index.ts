@@ -17,7 +17,7 @@
 export { toast, useToast } from '@/hooks/use-toast';
 
 // Re-export types
-export type { ToastVariant, ToastType, SmsResult } from './types';
+export type { ToastVariant, SmsResult } from './types';
 
 // Re-export common toasts (includes CRUD factory)
 export {
