@@ -20,7 +20,7 @@ class TaskListSerializer(serializers.ModelSerializer):
     assigned_to_details = UserListSerializer(source='assigned_to', read_only=True)
     outstanding_balance = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     laptop_model_details = ModelSerializer(source='laptop_model', read_only=True)
-    total_cost = serializers.DecimalField(source='calculated_total_cost', max_digits=10, decimal_places=2, read_only=True)
+    total_cost = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     current_location_details = LocationSerializer(source='current_location', read_only=True)
 
     class Meta:
@@ -61,8 +61,8 @@ class TaskDetailSerializer(serializers.ModelSerializer):
     activities = TaskActivitySerializer(many=True, read_only=True)
     payments = PaymentSerializer(many=True, read_only=True)
     outstanding_balance = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
-    total_cost = serializers.DecimalField(source='calculated_total_cost', max_digits=10, decimal_places=2, read_only=True)
-    paid_amount = serializers.DecimalField(source='calculated_paid_amount', max_digits=10, decimal_places=2, read_only=True)
+    total_cost = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    paid_amount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     workshop_location_details = LocationSerializer(
         source="workshop_location", read_only=True
     )
