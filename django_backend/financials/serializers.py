@@ -180,38 +180,11 @@ class DebtRequestSerializer(serializers.ModelSerializer):
         """Return task details including outstanding balance."""
         if obj.task:
             task = obj.task
-            
-            # Compute outstanding_balance using the same logic as TaskViewSet annotation:
-            # calculated_total_cost = estimated_cost + additive_breakdowns - subtractive_breakdowns
-            # calculated_paid_amount = sum of payments
-            # outstanding_balance = calculated_total_cost - calculated_paid_amount
-            
-            from decimal import Decimal
-            from django.db.models import Sum
-            
-            estimated_cost = task.estimated_cost or Decimal('0')
-            
-            # Get additive and subtractive cost breakdowns
-            additive_breakdowns = task.cost_breakdowns.filter(
-                cost_type='Additive'
-            ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-            
-            subtractive_breakdowns = task.cost_breakdowns.filter(
-                cost_type='Subtractive'
-            ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-            
-            # Get total payments
-            paid_amount = task.payments.aggregate(total=Sum('amount'))['total'] or Decimal('0')
-            
-            # Calculate outstanding balance
-            total_cost = estimated_cost + additive_breakdowns - subtractive_breakdowns
-            outstanding_balance = total_cost - paid_amount
-            
             return {
                 'id': task.id,
                 'title': task.title,
                 'customer_name': task.customer.name if task.customer else None,
-                'outstanding_balance': str(outstanding_balance)
+                'outstanding_balance': str(task.outstanding_balance)
             }
         return None
     

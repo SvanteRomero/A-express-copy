@@ -80,9 +80,7 @@ class MessageBuilder:
     
     def get_outstanding_balance_str(self, include_suffix: bool = True) -> str:
         """Calculate and format outstanding balance."""
-        total_cost = self.task.total_cost or 0
-        paid_amount = self.task.paid_amount or 0
-        outstanding = max(0, total_cost - paid_amount)
+        outstanding = max(0, self.task.outstanding_balance)
         if include_suffix:
             return f"{outstanding:,.0f}/=" if outstanding else "0/="
         return f"{outstanding:,.0f}"

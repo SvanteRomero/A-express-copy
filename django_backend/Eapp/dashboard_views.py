@@ -1,5 +1,4 @@
-from django.db.models import Sum, F, DecimalField, Value, Q
-from django.db.models.functions import Coalesce
+from django.db.models import Sum
 from django.utils import timezone
 from rest_framework import permissions
 from rest_framework.views import APIView
@@ -39,29 +38,13 @@ class DashboardStats(APIView):
         )
         
         # 6. Total Outstanding Debt Balance
-        # Calculate outstanding balance for all debt tasks (not terminated)
-        debt_tasks = Task.objects.filter(
-            is_debt=True
-        ).exclude(
-            status='Terminated'
-        ).annotate(
-            calculated_total_cost=Coalesce(
-                F('estimated_cost'), Value(0, output_field=DecimalField())
-            ) + Coalesce(
-                Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Additive')),
-                Value(0, output_field=DecimalField())
-            ) - Coalesce(
-                Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Subtractive')),
-                Value(0, output_field=DecimalField())
-            ),
-            calculated_paid_amount=Coalesce(Sum('payments__amount'), Value(0, output_field=DecimalField()))
-        ).annotate(
-            outstanding_balance=F('calculated_total_cost') - F('calculated_paid_amount')
+        total_debt_balance = (
+            Task.objects.filter(is_debt=True)
+            .exclude(status='Terminated')
+            .with_outstanding_balance()
+            .aggregate(total=Sum('outstanding_balance'))['total']
+            or 0
         )
-        
-        total_debt_balance = debt_tasks.aggregate(
-            total=Sum('outstanding_balance')
-        )['total'] or 0
         
         data = {
             "new_tasks_count": new_tasks_count,

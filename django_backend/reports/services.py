@@ -1,5 +1,4 @@
-from django.db.models import Q, Sum, F, Value, DecimalField
-from django.db.models.functions import Coalesce
+from django.db.models import Q, Sum
 from Eapp.models import Task
 from datetime import timedelta
 from django.utils import timezone
@@ -17,8 +16,8 @@ class ReportGenerator:
         'location': 'current_location',
         'brand': 'brand__name',
         'device_type': 'device_type',
-        'total_cost': 'calculated_total_cost',
-        'paid_amount': 'calculated_paid_amount',
+        'total_cost': 'total_cost',
+        'paid_amount': 'paid_amount',
         'outstanding_balance': 'outstanding_balance',
     }
 
@@ -96,20 +95,7 @@ class ReportGenerator:
         """Build report data based on selected fields"""
         
         # Annotate the queryset
-        self.queryset = self.queryset.annotate(
-            calculated_total_cost=Coalesce(
-                F('estimated_cost'), Value(0, output_field=DecimalField())
-            ) + Coalesce(
-                Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Additive')),
-                Value(0, output_field=DecimalField())
-            ) - Coalesce(
-                Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Subtractive')),
-                Value(0, output_field=DecimalField())
-            ),
-            calculated_paid_amount=Coalesce(Sum('payments__amount'), Value(0, output_field=DecimalField()))
-        ).annotate(
-            outstanding_balance=F('calculated_total_cost') - F('calculated_paid_amount')
-        )
+        self.queryset = self.queryset.with_outstanding_balance()
 
         # Select related to optimize queries
         self.queryset = self.queryset.select_related(

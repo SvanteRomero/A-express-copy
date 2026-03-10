@@ -8,7 +8,17 @@ _LOCATION_REF = 'common.Location'
 
 def get_current_date():
     return timezone.now().date()
-    
+
+
+class TaskQuerySet(models.QuerySet):
+    def with_outstanding_balance(self):
+        return self.annotate(
+            outstanding_balance=models.ExpressionWrapper(
+                models.F('total_cost') - models.F('paid_amount'),
+                output_field=models.DecimalField(max_digits=10, decimal_places=2)
+            )
+        )
+
 
 class Task(models.Model):
     class Status(models.TextChoices):
@@ -266,6 +276,12 @@ class Task(models.Model):
     negotiated_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='negotiated_tasks'
     )
+
+    objects = TaskQuerySet.as_manager()
+
+    @property
+    def outstanding_balance(self) -> Decimal:
+        return (self.total_cost or Decimal('0')) - (self.paid_amount or Decimal('0'))
 
     def _calculate_total_cost(self):
         estimated_cost = self.estimated_cost or Decimal('0.00')

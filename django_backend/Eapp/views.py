@@ -38,24 +38,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         # Only add annotations for list and retrieve actions
         # Skip for update/partial_update to avoid potential query issues
         if self.action in ['list', 'retrieve', 'debts', None]:
-            # Annotate total_cost and paid_amount
-            queryset = queryset.annotate(
-                calculated_total_cost=Coalesce(
-                    F('estimated_cost'), Value(0, output_field=DecimalField())
-                ) + Coalesce(
-                    Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Additive')),
-                    Value(0, output_field=DecimalField())
-                ) - Coalesce(
-                    Sum('cost_breakdowns__amount', filter=Q(cost_breakdowns__cost_type='Subtractive')),
-                    Value(0, output_field=DecimalField())
-                ),
-                calculated_paid_amount=Coalesce(Sum('payments__amount'), Value(0, output_field=DecimalField()))
-            )
-
-            # Annotate outstanding_balance
-            queryset = queryset.annotate(
-                outstanding_balance=F('calculated_total_cost') - F('calculated_paid_amount')
-            )
+            queryset = queryset.with_outstanding_balance()
         
         # Prefetch related objects to avoid N+1 queries
         if self.action == 'list':

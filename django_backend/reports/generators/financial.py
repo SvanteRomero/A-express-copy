@@ -1,6 +1,6 @@
 # reports/generators/financial.py
 """Financial report generators."""
-from django.db.models import Sum, Avg, Count, F, Q
+from django.db.models import Sum, Avg, Count, Q
 from django.utils import timezone
 from django.core.paginator import Paginator
 from datetime import timedelta
@@ -38,9 +38,9 @@ class FinancialReportGenerator(ReportGeneratorBase):
             Task.objects.filter(base_query)
             .select_related("customer")
             .prefetch_related("payments", "customer__phone_numbers", "cost_breakdowns")
-            .annotate(
-                outstanding_balance_calculated=F('total_cost') - F('paid_amount')
-            ).filter(outstanding_balance_calculated__gt=0).order_by('-outstanding_balance_calculated')
+            .with_outstanding_balance()
+            .filter(outstanding_balance__gt=0)
+            .order_by('-outstanding_balance')
         )
 
         if pdf_export:
@@ -61,7 +61,7 @@ class FinancialReportGenerator(ReportGeneratorBase):
                     "customer_phone": customer_phone,
                     "total_cost": float(t.total_cost or 0),
                     "paid_amount": float(t.paid_amount or 0),
-                    "outstanding_balance": float(t.outstanding_balance_calculated),
+                    "outstanding_balance": float(t.outstanding_balance),
                     "days_overdue": days_overdue,
                     "status": t.status,
                     "workshop_status": t.workshop_status,
@@ -73,7 +73,7 @@ class FinancialReportGenerator(ReportGeneratorBase):
                 "bottom_20": [serialize_task(t) for t in bottom_20_qs]
             }
             
-            total_outstanding = outstanding_tasks_qs.aggregate(total=Sum('outstanding_balance_calculated'))['total'] or 0
+            total_outstanding = outstanding_tasks_qs.aggregate(total=Sum('outstanding_balance'))['total'] or 0
             count = outstanding_tasks_qs.count()
             
             return {
@@ -116,14 +116,14 @@ class FinancialReportGenerator(ReportGeneratorBase):
                 "customer_phone": customer_phone,
                 "total_cost": float(task.total_cost or 0),
                 "paid_amount": float(task.paid_amount or 0),
-                "outstanding_balance": float(task.outstanding_balance_calculated),
+                "outstanding_balance": float(task.outstanding_balance),
                 "days_overdue": days_overdue,
                 "status": task.status,
                 "workshop_status": task.workshop_status,
                 "date_in": task.date_in.isoformat() if task.date_in else None,
             })
 
-        total_outstanding = outstanding_tasks_qs.aggregate(total=Sum('outstanding_balance_calculated'))['total'] or 0
+        total_outstanding = outstanding_tasks_qs.aggregate(total=Sum('outstanding_balance'))['total'] or 0
 
         return {
             "outstanding_tasks": tasks_data,
