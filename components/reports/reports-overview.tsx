@@ -100,7 +100,7 @@ export function ReportsOverview() {
       setSelectedReport({
         id: reportId,
         data,
-        ...(paginatedReports.includes(reportId) && {
+        ...(paginatedReports.has(reportId) && {
           currentPage: page,
           pageSize: pageSize
         })
