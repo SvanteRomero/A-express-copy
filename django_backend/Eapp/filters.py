@@ -88,14 +88,13 @@ class TaskFilter(django_filters.FilterSet):
     
     def filter_unpaid_tasks(self, queryset, name, value):
         """
-        Filter tasks that have outstanding payments and are not picked up or terminated.
+        Filter tasks that have outstanding payments and are not terminated.
+        Includes picked-up tasks since a customer may have left without full payment.
         Uses the payment_status field which is kept in sync by the model.
         """
         if value:
             return queryset.exclude(
                 payment_status='Fully Paid'
-            ).exclude(
-                status=_PICKED_UP
             ).exclude(
                 status='Terminated'
             )

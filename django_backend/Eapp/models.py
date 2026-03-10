@@ -294,11 +294,14 @@ class Task(models.Model):
         return estimated_cost + additive_costs - subtractive_costs
 
     def update_payment_status(self):
-        if self.paid_amount == 0:
+        net_amount = self.payments.aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+        if net_amount <= Decimal('0') and net_amount < self.paid_amount:
+            self.payment_status = self.PaymentStatus.REFUNDED
+        elif self.paid_amount == 0:
             self.payment_status = self.PaymentStatus.UNPAID
         elif self.paid_amount < self.total_cost:
             self.payment_status = self.PaymentStatus.PARTIALLY_PAID
-        elif self.paid_amount >= self.total_cost:
+        else:
             self.payment_status = self.PaymentStatus.FULLY_PAID
 
 
