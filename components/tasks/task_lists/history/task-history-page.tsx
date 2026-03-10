@@ -101,7 +101,7 @@ export function TaskHistoryPage({
         onRowClick={handleRowClick}
         showActions={true}
         isHistoryView={true}
-        onReturnTask={isFrontDeskView ? handleReturnTask : undefined}
+        onReturnTask={(isFrontDeskView || isManagerView) ? handleReturnTask : undefined}
         isCompletedTab={true}
         isManagerView={isManagerView}
         searchQuery={searchQuery}
@@ -115,7 +115,7 @@ export function TaskHistoryPage({
         <Button onClick={() => setPage(page + 1)} disabled={!next}>Next</Button>
       </div>
 
-      {selectedTask && isFrontDeskView && (
+      {selectedTask && (isFrontDeskView || isManagerView) && (
         <ReturnTaskDialog
           task={selectedTask}
           isOpen={isReturnDialogOpen}

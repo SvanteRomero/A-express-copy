@@ -37,9 +37,9 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         # Only add annotations for list and retrieve actions
         # Skip for update/partial_update to avoid potential query issues
-        if self.action in ['list', 'retrieve', 'debts', None]:
+        if self.action in ['list', 'retrieve', 'debts', 'return_task', None]:
             queryset = queryset.with_outstanding_balance()
-        
+
         # Prefetch related objects to avoid N+1 queries
         if self.action == 'list':
             return queryset.select_related(
@@ -47,7 +47,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             ).prefetch_related(
                 'payments', 'cost_breakdowns'
             )
-        elif self.action in ['retrieve', 'update', 'partial_update', None]:
+        elif self.action in ['retrieve', 'update', 'partial_update', 'return_task', None]:
             # For detail view and updates, prefetch all related data
             return queryset.select_related(
                 'assigned_to', 'created_by', 'negotiated_by', 'brand', 'referred_by', 'customer', 
