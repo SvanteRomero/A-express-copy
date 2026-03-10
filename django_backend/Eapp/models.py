@@ -283,6 +283,10 @@ class Task(models.Model):
     def outstanding_balance(self) -> Decimal:
         return (self.total_cost or Decimal('0')) - (self.paid_amount or Decimal('0'))
 
+    @outstanding_balance.setter
+    def outstanding_balance(self, value):
+        pass  # Allows ORM annotation to set this attribute without error
+
     def _calculate_total_cost(self):
         estimated_cost = self.estimated_cost or Decimal('0.00')
         additive_costs = sum(item.amount for item in self.cost_breakdowns.filter(cost_type='Additive'))
