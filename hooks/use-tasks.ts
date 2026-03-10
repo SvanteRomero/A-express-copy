@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { getTasks, getTask, createTask, updateTask as apiUpdateTask, createCostBreakdown, getDebts, apiClient } from '@/lib/api-client'
+import { getTasks, getTask, createTask, updateTask as apiUpdateTask, returnTask as apiReturnTask, getDebts, apiClient } from '@/lib/api-client'
 import { Task, PaginatedTasks } from '@/components/tasks/types'
 
 export const getTaskStatusOptions = async () => {
@@ -231,13 +231,67 @@ export function useUpdateTask() {
   });
 }
 
-export function useCreateCostBreakdown() {
+export function useReturnTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ taskId, costBreakdown }: { taskId: string, costBreakdown: any }) => createCostBreakdown(taskId, costBreakdown),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['task', variables.taskId] });
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      apiReturnTask(id, data).then(res => res.data),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['technicianTasks'], exact: false });
+      await queryClient.cancelQueries({ queryKey: ['tasks'], exact: false });
+      await queryClient.cancelQueries({ queryKey: ['task', id] });
+
+      const previousTechnicianTasks = queryClient.getQueriesData<PaginatedTasks>({ queryKey: ['technicianTasks'] });
+      const previousTask = queryClient.getQueryData<Task>(['task', id]);
+
+      const updates = {
+        status: 'In Progress',
+        ...(data.urgency && { urgency: data.urgency }),
+        ...(data.assigned_to && { assigned_to: data.assigned_to }),
+      };
+
+      if (previousTask) {
+        queryClient.setQueryData(['task', id], (old: Task | undefined) => old ? { ...old, ...updates } : old);
+      }
+
+      previousTechnicianTasks.forEach(([queryKey, oldData]) => {
+        if (!oldData) return;
+        const activeTab = queryKey[3] as string;
+        const newData = computeOptimisticTechnicianData(oldData, activeTab, id, updates, previousTask);
+        if (newData) queryClient.setQueryData(queryKey, newData);
+      });
+
+      queryClient.setQueriesData<PaginatedTasks>(
+        { queryKey: ['tasks'], exact: false },
+        (old) => {
+          if (!old?.results || !Array.isArray(old.results)) return old;
+          return { ...old, results: old.results.map(t => t.title === id ? { ...t, ...updates } : t) };
+        }
+      );
+
+      return { previousTechnicianTasks, previousTask };
+    },
+    onError: (_err, variables, context) => {
+      context?.previousTechnicianTasks?.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+      if (context?.previousTask) {
+        queryClient.setQueryData(['task', variables.id], context.previousTask);
+      }
+    },
+    onSettled: (_, error, variables) => {
+      if (error) {
+        queryClient.invalidateQueries({ queryKey: ['technicianTasks'] });
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
+        queryClient.invalidateQueries({ queryKey: ['technicianHistoryTasks'] });
+      } else {
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['technicianTasks'] });
+          queryClient.invalidateQueries({ queryKey: ['tasks'] });
+          queryClient.invalidateQueries({ queryKey: ['technicianHistoryTasks'] });
+        }, 1000);
+      }
     },
   });
 }

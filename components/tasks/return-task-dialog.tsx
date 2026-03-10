@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -21,10 +20,8 @@ import {
   SelectValue,
 } from '@/components/ui/core/select';
 import { Checkbox } from '@/components/ui/core/checkbox';
-import { useUpdateTask, useCreateCostBreakdown, useTaskUrgencyOptions } from '@/hooks/use-tasks';
+import { useReturnTask, useTaskUrgencyOptions } from '@/hooks/use-tasks';
 import { useAssignableUsers } from '@/hooks/use-users';
-import { useMutation } from '@tanstack/react-query';
-import { addTaskActivity } from '@/lib/api-client';
 
 interface ReturnTaskDialogProps {
   task: any;
@@ -35,50 +32,59 @@ interface ReturnTaskDialogProps {
 export function ReturnTaskDialog({ task, isOpen, onClose }: Readonly<ReturnTaskDialogProps>) {
   const [newIssueDescription, setNewIssueDescription] = useState('');
   const [newEstimatedCost, setNewEstimatedCost] = useState<number | ''>('');
-  const [urgency, setUrgency] = useState('');
-  const [assignedTo, setAssignedTo] = useState('');
+  const [urgency, setUrgency] = useState<string>(task.urgency ?? '');
+  const [assignedTo, setAssignedTo] = useState<string>(
+    task.assigned_to ? String(task.assigned_to?.id ?? task.assigned_to) : ''
+  );
   const [renegotiate, setRenegotiate] = useState(false);
-  const updateTaskMutation = useUpdateTask();
-  const createCostBreakdownMutation = useCreateCostBreakdown();
+  const [error, setError] = useState<string | null>(null);
+
+  const returnTaskMutation = useReturnTask();
   const { data: urgencyOptions } = useTaskUrgencyOptions();
   const { data: technicians } = useAssignableUsers();
 
-  const addTaskActivityMutation = useMutation({
-    mutationFn: (data: any) => addTaskActivity(task.title, data)
-  });
+  const costDifference =
+    renegotiate && newEstimatedCost !== ''
+      ? (newEstimatedCost) - Number(task.total_cost)
+      : null;
 
-  const handleSubmit = () => {
-    if (renegotiate) {
-      const costDifference = (newEstimatedCost || 0) - task.total_cost;
-      createCostBreakdownMutation.mutate({
-        taskId: task.title,
-        costBreakdown: {
-          description: 'Renegotiation on Return',
-          amount: costDifference,
-          cost_type: costDifference > 0 ? 'Additive' : 'Subtractive',
+  const handleSubmit = async () => {
+    if (renegotiate && (newEstimatedCost === '' || (newEstimatedCost) <= 0)) {
+      setError('Enter a valid new cost or uncheck Renegotiate.');
+      return;
+    }
+    setError(null);
+    try {
+      await returnTaskMutation.mutateAsync({
+        id: task.title,
+        data: {
+          issue_description: newIssueDescription || undefined,
+          urgency,
+          assigned_to: assignedTo || undefined,
+          estimated_cost: renegotiate ? newEstimatedCost : undefined,
+          renegotiation:
+            renegotiate && costDifference !== null
+              ? {
+                  amount: Math.abs(costDifference),
+                  cost_type: costDifference >= 0 ? 'Additive' : 'Subtractive',
+                }
+              : undefined,
         },
       });
+      onClose();
+    } catch (e: any) {
+      setError(e?.response?.data?.error ?? 'Something went wrong. Please try again.');
     }
-
-    if (newIssueDescription) {
-      addTaskActivityMutation.mutate({ type: 'returned', message: newIssueDescription });
-    }
-
-    updateTaskMutation.mutate({
-      id: task.title,
-      updates: {
-        status: 'In Progress',
-        estimated_cost: newEstimatedCost || task.estimated_cost,
-        urgency: urgency || task.urgency,
-        assigned_to: assignedTo || task.assigned_to,
-      },
-    });
-    onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open && !returnTaskMutation.isPending) onClose();
+      }}
+    >
+      <DialogContent key={task.title}>
         <DialogHeader>
           <DialogTitle>Return Task: {task.title}</DialogTitle>
         </DialogHeader>
@@ -92,7 +98,14 @@ export function ReturnTaskDialog({ task, isOpen, onClose }: Readonly<ReturnTaskD
             />
           </div>
           <div className="flex items-center space-x-2">
-            <Checkbox id="renegotiate" checked={renegotiate} onCheckedChange={(checked) => setRenegotiate(checked === true)} />
+            <Checkbox
+              id="renegotiate"
+              checked={renegotiate}
+              onCheckedChange={(checked) => {
+                setRenegotiate(checked === true);
+                setNewEstimatedCost('');
+              }}
+            />
             <Label htmlFor="renegotiate">Renegotiate</Label>
           </div>
           {renegotiate && (
@@ -103,6 +116,14 @@ export function ReturnTaskDialog({ task, isOpen, onClose }: Readonly<ReturnTaskD
                 value={newEstimatedCost}
                 onValueChange={(value) => setNewEstimatedCost(value)}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Current total: TSh {Number(task.total_cost).toLocaleString()}
+              </p>
+              {costDifference !== null && costDifference < 0 && (
+                <p className="text-xs text-amber-600 mt-1">
+                  This will reduce the total cost by TSh {Math.abs(costDifference).toLocaleString()}.
+                </p>
+              )}
             </div>
           )}
           <div>
@@ -128,19 +149,23 @@ export function ReturnTaskDialog({ task, isOpen, onClose }: Readonly<ReturnTaskD
               </SelectTrigger>
               <SelectContent>
                 {technicians?.map((technician: any) => (
-                  <SelectItem key={technician.id} value={technician.id}>
-                    {technician.first_name} {technician.last_name}{technician.role === 'Manager' ? ' (Manager)' : ''}
+                  <SelectItem key={technician.id} value={String(technician.id)}>
+                    {technician.first_name} {technician.last_name}
+                    {technician.role === 'Manager' ? ' (Manager)' : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={returnTaskMutation.isPending}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Return Task</Button>
+          <Button onClick={handleSubmit} disabled={returnTaskMutation.isPending}>
+            {returnTaskMutation.isPending ? 'Returning...' : 'Return Task'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,4 +1,6 @@
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from datetime import timedelta
 from rest_framework import status, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -411,6 +413,83 @@ class TaskViewSet(viewsets.ModelViewSet):
         return Response({'status': 'rejected'})
 
 
+
+    @action(detail=True, methods=['post'], url_path='return')
+    def return_task(self, request, task_id=None):
+        """Atomically return a picked-up task: log activity, optional renegotiation, reassign."""
+        from django.db import transaction as db_transaction
+
+        task = self.get_object()
+
+        if task.status != Task.Status.PICKED_UP:
+            return Response(
+                {'error': 'Only picked-up tasks can be returned.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        cutoff = timezone.now() - timedelta(days=7)
+        if task.updated_at < cutoff:
+            return Response(
+                {'error': 'Task can only be returned within 7 days of pickup.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        issue_description = request.data.get('issue_description')
+        new_urgency = request.data.get('urgency')
+        new_technician_id = request.data.get('assigned_to')
+        renegotiation = request.data.get('renegotiation')
+        new_estimated_cost = request.data.get('estimated_cost')
+
+        with db_transaction.atomic():
+            # 1. RETURNED activity — signal auto-updates return_count + return_periods
+            if issue_description:
+                TaskActivity.objects.create(
+                    task=task,
+                    user=request.user,
+                    type=TaskActivity.ActivityType.RETURNED,
+                    message=issue_description,
+                )
+
+            # 2. Cost breakdown (if renegotiating)
+            if renegotiation:
+                CostBreakdown.objects.create(
+                    task=task,
+                    description='Renegotiation on Return',
+                    amount=renegotiation['amount'],
+                    cost_type=renegotiation['cost_type'],
+                )
+
+            # 3. Update task fields
+            task.status = Task.Status.IN_PROGRESS
+            if new_urgency:
+                task.urgency = new_urgency
+            if new_technician_id:
+                task.assigned_to_id = new_technician_id
+            if new_estimated_cost is not None:
+                task.estimated_cost = new_estimated_cost
+            task.save()
+
+            # 4. ASSIGNMENT activity — closes the open return_period and tracks technician
+            if new_technician_id:
+                try:
+                    technician = User.objects.get(id=new_technician_id)
+                except User.DoesNotExist:
+                    return Response(
+                        {'error': 'Assigned technician not found.'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                TaskActivity.objects.create(
+                    task=task,
+                    user=request.user,
+                    type=TaskActivity.ActivityType.ASSIGNMENT,
+                    message=f"Returned task assigned to {technician.get_full_name()}.",
+                    details={
+                        'new_technician_id': technician.id,
+                        'new_technician_name': technician.get_full_name(),
+                    },
+                )
+
+        return Response(self.get_serializer(task).data)
 
     @action(detail=True, methods=['get'])
     def activities(self, request, task_id=None):
