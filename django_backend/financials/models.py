@@ -71,17 +71,10 @@ class CostBreakdown(models.Model):
         SUBTRACTIVE = 'Subtractive', _('Subtractive')
         INCLUSIVE = 'Inclusive', _('Inclusive')
 
-    class Status(models.TextChoices):
-        PENDING = 'Pending', _('Pending')
-        APPROVED = 'Approved', _('Approved')
-        REJECTED = 'Rejected', _('Rejected')
-
-
     task = models.ForeignKey(_TASK_REF, on_delete=models.CASCADE, related_name='cost_breakdowns')
     description = models.CharField(max_length=255)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     cost_type = models.CharField(max_length=20, choices=CostType.choices, default=CostType.INCLUSIVE)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.APPROVED)
     category = models.CharField(max_length=100, default='Inclusive')
     created_at = models.DateTimeField(auto_now_add=True)
     reason = models.TextField(blank=True, null=True)

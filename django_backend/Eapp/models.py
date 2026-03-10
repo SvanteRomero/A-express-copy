@@ -201,11 +201,18 @@ class Task(models.Model):
             ),
         ]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._original_estimated_cost = self.estimated_cost
+
     def save(self, *args, **kwargs):
-        if not self.pk:  # Only for new instances
+        if not self.pk:
             if self.estimated_cost is not None:
                 self.total_cost = self.estimated_cost
+        elif self.estimated_cost != self._original_estimated_cost:
+            self.total_cost = self._calculate_total_cost()
         super().save(*args, **kwargs)
+        self._original_estimated_cost = self.estimated_cost
 
     # --- Activity-derived helpers and properties ---
     def _last_activity(self, activity_type):
@@ -293,11 +300,21 @@ class Task(models.Model):
         subtractive_costs = sum(item.amount for item in self.cost_breakdowns.filter(cost_type='Subtractive'))
         return estimated_cost + additive_costs - subtractive_costs
 
-    def update_payment_status(self):
-        net_amount = self.payments.aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
-        if net_amount <= Decimal('0') and net_amount < self.paid_amount:
+    def update_payment_status(self, net_paid=None):
+        """Update payment_status based on paid_amount and net_paid.
+
+        Args:
+            net_paid: pre-computed sum of ALL payments (positive + negative). If None,
+                      it will be fetched from the DB. Pass it from signals to avoid
+                      an extra query when paid_amount is already being aggregated there.
+        """
+        if net_paid is None:
+            net_paid = self.payments.aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+
+        # All money paid was refunded back to the customer
+        if net_paid <= Decimal('0') and self.paid_amount > Decimal('0'):
             self.payment_status = self.PaymentStatus.REFUNDED
-        elif self.paid_amount == 0:
+        elif self.paid_amount == Decimal('0'):
             self.payment_status = self.PaymentStatus.UNPAID
         elif self.paid_amount < self.total_cost:
             self.payment_status = self.PaymentStatus.PARTIALLY_PAID

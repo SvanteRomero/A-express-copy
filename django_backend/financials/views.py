@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
@@ -157,11 +157,26 @@ class CostBreakdownViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         from Eapp.services import ActivityLogger
+        from django.db import transaction as db_transaction
+        from decimal import Decimal
+
         task_id = self.kwargs.get("task_id")
-        task = get_object_or_404(Task, title=task_id)
-        instance = serializer.save(task=task)
-        
-        # Log the activity
+
+        with db_transaction.atomic():
+            task = get_object_or_404(Task.objects.select_for_update(), title=task_id)
+
+            # Guard: Subtractive breakdowns must not push total_cost below zero
+            amount = serializer.validated_data.get('amount', Decimal('0'))
+            cost_type = serializer.validated_data.get('cost_type', 'Inclusive')
+            if cost_type == 'Subtractive':
+                projected = task.total_cost - amount
+                if projected < Decimal('0'):
+                    raise serializers.ValidationError(
+                        {"amount": f"This discount would make the total cost negative (projected: {projected})."}
+                    )
+
+            instance = serializer.save(task=task)
+
         ActivityLogger.log_cost_breakdown_add(
             task=task,
             user=self.request.user,
@@ -209,11 +224,10 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
         if not user.is_staff and user.role not in ["Manager", "Admin"]:
             queryset = queryset.filter(requester=user)
 
-        # Filter by status
-        status_filter = self.request.query_params.get("status")
-        if status_filter:
-            queryset = queryset.filter(status=status_filter)
-        
+        # Filter by status — default to Pending so resolved requests are hidden from the UI
+        status_filter = self.request.query_params.get("status", TransactionRequest.Status.PENDING)
+        queryset = queryset.filter(status=status_filter)
+
         # Filter by transaction type
         transaction_type = self.request.query_params.get("transaction_type")
         if transaction_type:
@@ -248,8 +262,6 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
                 status=TransactionRequest.Status.APPROVED
             )
             self._create_payment(instance)
-            # Delete auto-approved request - no longer needed
-            instance.delete()
         elif approver:
             # Accountant selected specific manager → auto-approved with that manager
             instance = serializer.save(
@@ -257,8 +269,6 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
                 status=TransactionRequest.Status.APPROVED
             )
             self._create_payment(instance)
-            # Delete auto-approved request - no longer needed
-            instance.delete()
         else:
             # Accountant left blank → pending, broadcast to all managers
             instance = serializer.save(
@@ -281,7 +291,6 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
 
     def _create_payment(self, instance):
         """Create Payment record based on transaction type."""
-        # Determine amount sign based on transaction type
         if instance.transaction_type == TransactionRequest.TransactionType.REVENUE:
             amount = instance.amount  # Positive for revenue
         else:
@@ -295,16 +304,21 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
             category=instance.category,
         )
 
-        # Only create CostBreakdown for expenditures with tasks
-        if instance.transaction_type == TransactionRequest.TransactionType.EXPENDITURE and instance.task:
+        # Create a CostBreakdown for task-linked expenditures that represent a real
+        # cost item (Additive or Inclusive). Subtractive expenditures are refunds —
+        # the negative Payment is sufficient; a CostBreakdown would double-reduce
+        # the outstanding balance by also shrinking total_cost.
+        is_expenditure = instance.transaction_type == TransactionRequest.TransactionType.EXPENDITURE
+        cost_type = instance.cost_type or CostBreakdown.CostType.INCLUSIVE
+        is_refund = cost_type == CostBreakdown.CostType.SUBTRACTIVE
+        if is_expenditure and instance.task and not is_refund:
             CostBreakdown.objects.create(
                 task=instance.task,
                 description=f"Expenditure: {instance.description}",
                 amount=instance.amount,
-                cost_type=instance.cost_type or CostBreakdown.CostType.INCLUSIVE,
+                cost_type=cost_type,
                 category=instance.category.name,
                 payment_method=instance.payment_method,
-                status=CostBreakdown.Status.APPROVED,
             )
 
     @action(detail=True, methods=["post"])
@@ -316,24 +330,16 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Store data before deletion
-        requester_id = transaction.requester.id
+        requester_id = transaction.requester.id if transaction.requester else None
 
         transaction.status = TransactionRequest.Status.APPROVED
         transaction.approver = request.user
         transaction.save()
 
-        # Create payment and optionally cost breakdown
         self._create_payment(transaction)
 
-        # Serialize before deletion for the response
         serializer = self.get_serializer(transaction)
-        response_data = serializer.data
 
-        # Delete the processed request - no longer needed
-        transaction.delete()
-
-        # Broadcast dismissal to all managers and notify requester
         from .broadcasts import broadcast_transaction_resolved, broadcast_transaction_update
         broadcast_transaction_resolved(
             request_id=pk,
@@ -343,7 +349,7 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
         )
         broadcast_transaction_update()
 
-        return Response(response_data)
+        return Response(serializer.data)
 
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):
@@ -354,21 +360,14 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Store data before deletion
-        requester_id = transaction.requester.id
+        requester_id = transaction.requester.id if transaction.requester else None
 
         transaction.status = TransactionRequest.Status.REJECTED
         transaction.approver = request.user
         transaction.save()
 
-        # Serialize before deletion for the response
         serializer = self.get_serializer(transaction)
-        response_data = serializer.data
 
-        # Delete rejected request immediately - serves no purpose
-        transaction.delete()
-
-        # Broadcast dismissal to all managers and notify requester
         from .broadcasts import broadcast_transaction_resolved, broadcast_transaction_update
         broadcast_transaction_resolved(
             request_id=pk,
@@ -378,7 +377,7 @@ class TransactionRequestViewSet(viewsets.ModelViewSet):
         )
         broadcast_transaction_update()
 
-        return Response(response_data)
+        return Response(serializer.data)
 
     def perform_destroy(self, instance):
         super().perform_destroy(instance)
@@ -537,11 +536,10 @@ class UnifiedApprovalRequestViewSet(viewsets.ReadOnlyModelViewSet):
             transaction_qs = transaction_qs.filter(requester=user)
             debt_qs = debt_qs.filter(requester=user)
         
-        # Apply status filter
-        status_filter = self.request.query_params.get("status")
-        if status_filter:
-            transaction_qs = transaction_qs.filter(status=status_filter)
-            debt_qs = debt_qs.filter(status=status_filter)
+        # Apply status filter — default to Pending so resolved requests are hidden from the UI
+        status_filter = self.request.query_params.get("status", TransactionRequest.Status.PENDING)
+        transaction_qs = transaction_qs.filter(status=status_filter)
+        debt_qs = debt_qs.filter(status=status_filter)
         
         # Apply transaction_type filter (only affects TransactionRequests)
         transaction_type = self.request.query_params.get("transaction_type")

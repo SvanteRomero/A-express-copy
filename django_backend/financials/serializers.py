@@ -33,7 +33,6 @@ class CostBreakdownSerializer(serializers.ModelSerializer):
             "reason",
             "payment_method",
             "task_title",
-            "status",
         ]
         extra_kwargs = {"payment_method": {"write_only": True}}
 

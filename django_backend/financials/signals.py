@@ -1,6 +1,7 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from django.db.models import Sum
+from django.db.models import Sum, Q
+from decimal import Decimal
 from .models import Payment, CostBreakdown, Account
 from Eapp.models import Task
 
@@ -9,18 +10,24 @@ def update_task_on_payment_change(sender, instance, **kwargs):
     try:
         if instance.task:
             task = instance.task
-            task.paid_amount = task.payments.filter(amount__gte=0).aggregate(total=Sum('amount'))['total'] or 0
-            task.update_payment_status()
+            # Single aggregate: positive payments (what customer paid) + net (all payments)
+            agg = task.payments.aggregate(
+                positive=Sum('amount', filter=Q(amount__gt=0)),
+                net=Sum('amount'),
+            )
+            task.paid_amount = agg['positive'] or Decimal('0')
+            net_paid = agg['net'] or Decimal('0')
+            task.update_payment_status(net_paid=net_paid)
             # Clear is_debt if fully paid
             if task.is_debt and task.payment_status == task.PaymentStatus.FULLY_PAID:
                 task.is_debt = False
             task.save(update_fields=['paid_amount', 'payment_status', 'is_debt'])
-            
+
             # Broadcast payment update for live cross-user sync
             from .broadcasts import broadcast_payment_update
             broadcast_payment_update(task_id=task.title)
     except Task.DoesNotExist:
-        pass # Task was deleted, do nothing.
+        pass  # Task was deleted, do nothing.
 
 @receiver([post_save, post_delete], sender=CostBreakdown)
 def update_task_on_cost_breakdown_change(sender, instance, **kwargs):

@@ -448,25 +448,41 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='add-payment')
     def add_payment(self, request, task_id=None):
+        from django.db import transaction as db_transaction
 
         if not (request.user.role in ['Manager', _FRONT_DESK, 'Accountant'] or request.user.is_superuser):
             return Response(
                 {"error": "You do not have permission to add payments."},
                 status=status.HTTP_403_FORBIDDEN
             )
-        task = self.get_object()
-        serializer = PaymentSerializer(data=request.data)
-        if serializer.is_valid():
-            tech_support_category, _ = PaymentCategory.objects.get_or_create(name='TECH SUPPORT')
 
-            payment = serializer.save(task=task, description=f"{task.customer.name} - {task.title}", category=tech_support_category)
-            
-            # Handle notification
-            from .services.notification_handler import TaskNotificationHandler
-            TaskNotificationHandler.notify_payment_added(task, payment)
-            
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = PaymentSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        with db_transaction.atomic():
+            # Re-fetch the task inside the transaction with a row lock so that
+            # concurrent payment submissions cannot both pass the balance check.
+            task = Task.objects.select_for_update().get(pk=self.get_object().pk)
+
+            payment_amount = serializer.validated_data['amount']
+            if payment_amount > task.outstanding_balance:
+                return Response(
+                    {"error": f"Payment of {payment_amount} exceeds the outstanding balance of {task.outstanding_balance}."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            tech_support_category, _ = PaymentCategory.objects.get_or_create(name='TECH SUPPORT')
+            payment = serializer.save(
+                task=task,
+                description=f"{task.customer.name} - {task.title}",
+                category=tech_support_category,
+            )
+
+        from .services.notification_handler import TaskNotificationHandler
+        TaskNotificationHandler.notify_payment_added(task, payment)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 
