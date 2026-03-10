@@ -254,9 +254,10 @@ class FinancialReportGenerator(ReportGeneratorBase):
         now = timezone.now()
         today = now.date()
 
-        # Opening balance
+        # Opening balance (yesterday only)
+        yesterday = today - timedelta(days=1)
         opening_balance = (
-            Payment.objects.filter(date__lt=today).aggregate(total=Sum("amount"))["total"]
+            Payment.objects.filter(date=yesterday).aggregate(total=Sum("amount"))["total"]
             or 0
         )
 
