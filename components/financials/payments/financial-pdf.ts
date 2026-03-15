@@ -93,6 +93,72 @@ export const generateFinancialPDF = async (financialData: PDFFinancialData, star
         doc.setTextColor(0, 0, 0);
         yPosition += 15;
 
+        // --- Breakdown by Category ---
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('INCOME & EXPENDITURE BREAKDOWN', margin, yPosition);
+        yPosition += 8;
+
+        // Income breakdown by category
+        const incomeByCategory: Record<string, number> = {};
+        for (const item of financialData.revenue) {
+            const cat = item.category_name || 'Uncategorized';
+            incomeByCategory[cat] = (incomeByCategory[cat] || 0) + Number.parseFloat(item.amount);
+        }
+        const incomeBreakdownRows = Object.entries(incomeByCategory).map(([cat, total]) => [
+            cat,
+            total.toLocaleString('en-US'),
+        ]);
+        incomeBreakdownRows.push(['Total', Number.parseFloat(financialData.total_revenue).toLocaleString('en-US')]);
+
+        // Expenditure breakdown by category
+        const expByCategory: Record<string, number> = {};
+        for (const item of financialData.expenditures) {
+            const cat = item.category_name || 'Uncategorized';
+            expByCategory[cat] = (expByCategory[cat] || 0) + Math.abs(Number.parseFloat(item.amount));
+        }
+        const expBreakdownRows = Object.entries(expByCategory).map(([cat, total]) => [
+            cat,
+            total.toLocaleString('en-US'),
+        ]);
+        expBreakdownRows.push(['Total', Number.parseFloat(financialData.total_expenditures).toLocaleString('en-US')]);
+
+        const halfWidth = (pageWidth - margin * 2 - 10) / 2;
+
+        // Income breakdown table (left half)
+        autoTable(doc, {
+            startY: yPosition,
+            head: [['Income Category', 'Amount (TZS)']],
+            body: incomeBreakdownRows,
+            margin: { left: margin },
+            tableWidth: halfWidth,
+            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [66, 139, 202] },
+            didParseCell: (data) => {
+                if (data.row.index === incomeBreakdownRows.length - 1) {
+                    data.cell.styles.fontStyle = 'bold';
+                }
+            },
+        });
+
+        // Expenditure breakdown table (right half, same startY)
+        autoTable(doc, {
+            startY: yPosition,
+            head: [['Expenditure Category', 'Amount (TZS)']],
+            body: expBreakdownRows,
+            margin: { left: margin + halfWidth + 10, right: margin },
+            tableWidth: halfWidth,
+            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [220, 53, 69] },
+            didParseCell: (data) => {
+                if (data.row.index === expBreakdownRows.length - 1) {
+                    data.cell.styles.fontStyle = 'bold';
+                }
+            },
+        });
+
+        yPosition = (doc as any).lastAutoTable.finalY + 15;
+
         // Income/Revenue Table
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
