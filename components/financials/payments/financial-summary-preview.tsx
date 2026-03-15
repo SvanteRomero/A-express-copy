@@ -104,13 +104,21 @@ function SummaryCards({ financialData }: { readonly financialData: FinancialSumm
                     <DollarSign className="h-4 w-4 text-blue-500" />
                 </CardHeader>
                 <CardContent>
-                    <div className={`text-2xl font-bold ${Number.parseFloat(financialData.net_balance) >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
+                    <div className={`text-2xl font-bold ${Number.parseFloat(financialData.net_balance) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {formatCurrency(financialData.net_balance)}
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                        Opening Balance: {formatCurrency(financialData.opening_balance)}
-                    </p>
+                    {(() => {
+                        const prev = Number.parseFloat(financialData.opening_balance);
+                        const curr = Number.parseFloat(financialData.net_balance);
+                        if (prev === 0) return null;
+                        const pct = ((curr - prev) / Math.abs(prev)) * 100;
+                        const up = pct >= 0;
+                        return (
+                            <p className={`text-xs font-medium ${up ? 'text-green-600' : 'text-red-600'}`}>
+                                {up ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}% vs previous day
+                            </p>
+                        );
+                    })()}
                 </CardContent>
             </Card>
         </div>
