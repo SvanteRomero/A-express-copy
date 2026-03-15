@@ -141,6 +141,10 @@ function SummaryTab({ financialData }: { readonly financialData: FinancialSummar
                                 <span className="ml-2">{financialData.revenue.length + financialData.expenditures.length}</span>
                             </div>
                             <div>
+                                <span className="font-medium">Opening Balance:</span>
+                                <span className="ml-2">{formatCurrency(financialData.opening_balance)}</span>
+                            </div>
+                            <div>
                                 <span className="font-medium">Net Profit/Loss:</span>
                                 <Badge
                                     variant={getNetBalanceVariant(financialData.net_balance)}
