@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/layout/tabs"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useTechnicianTasks } from "@/hooks/use-tasks"
 import { TechnicianTaskCard } from "./technician-task-card"
@@ -48,10 +49,15 @@ function PaginationControls({ taskCount, currentPage, count, totalPages, activeT
 
 export function TechnicianTasksPage() {
   const { user } = useAuth()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const activeTabParam = searchParams.get("tab")
+  
   const userId = user?.id ? user.id.toString() : undefined
   const isWorkshopTech = user?.is_workshop || false
 
-  const [activeTab, setActiveTab] = useState("in-progress")
+  const activeTab = activeTabParam || "in-progress"
   const [searchQuery, setSearchQuery] = useState("");
   const [pages, setPages] = useState<Record<string, number>>({
     'in-progress': 1,
@@ -59,9 +65,11 @@ export function TechnicianTasksPage() {
     'in-workshop': 1,
   });
 
-  // Reset page when tab changes
+  // Reset page when tab changes via URL
   const handleTabChange = (value: string) => {
-    setActiveTab(value)
+    const params = new URLSearchParams(searchParams)
+    params.set("tab", value)
+    router.replace(`${pathname}?${params.toString()}`)
     // No need to reset page here, as pages are managed per tab in the 'pages' state
   }
 

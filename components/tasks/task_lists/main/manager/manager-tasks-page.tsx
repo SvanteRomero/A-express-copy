@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/core/button";
 import { Plus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -28,8 +28,18 @@ const TABS_ORDER: Tab[] = ['pending', 'myTasks', 'completed'];
 export function ManagerTasksPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<Tab>('pending');
+  
+  const activeTabParam = searchParams.get("tab") as Tab | null;
+  const activeTab = activeTabParam || 'pending';
+
+  const handleTabChange = (value: Tab) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("tab", value);
+    router.replace(`${pathname}?${params.toString()}`);
+  };
 
   // Use independent hooks for each tab to maintain separate states
   // 1. Pending Tasks Hook
@@ -81,9 +91,9 @@ export function ManagerTasksPage() {
 
     if (Math.abs(distance) > minSwipeDistance) {
       if (distance > 0 && currentIndex < TABS_ORDER.length - 1) {
-        setActiveTab(TABS_ORDER[currentIndex + 1]);
+        handleTabChange(TABS_ORDER[currentIndex + 1]);
       } else if (distance < 0 && currentIndex > 0) {
-        setActiveTab(TABS_ORDER[currentIndex - 1]);
+        handleTabChange(TABS_ORDER[currentIndex - 1]);
       }
     }
   };
@@ -155,7 +165,7 @@ export function ManagerTasksPage() {
       </div>
 
       {/* Main Content with Swipe Support */}
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as Tab)}>
+      <Tabs value={activeTab} onValueChange={(value) => handleTabChange(value as Tab)}>
         <TabsList className="grid w-full grid-cols-3 bg-gray-100">
           <TabsTrigger value="pending" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Current Tasks</TabsTrigger>
           <TabsTrigger value="myTasks" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">My Tasks</TabsTrigger>

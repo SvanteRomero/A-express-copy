@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/core/button";
 import { Plus } from "lucide-react";
 import { TasksDisplay } from "@/components/tasks/task_utils/tasks-display";
@@ -26,7 +26,18 @@ import Link from "next/link";
 
 export function FrontDeskTasksPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
+
+  const activeTabParam = searchParams.get("tab");
+  const activeTab = activeTabParam || "not-completed";
+
+  const handleTabChange = (value: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("tab", value);
+    router.replace(`${pathname}?${params.toString()}`);
+  };
 
   // Use independent hooks for each tab
   // 1. Not Completed
@@ -166,7 +177,7 @@ export function FrontDeskTasksPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="not-completed">
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-3 bg-gray-100">
           <TabsTrigger value="not-completed" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Not Completed</TabsTrigger>
           <TabsTrigger value="completed" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">Completed Tasks</TabsTrigger>
