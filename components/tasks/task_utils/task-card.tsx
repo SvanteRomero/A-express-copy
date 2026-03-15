@@ -53,7 +53,7 @@ export function TaskCard({
             <CardContent className="p-4 pt-0 space-y-2">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Laptop className="h-4 w-4" />
-                    <span>{task.laptop_model_details?.name}</span>
+                    <span>{task.brand_details?.name} {task.laptop_model_details?.name}</span>
                 </div>
 
                 <div className="text-sm text-gray-600">

@@ -73,7 +73,7 @@ export function TaskTableRow({
             <TableCell>
                 <div className="flex items-center gap-2">
                     <Laptop className="h-4 w-4 text-gray-400" />
-                    <span className="text-gray-900">{task.laptop_model_details?.name}</span>
+                    <span className="text-gray-900">{task.brand_details?.name} {task.laptop_model_details?.name}</span>
                 </div>
             </TableCell>
             {contextCell}

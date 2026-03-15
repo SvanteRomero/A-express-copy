@@ -20,6 +20,7 @@ class TaskListSerializer(serializers.ModelSerializer):
     assigned_to_details = UserListSerializer(source='assigned_to', read_only=True)
     outstanding_balance = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     laptop_model_details = ModelSerializer(source='laptop_model', read_only=True)
+    brand_details = BrandSerializer(source='brand', read_only=True)
     total_cost = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     current_location_details = LocationSerializer(source='current_location', read_only=True)
 
@@ -34,6 +35,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             'workshop_status',
             'current_location',
             'current_location_details',
+            'brand_details',
             'laptop_model',
             'laptop_model_details',
             'description',
