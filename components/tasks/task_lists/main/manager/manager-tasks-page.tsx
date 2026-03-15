@@ -177,6 +177,7 @@ export function ManagerTasksPage() {
               onProcessPickup={handleProcessPickup}
               onTerminateTask={handleTerminateTask}
               isManagerView={true}
+              showSearch={false}
               searchQuery={pendingTasks.searchQuery}
               onSearchQueryChange={pendingTasks.setSearchQuery}
               serverSideFilters={pendingTasks.serverSideFilters}
@@ -196,6 +197,7 @@ export function ManagerTasksPage() {
               showActions={false}
               isManagerView={false}
               isMyTasksTab={true}
+              showSearch={false}
               searchQuery={myTasks.searchQuery}
               onSearchQueryChange={myTasks.setSearchQuery}
               serverSideFilters={
@@ -225,6 +227,7 @@ export function ManagerTasksPage() {
               onProcessPickup={handleProcessPickup}
               isCompletedTab={true}
               isManagerView={true}
+              showSearch={false}
               searchQuery={completedTasks.searchQuery}
               onSearchQueryChange={completedTasks.setSearchQuery}
               serverSideFilters={completedTasks.serverSideFilters}

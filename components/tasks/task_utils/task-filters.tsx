@@ -27,21 +27,24 @@ interface TaskFiltersProps {
   showDeviceStatusFilter?: boolean
   showLocationFilter?: boolean
   showTechnicianFilter?: boolean
+  showSearch?: boolean
 }
 
-export function TaskFilters({ searchQuery, setSearchQuery, taskStatusFilter, setTaskStatusFilter, technicianFilter, setTechnicianFilter, urgencyFilter, setUrgencyFilter, deviceStatusFilter, setDeviceStatusFilter, locationFilter, setLocationFilter, uniqueStatuses, uniqueTechnicians, uniqueUrgencies, uniqueDeviceStatuses, uniqueLocations, clearAllFilters, showDeviceStatusFilter = true, showLocationFilter = false, showTechnicianFilter = true }: Readonly<TaskFiltersProps>) {
+export function TaskFilters({ searchQuery, setSearchQuery, taskStatusFilter, setTaskStatusFilter, technicianFilter, setTechnicianFilter, urgencyFilter, setUrgencyFilter, deviceStatusFilter, setDeviceStatusFilter, locationFilter, setLocationFilter, uniqueStatuses, uniqueTechnicians, uniqueUrgencies, uniqueDeviceStatuses, uniqueLocations, clearAllFilters, showDeviceStatusFilter = true, showLocationFilter = false, showTechnicianFilter = true, showSearch = true }: Readonly<TaskFiltersProps>) {
   return (
     <div className="space-y-4">
       {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <Input
-          placeholder="Search by Task ID, Customer Name, Laptop Model, or Issue..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 h-12 text-base border-gray-300 focus:border-red-500 focus:ring-red-500"
-        />
-      </div>
+      {showSearch && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search by Task ID, Customer Name, Laptop Model, or Issue..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 h-12 text-base border-gray-300 focus:border-red-500 focus:ring-red-500"
+          />
+        </div>
+      )}
 
       {/* Filter Dropdowns */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">

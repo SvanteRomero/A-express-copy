@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/core/button"
 import { useAuth } from "@/hooks/use-auth"
 import { useWebSocketContext } from "@/components/provider/websocket-provider"
 import { Wifi, WifiOff, AlertTriangle, RotateCcw } from "lucide-react"
+import { GlobalSearchModal } from "./global-search-modal"
 
 function WebSocketIndicator() {
   const { isConnected, connectionQuality, forceReconnect } = useWebSocketContext()
@@ -81,8 +82,8 @@ function WebSocketIndicator() {
 
 export function DashboardHeader() {
   const { user } = useAuth()
-  // Show indicator for all authenticated users
   const showWsIndicator = !!user
+  const showSearch = user?.role === "Manager" || user?.role === "Front Desk" || user?.role === "Administrator"
 
   return (
     <header className="flex h-14 sm:h-16 shrink-0 items-center gap-1.5 sm:gap-2 border-b px-3 sm:px-4">
@@ -98,6 +99,9 @@ export function DashboardHeader() {
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* Global Task Search */}
+      {showSearch && <GlobalSearchModal />}
 
       {/* WebSocket Connection Indicator */}
       {showWsIndicator && <WebSocketIndicator />}

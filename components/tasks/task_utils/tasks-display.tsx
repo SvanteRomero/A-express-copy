@@ -35,6 +35,7 @@ interface TasksDisplayProps {
   approvingTaskId?: string | null
   pickingUpTaskId?: string | null
   isMyTasksTab?: boolean
+  showSearch?: boolean
   searchQuery?: string
   onSearchQueryChange?: (query: string) => void
   // Server-side filter state and setters
@@ -82,6 +83,7 @@ export function TasksDisplay({
   approvingTaskId,
   pickingUpTaskId,
   isMyTasksTab,
+  showSearch = true,
   searchQuery: externalSearchQuery,
   onSearchQueryChange: onExternalSearchQueryChange,
   serverSideFilters,
@@ -293,6 +295,7 @@ export function TasksDisplay({
         showDeviceStatusFilter={!isCurrentTasks}
         showLocationFilter={isCurrentTasks}
         showTechnicianFilter={showTechnicianFilter}
+        showSearch={showSearch}
       />
 
       {isMobile ? (

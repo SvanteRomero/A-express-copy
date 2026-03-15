@@ -179,6 +179,7 @@ export function FrontDeskTasksPage() {
             onRowClick={handleRowClick}
             showActions={false}
             isManagerView={true}
+            showSearch={false}
             searchQuery={notCompletedTasks.searchQuery}
             onSearchQueryChange={notCompletedTasks.setSearchQuery}
             serverSideFilters={notCompletedTasks.serverSideFilters}
@@ -199,6 +200,7 @@ export function FrontDeskTasksPage() {
             onReject={handleReject}
             isFrontDeskCompletedView={true}
             approvingTaskId={approvingTaskId}
+            showSearch={false}
             searchQuery={completedTasks.searchQuery}
             onSearchQueryChange={completedTasks.setSearchQuery}
             serverSideFilters={completedTasks.serverSideFilters}
@@ -219,6 +221,7 @@ export function FrontDeskTasksPage() {
             onPickedUp={handlePickedUp}
             onNotifyCustomer={handleNotifyCustomer}
             pickingUpTaskId={pickingUpTaskId}
+            showSearch={false}
             searchQuery={pickupTasks.searchQuery}
             onSearchQueryChange={pickupTasks.setSearchQuery}
             serverSideFilters={pickupTasks.serverSideFilters}

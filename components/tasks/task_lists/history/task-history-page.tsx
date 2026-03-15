@@ -104,6 +104,7 @@ export function TaskHistoryPage({
         onReturnTask={(isFrontDeskView || isManagerView) ? handleReturnTask : undefined}
         isCompletedTab={true}
         isManagerView={isManagerView}
+        showSearch={!(isFrontDeskView || isManagerView)}
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
         serverSideFilters={serverSideFilters}
