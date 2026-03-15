@@ -324,10 +324,9 @@ function ExpenditureTab({ financialData, isMobile }: { readonly financialData: F
 interface FinancialSummaryPreviewProps {
     readonly isOpen: boolean
     readonly onClose: () => void
-    readonly openingBalance?: number
 }
 
-export function FinancialSummaryPreview({ isOpen, onClose, openingBalance }: FinancialSummaryPreviewProps) {
+export function FinancialSummaryPreview({ isOpen, onClose }: FinancialSummaryPreviewProps) {
     const [startDate, setStartDate] = useState<Date | undefined>(new Date())
     const [activeTab, setActiveTab] = useState('summary')
     const [isCalendarOpen, setIsCalendarOpen] = useState(false)
@@ -356,7 +355,10 @@ export function FinancialSummaryPreview({ isOpen, onClose, openingBalance }: Fin
 
     const handleExport = () => {
         if (financialData && startDate) {
-            generateFinancialPDF(financialData as unknown as PDFFinancialData, startDate, openingBalance);
+            const ob = financialData.opening_balance !== undefined
+                ? Number.parseFloat(financialData.opening_balance)
+                : undefined;
+            generateFinancialPDF(financialData as unknown as PDFFinancialData, startDate, ob);
         }
     };
 

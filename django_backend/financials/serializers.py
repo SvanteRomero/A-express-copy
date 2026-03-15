@@ -280,6 +280,9 @@ class FinancialSummarySerializer(serializers.Serializer):
     net_balance = serializers.DecimalField(
         max_digits=12, decimal_places=2, read_only=True
     )
+    opening_balance = serializers.DecimalField(
+        max_digits=12, decimal_places=2, read_only=True
+    )
     date_range = serializers.CharField(read_only=True)
     period_start = serializers.DateField(read_only=True)
     period_end = serializers.DateField(read_only=True)

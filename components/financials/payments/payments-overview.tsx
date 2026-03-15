@@ -200,7 +200,6 @@ export function PaymentsOverview() {
       <FinancialSummaryPreview
         isOpen={isFinancialSummaryOpen}
         onClose={() => setIsFinancialSummaryOpen(false)}
-        openingBalance={revenueData?.opening_balance}
       />
       <AddTransactionDialog
         isOpen={transactionDialog.isOpen}

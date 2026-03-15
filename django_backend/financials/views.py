@@ -626,12 +626,24 @@ class FinancialSummaryView(APIView):
 
         # Calculate totals
         total_revenue = revenue_payments.aggregate(total=Sum("amount"))["total"] or 0
-        
+
         # Expenditures are stored as negative, so we use abs() for display
         total_expenditures_raw = expenditure_payments.aggregate(total=Sum("amount"))["total"] or 0
         total_expenditures = abs(total_expenditures_raw)
 
         net_balance = total_revenue - total_expenditures
+
+        # Opening balance = net balance of the previous day (revenue - expenditures)
+        previous_day = selected_date - timedelta(days=1)
+        prev_revenue = Payment.objects.filter(date=previous_day, amount__gt=0).aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+        prev_expenditures = abs(
+            Payment.objects.filter(date=previous_day, amount__lt=0).aggregate(
+                total=Sum("amount")
+            )["total"] or 0
+        )
+        opening_balance = prev_revenue - prev_expenditures
 
         # Prepare response data - using unified Payment serializer format
         financial_data = {
@@ -640,6 +652,7 @@ class FinancialSummaryView(APIView):
             "total_revenue": total_revenue,
             "total_expenditures": total_expenditures,
             "net_balance": net_balance,
+            "opening_balance": opening_balance,
             "date": selected_date.isoformat(),
             "period_start": selected_date.isoformat(),
             "period_end": selected_date.isoformat(),
