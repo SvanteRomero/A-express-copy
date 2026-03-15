@@ -109,7 +109,7 @@ function SummaryCards({ financialData }: { readonly financialData: FinancialSumm
                         {formatCurrency(financialData.net_balance)}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                        Date: {format(new Date(financialData.period_start), 'MMM dd, yyyy')}
+                        Opening Balance: {formatCurrency(financialData.opening_balance)}
                     </p>
                 </CardContent>
             </Card>
@@ -355,9 +355,9 @@ export function FinancialSummaryPreview({ isOpen, onClose }: FinancialSummaryPre
 
     const handleExport = () => {
         if (financialData && startDate) {
-            const ob = financialData.opening_balance !== undefined
-                ? Number.parseFloat(financialData.opening_balance)
-                : undefined;
+            const ob = financialData.opening_balance === undefined
+                ? undefined
+                : Number.parseFloat(financialData.opening_balance);
             generateFinancialPDF(financialData as unknown as PDFFinancialData, startDate, ob);
         }
     };

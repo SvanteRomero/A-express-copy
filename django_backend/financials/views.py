@@ -631,8 +631,6 @@ class FinancialSummaryView(APIView):
         total_expenditures_raw = expenditure_payments.aggregate(total=Sum("amount"))["total"] or 0
         total_expenditures = abs(total_expenditures_raw)
 
-        net_balance = total_revenue - total_expenditures
-
         # Opening balance = net balance of the previous day (revenue - expenditures)
         previous_day = selected_date - timedelta(days=1)
         prev_revenue = Payment.objects.filter(date=previous_day, amount__gt=0).aggregate(
@@ -644,6 +642,9 @@ class FinancialSummaryView(APIView):
             )["total"] or 0
         )
         opening_balance = prev_revenue - prev_expenditures
+
+        # Opening balance counts as part of revenue for the day
+        net_balance = opening_balance + total_revenue - total_expenditures
 
         # Prepare response data - using unified Payment serializer format
         financial_data = {
